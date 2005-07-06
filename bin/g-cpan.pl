@@ -81,7 +81,8 @@ GetOptions(
 
 
 # Output error if more than one switch is activated
-if ( $search + $list + $install + $generate + $upgrade + $pretend + $ask > 1 ) {
+#
+if ( $search + $list + $install + $generate + $upgrade + $ask > 1 ) {
     print_err(
 "You can't combine actions with each other.\n");
 	print "${white}Please consult ${cyan}$prog ${green}--help${reset} or ${cyan}man $prog${reset} for more information\n\n";
