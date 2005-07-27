@@ -1,0 +1,143 @@
+#!/usr/bin/perl
+
+# This snippet isn't intended as the final version, but is instead 
+# a proof of concept for how to grab the dependency information for a
+# module from all possible sources - Makfile, Build.PL, and META.yml.
+# To be better, it should also stop at the top level dir - Module-Build,
+# for instance, includes a sample Build.PL and META.yml in a subdirectory
+# that we end up parsing because we are so lax in our scan.
+#
+# Like I said, as a proof of concept it works :)
+#
+# -mcummings
+
+use Cwd qw(getcwd abs_path cwd);
+eval 'use YAML qw(:all); use YAML::Node;';
+my $has_yaml = $@ ? 0 : 1;
+
+use Data::Dumper;
+
+use File::Basename;
+
+my %req_list = ();
+my $curdir = ".";
+
+&ScanDir($curdir);
+
+print Dumper(%req_list);
+
+sub ScanDir {
+    my ($workdir)  = shift;
+    my ($startdir) = &cwd;
+
+    chdir($workdir) or die "Unable to enter dir $workdir:$!\n";
+    opendir( CURD, "." );
+    my @dirs = readdir(CURD);
+    closedir(CURD);
+    my %final = ();
+    my %BUILD = ();
+
+    foreach my $object (@dirs) {
+        next if ( $object eq "." );
+        next if ( $object eq ".." );
+        if ( -f $object ) {
+            my $abs_path = abs_path($object);
+            if ( $object =~ m/\.yml/ ) {
+
+                # Do YAML parsing if you can
+                if ($has_yaml) {
+                    my $b_n = dirname($abs_path);
+                    $b_n = basename($b_n);
+                    my %reqs = ();
+                    my $arr  = YAML::LoadFile($abs_path);
+                    foreach my $type qw(requires build_requires recommends) {
+                        foreach my $module ( keys %{ $arr->{$type} } ) {
+                            next if ( $module =~ /Cwd/i );
+                            $req_list{$b_n}{"$type"}{$module} =
+                              $arr->{$type}{$module};
+                        }
+                    }
+                }
+                else {
+                    print
+"WARNING: You should consider emerging dev-perl/yaml. It'll come in handy pretty soon.";
+                }
+            }
+            elsif ( $object =~ m/Makefile.PL/ ) {
+
+                # Do some makefile parsing
+                # RIPPED from CPAN.pm ;)
+                use FileHandle;
+
+                my $b_n = dirname($abs_path);
+                $b_n = basename($b_n);
+                my $b_dir = dirname($abs_path);
+                if ( !-f "$b_dir/Makefile" ) { sleep(5); `perl $abs_path` }
+                my $makefile = File::Spec->catfile( $b_dir, "Makefile" );
+
+                my $fh;
+                my (%p) = ();
+                if ( $fh = FileHandle->new("<$makefile\0") ) {
+                    local ($/) = "\n";
+                    while (<$fh>) {
+                        chomp;
+                        last if /MakeMaker post_initialize section/;
+                        my ($p) = m{^[\#]
+       \s{0,}PREREQ_PM\s+=>\s+(.+)
+       }x;
+                        next unless $p;
+                        while ( $p =~ m/(?:\s)([\w\:]+)=>q\[(.*?)\],?/g ) {
+                            $req_list{$b_n}{'requires'}{$1} = $2;
+                        }
+
+                        last;
+                    }
+                }
+            }
+            elsif ( $object eq "Build.PL" ) {
+
+                # Do some Build file parsing
+                use FileHandle;
+                my $b_dir = dirname($abs_path);
+                my $b_n   = dirname($abs_path);
+                $b_n = basename($b_n);
+                my $makefile = File::Spec->catfile( $b_dir, "Build.PL" );
+                my (%p) = ();
+                my $fh;
+
+                foreach $type qw(requires recommends build_requires) {
+                    if ( $fh = FileHandle->new("<$makefile\0") ) {
+                        local ($/) = "";
+                        while (<$fh>) {
+                            chomp;
+                            my ($p) = m/^\s+$type\s+=>\s+\{(.*?)\}/smx;
+                            next unless $p;
+                            undef($/);
+
+                            #local($/) = "\n";
+                            my @list = split( ',', $p );
+                            foreach my $pa (@list) {
+                                $pa =~ s/\n|\s+|\'//mg;
+                                if ($pa) {
+                                    my ( $module, $vers ) = split( /=>/, $pa );
+                                    $req_list{$b_n}{"$type"}{$module} = "$vers";
+                                }
+                            }
+                            last;
+
+                        }
+                    }
+                }
+
+            }
+
+        }
+        elsif ( -d $object ) {
+            &ScanDir($object);
+            next;
+        }
+
+    }
+    chdir($startdir) or die "Unable to change to dir $startdir:$!\n";
+
+}
