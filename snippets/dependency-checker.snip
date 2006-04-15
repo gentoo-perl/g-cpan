@@ -12,8 +12,8 @@
 # -mcummings
 
 use Cwd qw(getcwd abs_path cwd);
-eval 'use YAML qw(:all); use YAML::Node;';
-my $has_yaml = $@ ? 0 : 1;
+use YAML;
+use YAML::Node;
 
 use Data::Dumper;
 
@@ -22,11 +22,11 @@ use File::Basename;
 my %req_list = ();
 my $curdir = ".";
 
-&ScanDir($curdir);
+&FindDeps($curdir);
 
 print Dumper(%req_list);
 
-sub ScanDir {
+sub FindDeps {
     my ($workdir)  = shift;
     my ($startdir) = &cwd;
 
@@ -45,7 +45,6 @@ sub ScanDir {
             if ( $object =~ m/\.yml/ ) {
 
                 # Do YAML parsing if you can
-                if ($has_yaml) {
                     my $b_n = dirname($abs_path);
                     $b_n = basename($b_n);
                     my %reqs = ();
@@ -57,11 +56,6 @@ sub ScanDir {
                               $arr->{$type}{$module};
                         }
                     }
-                }
-                else {
-                    print
-"WARNING: You should consider emerging dev-perl/yaml. It'll come in handy pretty soon.";
-                }
             }
             elsif ( $object =~ m/Makefile.PL/ ) {
 
@@ -133,7 +127,7 @@ sub ScanDir {
 
         }
         elsif ( -d $object ) {
-            &ScanDir($object);
+            &FindDeps($object);
             next;
         }
 

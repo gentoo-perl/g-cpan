@@ -12,6 +12,9 @@ use File::Basename;
 use File::Copy;
 use Term::ANSIColor;
 use Digest::MD5;
+use Cwd qw(getcwd abs_path cwd);
+use YAML;
+use YAML::Node;
 
 use constant MAKE_CONF         => '/etc/make.conf';
 use constant PATH_PKG_VAR      => '/var/db/pkg/';
@@ -42,6 +45,7 @@ use constant ERR_FOLDER_CREATE   => "Couldn't create folder '%s' : %s";     # fo
 my $VERSION = "0.13.02";
 my $prog = basename($0);
 
+my %req_list = ();
 my @perl_dirs = (
     "dev-perl",   "perl-core", "perl-gcpan", "perl-text",
     "perl-tools", "perl-xml",  "perl-dev"
@@ -151,6 +155,42 @@ if ($search) {
     exit;
 }
 
+# Confirm that there is an /etc/portage/categories file
+# and that we have an entry for perl-gcpan in it.
+my $cat_file = "/etc/portage/categories";
+if ( -f "$cat_file" ) {
+   #
+   #  Use braces to localize the $/ assignment, so we don't get bitten later.
+   #
+   my $data;
+      local $/ = undef;
+      open (FH, "/etc/portage/categories") || die;
+      $data = <FH>;
+      close FH;
+   unless (grep "gcpan", $data ) 
+    {
+
+	if (open(CATEG,">/etc/portage/categories")) {
+		print CATEG "perl-gcpan";
+		close(CATEG);
+	} else {
+		print_err("Insufficient permissions to edit /etc/portage/categories");
+		print_err("Please run $prog as a user with sufficient permissions");
+		exit;
+	}
+   }
+
+	
+} else {
+	if (open(CATEG,">/etc/portage/categories")) {
+		print CATEG "perl-gcpan";
+		close(CATEG);
+	} else {
+		print_err("Insufficient permissions to edit /etc/portage/categories");
+		print_err("Please run $prog as a user with sufficient permissions");
+		exit;
+	}
+}
 # Set our temporary overlay directory for the scope of this run.
 # By setting an overlay directory, we bypass the predefined portage
 # directory and allow portage to build a package outside of its
@@ -353,8 +393,9 @@ sub portage_dir {
     # turn this into a directory name suitable for portage tree
     # at least one module omits the hyphen between name and version.
     # these two regexps are 'better' matches than previously.
-    if ( $file =~ m|.*/(.*)-[0-9]+\.| )        { return $1; }
-    if ( $file =~ m|.*/([a-zA-Z-]*)[0-9]+\.| ) { return $1; }
+    if ( $file =~ m|.*/(.*)-v?[0-9]+\.| )        { return $1; }
+    if ( $file =~ m|.*/([a-zA-Z-]*)v?[0-9]+\.| ) { return $1; }
+	if ( $file =~ m|.*/([a-zA-Z-]*)\-v?\.[0-9]+\.| ) { return $1; }
     if ( $file =~ m|.*/([^.]*)\.| )            { return $1; }
 
     warn "$prog: Unable to coerce $file into a portage dir name";
@@ -362,7 +403,7 @@ sub portage_dir {
 }
 
 sub create_ebuild {
-    my ( $module, $dir, $file, $build_dir, $prereq_pm, $md5 ) = @_;
+    my ( $module, $dir, $file, $build_dir, $md5, $prereq_pm ) = @_;
 
     # First, make the directory
     my $fulldir  = File::Spec->catdir( $perldev_overlay, $dir );
@@ -387,7 +428,7 @@ sub create_ebuild {
 
     my $re_path = '(?:.*)?';
     my $re_pkg = '(?:.*)?';
-    my $re_ver = '(?:[\d\.]+[a-z]?)?';
+    my $re_ver = '(?:v?[\d\.]+[a-z]?)?';
     my $re_suf = '(?:_(?:alpha|beta|pre|rc|p)(?:\d+)?)?';
     my $re_rev = '(?:\-r\d+)?';
     my $re_ext = '(?:(?:tar|tgz|zip|bz2|gz|tar\.gz))?';
@@ -401,6 +442,14 @@ sub create_ebuild {
 
     # Remove double .'s - happens on occasion with odd packages
     $filenamever =~ s/\.$//;
+
+	# Some modules don't use the /\d\.\d\d/ convention, and portage goes
+	# berserk if the ebuild is called ebulldname-.02.ebuild -- so we treat
+	# this special case
+    if (substr($filenamever, 0, 1) eq '.') {
+      $filenamever = 0 . $filenamever;
+    }
+
 
     my $ebuild = File::Spec->catdir( $fulldir, "$filename-$filenamever.ebuild" );
     my $digest = File::Spec->catdir( $filesdir, "digest-$filename-$filenamever" );
@@ -429,13 +478,13 @@ KEYWORDS="$arches"
 
 HERE
 
-    if ( $prereq_pm && keys %$prereq_pm ) {
+    if ( $prereq_pm && keys %{$prereq_pm} ) {
 
         print EBUILD q|DEPEND="|;
 
         my $first = 1;
         my %dup_check;
-        for ( keys %$prereq_pm ) {
+        for ( keys %{$prereq_pm} ) {
             my $obj = CPAN::Shell->expandany($_);
             my $dir = portage_dir($obj);
             if ( $dir =~ m/Module-Build/ ) {
@@ -468,7 +517,8 @@ HERE
 }
 
 sub install_module {
-    my ( $module_name, $recursive ) = @_;
+    my ( $module_name, $module_version, $recursive ) = @_;
+	print "Looking at $module_name\n";#MPC
     if ( $module_name !~ m|::| ) {
         $module_name =~ s/-/::/g;
     }    # Assume they gave us module-name instead of module::name
@@ -487,8 +537,10 @@ sub install_module {
         print_err ("Couldn't turn '$file' into a directory name\n");
         return;
     }
+	my $dir2 = $module_name;
+	$dir2   =~ s/::/-/g;
 
-    if ( my $exists = ebuild_exists($dir) ) {
+    if ( my $exists = ebuild_exists($dir) || ebuild_exists($dir2) ) {
 
 	# Print simple found message unless verbose -verbose already got a long version
 	print_info("Existing ebuild found for $exists\n") unless $verbose;
@@ -515,7 +567,8 @@ sub install_module {
 
     my $pack = $CPAN::META->instance( 'CPAN::Distribution', $file );
     $pack->called_for( $obj->id );
-    $pack->make;
+    #$pack->make;
+	$pack->get;
 
     # A cheap ploy, but this lets us add module-build as needed
     # instead of forcing it on everyone
@@ -532,16 +585,21 @@ sub install_module {
     my $md5string = sprintf "MD5 %s %s %d", file_md5sum($localfile), $base, -s $localfile;
 
     # make ebuilds for all the prereqs
-    my $prereq_pm = $pack->prereq_pm;
-    if ($add_mb) { $prereq_pm->{'Module::Build'} = "0" }
-    install_module( $_, 1 ) for ( keys %$prereq_pm );
+    #my $prereq_pm = $pack->prereq_pm;
+    #if ($add_mb) { $prereq_pm->{'Module::Build'} = "0" }
+    #install_module( $_, 1 ) for ( keys %$prereq_pm );
+		my $curdir = ".";
+		%req_list = ();
+		%req_list = &FindDeps($curdir);
+    	if ($add_mb) { $req_list{'Module::Build'} = "0" }
+    	install_module( $_, $req_list{$_}, 1 ) for ( keys %req_list );
 
     # get the build dir from CPAN, this will tell us definitively
     # what we should set S to in the ebuild
     # strip off the path element
     ( my $build_dir = $pack->{build_dir} ) =~ s|.*/||;
 
-    create_ebuild( $obj, $dir, $file, $build_dir, $prereq_pm, $md5string );
+    create_ebuild( $obj, $dir, $file, $build_dir, $md5string, \%req_list );
 
     unless ( -f "$PORTAGE_DISTDIR/$localfile" ) {
        move("$localfile", "$PORTAGE_DISTDIR");
@@ -600,7 +658,8 @@ sub upgrade_module {
 
 	    my $pack = $CPAN::META->instance( 'CPAN::Distribution', $file );
     	$pack->called_for( $obj->id );
-    	$pack->make;
+    	#MPC$pack->make;
+    	$pack->get;
 
     	# A cheap ploy, but this lets us add module-build as needed
     	# instead of forcing it on everyone
@@ -616,17 +675,26 @@ sub upgrade_module {
 
     	my $md5string = sprintf "MD5 %s %s %d", file_md5sum($localfile), $base, -s $localfile;
 
+		#HERE - replace this call to $pack->prereq_pm with the new code, then cycle to get versions
     	# make ebuilds for all the prereqs
-    	my $prereq_pm = $pack->prereq_pm;
-    	if ($add_mb) { $prereq_pm->{'Module::Build'} = "0" }
-    	install_module( $_, 1 ) for ( keys %$prereq_pm );
+
+		my $curdir = ".";
+
+		%req_list = {};
+		%req_list = &FindDeps($curdir);
+
+    	#my $prereq_pm = $pack->prereq_pm;
+    	#if ($add_mb) { $prereq_pm->{'Module::Build'} = "0" }
+    	if ($add_mb) { $req_list{'Module::Build'} = "0" }
+    	#install_module( $_, 1 ) for ( keys %$prereq_pm );
+    	install_module( $_, $req_list{$_}, 1 ) for ( keys %req_list );
 
     	# get the build dir from CPAN, this will tell us definitively
     	# what we should set S to in the ebuild
     	# strip off the path element
     	( my $build_dir = $pack->{build_dir} ) =~ s|.*/||;
 
-    	create_ebuild( $obj, $dir, $file, $build_dir, $prereq_pm, $md5string );
+    	create_ebuild( $obj, $dir, $file, $build_dir, $md5string, \%req_list );
     	unless ( -f "$PORTAGE_DISTDIR/$localfile" ) {
        		move("$localfile", "$PORTAGE_DISTDIR");
     	}
@@ -796,6 +864,117 @@ __END__
 SHERE
 
     close CPANCONF;
+}
+
+
+
+sub FindDeps {
+    my ($workdir)  = shift;
+    my ($startdir) = &cwd;
+    chdir($workdir) or die "Unable to enter dir $workdir:$!\n";
+    opendir( CURD, "." );
+    my @dirs = readdir(CURD);
+    closedir(CURD);
+    my %final = ();
+    my %BUILD = ();
+
+    foreach my $object (@dirs) {
+        next if ( $object eq "." );
+        next if ( $object eq ".." );
+        if ( -f $object ) {
+            my $abs_path = abs_path($object);
+            if ( $object =~ m/\.yml/ ) {
+
+                # Do YAML parsing if you can
+                    my $b_n = dirname($abs_path);
+                    $b_n = basename($b_n);
+                    my $arr  = YAML::LoadFile($abs_path);
+                    foreach my $type qw(requires build_requires recommends) {
+                        foreach my $module ( keys %{ $arr->{$type} } ) {
+                            next if ( $module =~ /Cwd/i );
+                            $req_list{$module} =
+                              $arr->{$type}{$module};
+                        }
+                    }
+            }
+            elsif ( $object =~ m/Makefile.PL/ ) {
+
+                # Do some makefile parsing
+                # RIPPED from CPAN.pm ;)
+                use FileHandle;
+
+                my $b_n = dirname($abs_path);
+                $b_n = basename($b_n);
+                my $b_dir = dirname($abs_path);
+                if ( !-f "$b_dir/Makefile" ) { sleep(5); `perl $abs_path` }
+                my $makefile = File::Spec->catfile( $b_dir, "Makefile" );
+
+                my $fh;
+                my (%p) = ();
+                if ( $fh = FileHandle->new("<$makefile\0") ) {
+                    local ($/) = "\n";
+                    while (<$fh>) {
+                        chomp;
+                        last if /MakeMaker post_initialize section/;
+                        my ($p) = m{^[\#]
+       \s{0,}PREREQ_PM\s+=>\s+(.+)
+       }x;
+                        next unless $p;
+                        while ( $p =~ m/(?:\s)([\w\:]+)=>q\[(.*?)\],?/g ) {
+                            $req_list{$1} = $2;
+                        }
+
+                        last;
+                    }
+                }
+            }
+            elsif ( $object eq "Build.PL" ) {
+
+                # Do some Build file parsing
+                use FileHandle;
+                my $b_dir = dirname($abs_path);
+                my $b_n   = dirname($abs_path);
+                $b_n = basename($b_n);
+                my $makefile = File::Spec->catfile( $b_dir, "Build.PL" );
+                my (%p) = ();
+                my $fh;
+
+                foreach my $type qw(requires recommends build_requires) {
+                    if ( $fh = FileHandle->new("<$makefile\0") ) {
+                        local ($/) = "";
+                        while (<$fh>) {
+                            chomp;
+                            my ($p) = m/^\s+$type\s+=>\s+\{(.*?)\}/smx;
+                            next unless $p;
+                            undef($/);
+
+                            #local($/) = "\n";
+                            my @list = split( ',', $p );
+                            foreach my $pa (@list) {
+                                $pa =~ s/\n|\s+|\'//mg;
+                                if ($pa) {
+                                    my ( $module, $vers ) = split( /=>/, $pa );
+                                    $req_list{$module} = "$vers";
+                                }
+                            }
+                            last;
+
+                        }
+                    }
+                }
+
+            }
+
+        }
+        elsif ( -d $object ) {
+            &FindDeps($object);
+            next;
+        }
+
+    }
+    chdir($startdir) or die "Unable to change to dir $startdir:$!\n";
+
+	return(%req_list);
 }
 
 ################
