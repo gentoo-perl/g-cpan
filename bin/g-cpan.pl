@@ -45,7 +45,7 @@ use constant ERR_FOLDER_CREATE   => "Couldn't create folder '%s' : %s";     # fo
 my $VERSION = "0.13.02";
 my $prog = basename($0);
 
-my %req_list = ();
+my %dep_list = ();
 my @perl_dirs = (
     "dev-perl",   "perl-core", "perl-gcpan", "perl-text",
     "perl-tools", "perl-xml",  "perl-dev"
@@ -485,6 +485,7 @@ HERE
         my $first = 1;
         my %dup_check;
         for ( keys %{$prereq_pm} ) {
+			next if ($_ eq "perl" );
             my $obj = CPAN::Shell->expandany($_);
             my $dir = portage_dir($obj);
             if ( $dir =~ m/Module-Build/ ) {
@@ -493,7 +494,6 @@ HERE
             if ( $dir =~ m/PathTools/i ) {
                 $dir = ">=perl-core/File-Spec-3.01";
             } # Will need to fix once File-Spec is moved to perl-core - mcummings
-            next if $dir eq "perl";
             if ( ( !$dup_check{$dir} ) && ( !module_check($dir) ) ) {
                 $dup_check{$dir} = 1;
 
@@ -567,8 +567,7 @@ sub install_module {
 
     my $pack = $CPAN::META->instance( 'CPAN::Distribution', $file );
     $pack->called_for( $obj->id );
-    #$pack->make;
-	$pack->get;
+    $pack->make;
 
     # A cheap ploy, but this lets us add module-build as needed
     # instead of forcing it on everyone
@@ -589,9 +588,9 @@ sub install_module {
     #if ($add_mb) { $prereq_pm->{'Module::Build'} = "0" }
     #install_module( $_, 1 ) for ( keys %$prereq_pm );
 		my $curdir = ".";
-		%req_list = ();
-		%req_list = &FindDeps($curdir);
-    	if ($add_mb) { $req_list{'Module::Build'} = "0" }
+		&FindDeps($curdir, $module_name);
+		
+    	if ($add_mb) { push @{$dep_list{$module_name}}, {'Module::Build' => "0"} }
     	install_module( $_, $req_list{$_}, 1 ) for ( keys %req_list );
 
     # get the build dir from CPAN, this will tell us definitively
@@ -658,8 +657,7 @@ sub upgrade_module {
 
 	    my $pack = $CPAN::META->instance( 'CPAN::Distribution', $file );
     	$pack->called_for( $obj->id );
-    	#MPC$pack->make;
-    	$pack->get;
+    	$pack->make;
 
     	# A cheap ploy, but this lets us add module-build as needed
     	# instead of forcing it on everyone
@@ -681,7 +679,7 @@ sub upgrade_module {
 		my $curdir = ".";
 
 		%req_list = {};
-		%req_list = &FindDeps($curdir);
+		%req_list = &FindDeps($curdir, $module_name);
 
     	#my $prereq_pm = $pack->prereq_pm;
     	#if ($add_mb) { $prereq_pm->{'Module::Build'} = "0" }
@@ -743,7 +741,7 @@ sub get_globals {
         next if ( substr( $line, 0, 1 ) eq '#' );
         chomp $line;
 
-        $line =~ tr/"'//d;    # Remove quotes to be safe
+        $line =~ tr/\"\'//d;    # Remove quotes to be safe
 
         # Now replacing defaults, if other values are set
         if ( $line =~ m/^PORTDIR\s*=\s*(.+)$/ ) {
@@ -868,15 +866,16 @@ SHERE
 
 
 
-sub FindDeps {
+sub FindDeps
+{
     my ($workdir)  = shift;
+    my $module_name = shift;
     my ($startdir) = &cwd;
     chdir($workdir) or die "Unable to enter dir $workdir:$!\n";
     opendir( CURD, "." );
     my @dirs = readdir(CURD);
     closedir(CURD);
-    my %final = ();
-    my %BUILD = ();
+    my %req_list = ();
 
     foreach my $object (@dirs) {
         next if ( $object eq "." );
@@ -892,21 +891,17 @@ sub FindDeps {
                     foreach my $type qw(requires build_requires recommends) {
                         foreach my $module ( keys %{ $arr->{$type} } ) {
                             next if ( $module =~ /Cwd/i );
-                            $req_list{$module} =
-                              $arr->{$type}{$module};
+                            $dep_list{$module_name}{$module} = $arr->{$type}{$module};
                         }
                     }
             }
-            elsif ( $object =~ m/Makefile.PL/ ) {
+            if ( $object =~ m/^Makefile$/ ) {
 
                 # Do some makefile parsing
                 # RIPPED from CPAN.pm ;)
                 use FileHandle;
 
-                my $b_n = dirname($abs_path);
-                $b_n = basename($b_n);
                 my $b_dir = dirname($abs_path);
-                if ( !-f "$b_dir/Makefile" ) { sleep(5); `perl $abs_path` }
                 my $makefile = File::Spec->catfile( $b_dir, "Makefile" );
 
                 my $fh;
@@ -921,14 +916,14 @@ sub FindDeps {
        }x;
                         next unless $p;
                         while ( $p =~ m/(?:\s)([\w\:]+)=>q\[(.*?)\],?/g ) {
-                            $req_list{$1} = $2;
+                            $dep_list{$module_name}{$1} = $2;
                         }
 
                         last;
                     }
                 }
             }
-            elsif ( $object eq "Build.PL" ) {
+            if ( $object eq "Build.PL" ) {
 
                 # Do some Build file parsing
                 use FileHandle;
@@ -954,7 +949,7 @@ sub FindDeps {
                                 $pa =~ s/\n|\s+|\'//mg;
                                 if ($pa) {
                                     my ( $module, $vers ) = split( /=>/, $pa );
-                                    $req_list{$module} = "$vers";
+                                    $dep_list{$module_name}{$module} = "$vers";
                                 }
                             }
                             last;
@@ -967,14 +962,13 @@ sub FindDeps {
 
         }
         elsif ( -d $object ) {
-            &FindDeps($object);
+            &FindDeps($object, $module_name);
             next;
         }
 
     }
     chdir($startdir) or die "Unable to change to dir $startdir:$!\n";
 
-	return(%req_list);
 }
 
 ################

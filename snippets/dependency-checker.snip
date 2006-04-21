@@ -11,6 +11,7 @@
 #
 # -mcummings
 
+use strict;
 use Cwd qw(getcwd abs_path cwd);
 use YAML;
 use YAML::Node;
@@ -22,20 +23,21 @@ use File::Basename;
 my %req_list = ();
 my $curdir = ".";
 
-&FindDeps($curdir);
-
-print Dumper(%req_list);
-
-sub FindDeps {
+my %dep_list = ();
+my $module_name = abs_path(".");
+$module_name = basename($module_name);
+&finder($curdir,$module_name);
+print Dumper(%dep_list);
+sub finder
+{
     my ($workdir)  = shift;
+    my $module_name = shift;
     my ($startdir) = &cwd;
-
     chdir($workdir) or die "Unable to enter dir $workdir:$!\n";
     opendir( CURD, "." );
     my @dirs = readdir(CURD);
     closedir(CURD);
-    my %final = ();
-    my %BUILD = ();
+    my %req_list = ();
 
     foreach my $object (@dirs) {
         next if ( $object eq "." );
@@ -47,26 +49,21 @@ sub FindDeps {
                 # Do YAML parsing if you can
                     my $b_n = dirname($abs_path);
                     $b_n = basename($b_n);
-                    my %reqs = ();
                     my $arr  = YAML::LoadFile($abs_path);
                     foreach my $type qw(requires build_requires recommends) {
                         foreach my $module ( keys %{ $arr->{$type} } ) {
                             next if ( $module =~ /Cwd/i );
-                            $req_list{$b_n}{"$type"}{$module} =
-                              $arr->{$type}{$module};
+                            $dep_list{$module_name}{$module} = $arr->{$type}{$module};
                         }
                     }
             }
-            elsif ( $object =~ m/Makefile.PL/ ) {
+            if ( $object =~ m/^Makefile$/ ) {
 
                 # Do some makefile parsing
                 # RIPPED from CPAN.pm ;)
                 use FileHandle;
 
-                my $b_n = dirname($abs_path);
-                $b_n = basename($b_n);
                 my $b_dir = dirname($abs_path);
-                if ( !-f "$b_dir/Makefile" ) { sleep(5); `perl $abs_path` }
                 my $makefile = File::Spec->catfile( $b_dir, "Makefile" );
 
                 my $fh;
@@ -81,14 +78,14 @@ sub FindDeps {
        }x;
                         next unless $p;
                         while ( $p =~ m/(?:\s)([\w\:]+)=>q\[(.*?)\],?/g ) {
-                            $req_list{$b_n}{'requires'}{$1} = $2;
+                            $dep_list{$module_name}{$1} = $2;
                         }
 
                         last;
                     }
                 }
             }
-            elsif ( $object eq "Build.PL" ) {
+            if ( $object eq "Build.PL" ) {
 
                 # Do some Build file parsing
                 use FileHandle;
@@ -99,7 +96,7 @@ sub FindDeps {
                 my (%p) = ();
                 my $fh;
 
-                foreach $type qw(requires recommends build_requires) {
+                foreach my $type qw(requires recommends build_requires) {
                     if ( $fh = FileHandle->new("<$makefile\0") ) {
                         local ($/) = "";
                         while (<$fh>) {
@@ -114,7 +111,7 @@ sub FindDeps {
                                 $pa =~ s/\n|\s+|\'//mg;
                                 if ($pa) {
                                     my ( $module, $vers ) = split( /=>/, $pa );
-                                    $req_list{$b_n}{"$type"}{$module} = "$vers";
+                                    $dep_list{$module_name}{$module} = "$vers";
                                 }
                             }
                             last;
@@ -127,7 +124,7 @@ sub FindDeps {
 
         }
         elsif ( -d $object ) {
-            &FindDeps($object);
+            &finder($object, $module_name);
             next;
         }
 
