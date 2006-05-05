@@ -115,6 +115,9 @@ if ( (scalar(@ARGV) == 0 ) and !(defined($upgrade) or defined($list))  ) {
 eval 'use CPAN::Config;';
 my $needs_cpan_stub = $@ ? 1 : 0;
 
+# Don't do autointalls via ExtUtils::AutoInstall
+
+$ENV{PERL_EXTUTILS_AUTOINSTALL}="--skipdeps";
 # Test Replacement - ((A&B)or(C&B)) should be the same as ((A or C) and B)
 if (   ( ($needs_cpan_stub) || ( $> > 0 ) )
     && ( !-f "$ENV{HOME}/.cpan/CPAN/MyConfig.pm" ) )
@@ -508,6 +511,10 @@ HERE
         print EBUILD qq|"\n\n|;
     }
 
+    print EBUILD "src_compile() {
+        export PERL_EXTUTILS_AUTOINSTALL=\"--skipdeps\"
+        perl-module_src_compile
+    }";
     close EBUILD;
 
     # write the digest too
@@ -518,7 +525,7 @@ HERE
 
 sub install_module {
     my ( $module_name, $module_version, $recursive ) = @_;
-	print "Looking at $module_name\n";#MPC
+	unless (defined($module_version)){$module_version = 0};
     if ( $module_name !~ m|::| ) {
         $module_name =~ s/-/::/g;
     }    # Assume they gave us module-name instead of module::name
@@ -590,15 +597,15 @@ sub install_module {
 		my $curdir = ".";
 		&FindDeps($curdir, $module_name);
 		
-    	if ($add_mb) { push @{$dep_list{$module_name}}, {'Module::Build' => "0"} }
-    	install_module( $_, $req_list{$_}, 1 ) for ( keys %req_list );
+    	if ($add_mb) { $dep_list{$module_name}{'Module::Build'} = "0" }
+    	install_module( $_, $dep_list{$module_name}{$_}, 1 ) for ( keys %{$dep_list{$module_name}} );
 
     # get the build dir from CPAN, this will tell us definitively
     # what we should set S to in the ebuild
     # strip off the path element
     ( my $build_dir = $pack->{build_dir} ) =~ s|.*/||;
 
-    create_ebuild( $obj, $dir, $file, $build_dir, $md5string, \%req_list );
+    create_ebuild( $obj, $dir, $file, $build_dir, $md5string, \%dep_list );
 
     unless ( -f "$PORTAGE_DISTDIR/$localfile" ) {
        move("$localfile", "$PORTAGE_DISTDIR");
@@ -678,21 +685,20 @@ sub upgrade_module {
 
 		my $curdir = ".";
 
-		%req_list = {};
-		%req_list = &FindDeps($curdir, $module_name);
+		&FindDeps($curdir, $module_name);
 
     	#my $prereq_pm = $pack->prereq_pm;
     	#if ($add_mb) { $prereq_pm->{'Module::Build'} = "0" }
-    	if ($add_mb) { $req_list{'Module::Build'} = "0" }
+    	if ($add_mb) { $dep_list{$module_name}{'Module::Build'} = "0" }
     	#install_module( $_, 1 ) for ( keys %$prereq_pm );
-    	install_module( $_, $req_list{$_}, 1 ) for ( keys %req_list );
+    	install_module( $_, $dep_list{$module_name}{$_}, 1 ) for ( keys %{$dep_list{$module_name}} );
 
     	# get the build dir from CPAN, this will tell us definitively
     	# what we should set S to in the ebuild
     	# strip off the path element
     	( my $build_dir = $pack->{build_dir} ) =~ s|.*/||;
 
-    	create_ebuild( $obj, $dir, $file, $build_dir, $md5string, \%req_list );
+    	create_ebuild( $obj, $dir, $file, $build_dir, $md5string, \%dep_list );
     	unless ( -f "$PORTAGE_DISTDIR/$localfile" ) {
        		move("$localfile", "$PORTAGE_DISTDIR");
     	}
@@ -889,10 +895,14 @@ sub FindDeps
                     $b_n = basename($b_n);
                     my $arr  = YAML::LoadFile($abs_path);
                     foreach my $type qw(requires build_requires recommends) {
-                        foreach my $module ( keys %{ $arr->{$type} } ) {
+                        my %ar_type = $arr->{$type};
+                     if (keys %ar_type  ) {
+                        foreach my $module ( keys %ar_type ) {
+                            next if ($module eq "");
                             next if ( $module =~ /Cwd/i );
                             $dep_list{$module_name}{$module} = $arr->{$type}{$module};
                         }
+                     }
                     }
             }
             if ( $object =~ m/^Makefile$/ ) {
