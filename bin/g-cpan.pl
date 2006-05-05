@@ -511,10 +511,6 @@ HERE
         print EBUILD qq|"\n\n|;
     }
 
-    print EBUILD "src_compile() {
-        export PERL_EXTUTILS_AUTOINSTALL=\"--skipdeps\"
-        perl-module_src_compile
-    }";
     close EBUILD;
 
     # write the digest too
