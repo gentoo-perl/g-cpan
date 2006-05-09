@@ -26,3 +26,5 @@ WriteMakefile(
 	# Un-comment this if you add C files to link with later:
     # OBJECT            => '$(O_FILES)', # link all the C files too
 );
+
+# PERL_DL_NONLAZY=1 /usr/bin/perl5.8.8 "-MExtUtils::Command::MM" "-e" "test_harness(0, 'lib')" t/*.t

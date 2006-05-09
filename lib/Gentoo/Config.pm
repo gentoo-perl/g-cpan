@@ -148,13 +148,12 @@ sub getValue {
 	{
 		return undef
 	}
-	if ( $makeconf =~ m/\b\s.*/ )
-	{
-		my @makeconf = map { split ' ' } $makeconf;
-		return \@makeconf;
-
-	}
-	return $makeconf;
+	$self->{lc($confVal)} = $makeconf;
+}
+sub DESTROY
+{
+	my ($self) = @_;
+	return if $self->{DESTROY}{__PACKAGE__}++;
 }
 
 1;
