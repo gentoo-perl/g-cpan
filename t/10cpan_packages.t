@@ -15,14 +15,21 @@
 #     REVISION:  ---
 #===============================================================================
 
+eval 'use CPAN::Config;';
+my $needs_cpan_stub = $@ ? 1 : 0;
+use Test::More;
+
+if (   ( ($needs_cpan_stub) || ( $> > 0 ) )
+    && ( !-f "$ENV{HOME}/.cpan/CPAN/MyConfig.pm" ) )
+{
+	plan skip_all => 'Tests impossible without a configured CPAN::Config';
+}
+else {
+	plan qw(no_plan);
+}
+
 use strict;
 use warnings;
-
-use Test::More qw(no_plan);
-#tests => 5;
-
-
-
 
 # Verify we can load Gentoo name space
 BEGIN { use_ok(' Gentoo'); }
