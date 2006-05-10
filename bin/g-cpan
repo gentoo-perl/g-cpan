@@ -1,5 +1,6 @@
 #!/usr/bin/perl -w
 package main;
+
 # Copyright 1999-2005 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 #
@@ -15,6 +16,7 @@ use Term::ANSIColor;
 use Cwd qw(getcwd abs_path cwd);
 use YAML;
 use YAML::Node;
+
 # While Writing - TO REMOVE - MPC
 use lib "../lib/";
 use Gentoo;
@@ -38,30 +40,22 @@ use constant DEF_UNZIP_PROG    => '/usr/bin/unzip';
 use constant DEF_WGET_PROG     => '/usr/bin/wget';
 use constant DEF_BASH_PROG     => '/bin/bash';
 
-
 #MPC
 my $DEBUG;
 my $modules;
 ##### ERRORS constants (easy internationalisation ;-) #####
-use constant ERR_FILE_NOTFOUND   => "Couldn't find file '%s'";      # filename
-use constant ERR_FOLDER_NOTFOUND => "Couldn't find folder '%s'";    # foldername
-use constant ERR_OPEN_READ       =>
-  "Couldn't open (read) file '%s' : %s";    # filename, $!
-use constant ERR_OPEN_WRITE =>
-  "Couldn't open (write) file '%s' : %s";    # filename, $!
-use constant ERR_FOLDER_OPEN =>
-  "Couldn't open folder '%s', %s";           # foldername, $!
-use constant ERR_FOLDER_CREATE =>
-  "Couldn't create folder '%s' : %s";        # foldername, $!
+use constant ERR_FILE_NOTFOUND   => "Couldn't find file '%s'";                 # filename
+use constant ERR_FOLDER_NOTFOUND => "Couldn't find folder '%s'";               # foldername
+use constant ERR_OPEN_READ       => "Couldn't open (read) file '%s' : %s";     # filename, $!
+use constant ERR_OPEN_WRITE      => "Couldn't open (write) file '%s' : %s";    # filename, $!
+use constant ERR_FOLDER_OPEN     => "Couldn't open folder '%s', %s";           # foldername, $!
+use constant ERR_FOLDER_CREATE   => "Couldn't create folder '%s' : %s";        # foldername, $!
 
 my $VERSION = "0.14.0";
 my $prog    = basename($0);
 
 my %dep_list  = ();
-my @perl_dirs = (
-    "dev-perl",   "perl-core", "perl-gcpan", "perl-text",
-    "perl-tools", "perl-xml",  "perl-dev"
-);
+my @perl_dirs = ("dev-perl", "perl-core", "perl-gcpan", "perl-text", "perl-tools", "perl-xml", "perl-dev");
 
 ###############################
 # Command line interpretation #
@@ -72,8 +66,7 @@ use Getopt::Long;
 Getopt::Long::Configure("bundling");
 
 # Init all options (has to be done to perform the 'sum test' later)
-my ( $verbose, $search, $install, $upgrade, $generate, $list, $pretend, $ask ) =
-  ( 0, 0, 0, 0, 0, 0, 0, 0 );
+my ($verbose, $search, $install, $upgrade, $generate, $list, $pretend, $ask) = (0, 0, 0, 0, 0, 0, 0, 0);
 
 # Set colors here so we can use them at will anywhere :)
 my $green = color("bold green");
@@ -97,27 +90,26 @@ GetOptions(
 
 # Output error if more than one switch is activated
 #
-if ( $search + $list + $install + $generate + $upgrade + $ask > 1 ) {
+if ($search + $list + $install + $generate + $upgrade + $ask > 1)
+{
     print_err("You can't combine actions with each other.\n");
-    print
-"${white}Please consult ${cyan}$prog ${green}--help${reset} or ${cyan}man $prog${reset} for more information\n\n";
+    print "${white}Please consult ${cyan}$prog ${green}--help${reset} or ${cyan}man $prog${reset} for more information\n\n";
     exit();
 }
 
-if ( $search + $list + $install + $generate + $upgrade + $pretend + $ask == 0 )
+if ($search + $list + $install + $generate + $upgrade + $pretend + $ask == 0)
 {
     print_err("You haven't told $prog what to do.\n");
-    print
-"${white}Please consult ${cyan}$prog ${green}--help${reset} or ${cyan}man $prog${reset} for more information\n\n";
+    print "${white}Please consult ${cyan}$prog ${green}--help${reset} or ${cyan}man $prog${reset} for more information\n\n";
 
     exit();
 }
 
 # Output error if no arguments
-if ( ( scalar(@ARGV) == 0 ) and !( defined($upgrade) or defined($list) ) ) {
+if ((scalar(@ARGV) == 0) and !(defined($upgrade) or defined($list)))
+{
     print_err("Not even one module name or expression given !\n");
-    print
-"${white}Please consult ${cyan}$prog ${green}--help${reset} for more information\n\n";
+    print "${white}Please consult ${cyan}$prog ${green}--help${reset} for more information\n\n";
     exit();
 }
 
@@ -128,14 +120,13 @@ if ( ( scalar(@ARGV) == 0 ) and !( defined($upgrade) or defined($list) ) ) {
 # Don't do autointalls via ExtUtils::AutoInstall
 $ENV{PERL_EXTUTILS_AUTOINSTALL} = "--skipdeps";
 
-
 # Do we need to generate a config ?
 eval 'use CPAN::Config;';
 my $needs_cpan_stub = $@ ? 1 : 0;
 
 # Test Replacement - ((A&B)or(C&B)) should be the same as ((A or C) and B)
-if (   ( ($needs_cpan_stub) || ( $> > 0 ) )
-    && ( !-f "$ENV{HOME}/.cpan/CPAN/MyConfig.pm" ) )
+if (   (($needs_cpan_stub) || ($> > 0))
+    && (!-f "$ENV{HOME}/.cpan/CPAN/MyConfig.pm"))
 {
 
     # In case match comes from the UID test
@@ -144,7 +135,8 @@ if (   ( ($needs_cpan_stub) || ( $> > 0 ) )
     # Generate a fake config for CPAN
     cpan_stub();
 }
-else {
+else
+{
     $needs_cpan_stub = 0;
 }
 
@@ -156,14 +148,17 @@ use CPAN;
 
 # Taking care of Searches. This has to be improved a lot, since it uses a call to
 # CPAN Shell to do the job, thus making it impossible to have a clean output..
-if ($search) {
-    foreach my $expr (@ARGV) {
+if ($search)
+{
+    foreach my $expr (@ARGV)
+    {
 
         # Assume they gave us module-name instead of module::name
         # which is bad, because CPAN can't convert it ;p
 
         print_ok("Searching for $expr on CPAN");
-        unless ( CPAN::Shell->i("/$expr/") ) {
+        unless (CPAN::Shell->i("/$expr/"))
+        {
             $expr =~ s/-/::/g;
             CPAN::Shell->i("/$expr/");
         }
@@ -176,37 +171,43 @@ if ($search) {
 # Confirm that there is an /etc/portage/categories file
 # and that we have an entry for perl-gcpan in it.
 my $cat_file = "/etc/portage/categories";
-if ( -f "$cat_file" ) {
+if (-f "$cat_file")
+{
 
     #
     #  Use braces to localize the $/ assignment, so we don't get bitten later.
     #
     my $data;
     local $/ = undef;
-    open( FH, "/etc/portage/categories" ) || die;
+    open(FH, "/etc/portage/categories") || die;
     $data = <FH>;
     close FH;
-    unless ( grep "gcpan", $data ) {
+    unless (grep "gcpan", $data)
+    {
 
-        if ( open( CATEG, ">/etc/portage/categories" ) ) {
+        if (open(CATEG, ">/etc/portage/categories"))
+        {
             print CATEG "perl-gcpan";
             close(CATEG);
         }
-        else {
-            print_err(
-                "Insufficient permissions to edit /etc/portage/categories");
+        else
+        {
+            print_err("Insufficient permissions to edit /etc/portage/categories");
             print_err("Please run $prog as a user with sufficient permissions");
             exit;
         }
     }
 
 }
-else {
-    if ( open( CATEG, ">/etc/portage/categories" ) ) {
+else
+{
+    if (open(CATEG, ">/etc/portage/categories"))
+    {
         print CATEG "perl-gcpan";
         close(CATEG);
     }
-    else {
+    else
+    {
         print_err("Insufficient permissions to edit /etc/portage/categories");
         print_err("Please run $prog as a user with sufficient permissions");
         exit;
@@ -226,20 +227,21 @@ my $PORTAGE_DIR     = getPortdir();
 my $PORTAGE_DISTDIR = getPortDist();
 my @OVERLAYS        = getOverlay();
 
-unless ( scalar(@OVERLAYS) > 0 ) {
-    if ( $generate or $pretend ) {
-        print_err(
-"The option you have chosen isn't supported without a configured overlay.\n"
-        );
+unless (scalar(@OVERLAYS) > 0)
+{
+    if ($generate or $pretend)
+    {
+        print_err("The option you have chosen isn't supported without a configured overlay.\n");
         exit();
     }
-    unless ( $ENV{TMPDIR} ) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
+    unless ($ENV{TMPDIR}) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
     $tmp_overlay_dir = "$ENV{TMPDIR}/perl-modules_$$";
 
     # Create the tmp_overlay_dir in the even that it is a 'real' temp dir
-    if ( not -d $tmp_overlay_dir ) {
-        mkpath( $tmp_overlay_dir, 1, 0755 )
-          or fatal( ERR_FOLDER_CREATE, $tmp_overlay_dir, $! );
+    if (not -d $tmp_overlay_dir)
+    {
+        mkpath($tmp_overlay_dir, 1, 0755)
+          or fatal(ERR_FOLDER_CREATE, $tmp_overlay_dir, $!);
     }
     push @OVERLAYS, $tmp_overlay_dir;
 }
@@ -248,26 +250,27 @@ unless ( scalar(@OVERLAYS) > 0 ) {
 # open to better ways :) mcummings
 my $o_reset = 1;
 
-foreach my $o_dir (@OVERLAYS) {
+foreach my $o_dir (@OVERLAYS)
+{
 
     # See if we can create a file
-    next if ( $o_dir =~ m/^$/ );
-    if ( open( TMP, ">$o_dir/g-cpan-test" ) ) {
+    next if ($o_dir =~ m/^$/);
+    if (open(TMP, ">$o_dir/g-cpan-test"))
+    {
         close(TMP);
         unlink("$o_dir/g-cpan-test");
         $tmp_overlay_dir = $o_dir;
         $o_reset         = 0;
-        if ($verbose) {
-            print_info(
-"Setting $tmp_overlay_dir as the PORTDIR_OVERLAY for this session."
-            );
+        if ($verbose)
+        {
+            print_info("Setting $tmp_overlay_dir as the PORTDIR_OVERLAY for this session.");
         }
         last;
     }
 }
-if ( $o_reset > 0 ) {
-    print_err(
-        "You don't have permission to work in any of the portage overlays.");
+if ($o_reset > 0)
+{
+    print_err("You don't have permission to work in any of the portage overlays.");
     print_err("Please run $prog as a user with sufficient permissions.\n");
     exit();
 }
@@ -276,14 +279,16 @@ my @OVERLAY_PERLS;
 my @PORTAGE_DEV_PERL;
 my @TMP_DEV_PERL_DIRS;
 
-foreach my $pdir (@perl_dirs) {
-    my $tmp_dir = File::Spec->catdir( $PORTAGE_DIR, $pdir );
+foreach my $pdir (@perl_dirs)
+{
+    my $tmp_dir = File::Spec->catdir($PORTAGE_DIR, $pdir);
     push @PORTAGE_DEV_PERL, $tmp_dir;
-    foreach my $odir (@OVERLAYS) {
-        my $otmp = File::Spec->catdir( $odir, $pdir );
+    foreach my $odir (@OVERLAYS)
+    {
+        my $otmp = File::Spec->catdir($odir, $pdir);
         push @OVERLAY_PERLS, $otmp;
     }
-    my $vtmp_dir = File::Spec->catdir( PATH_PKG_VAR, $pdir );
+    my $vtmp_dir = File::Spec->catdir(PATH_PKG_VAR, $pdir);
     push @TMP_DEV_PERL_DIRS, $vtmp_dir;
 }
 
@@ -292,48 +297,56 @@ foreach my $pdir (@perl_dirs) {
 
 # Grab the whole available arches list, to include them later in ebuilds
 print_info("Grabbing arch list") if $verbose;
-my $arches = do {
+my $arches = do
+{
     open my $tmp, "<$PORTAGE_DIR/profiles/arch.list"
-      or fatal( ERR_OPEN_READ, "$PORTAGE_DIR/profiles/arch.list", $! );
+      or fatal(ERR_OPEN_READ, "$PORTAGE_DIR/profiles/arch.list", $!);
     join " ", map { chomp; $_ } <$tmp>;
 };
 
 # Now we cat our dev-perl directory onto our overlay directory.
 # This is done so that portage records the appropriate path
 #i.e. dev-perl/package
-my $perldev_overlay = File::Spec->catfile( $tmp_overlay_dir, 'perl-gcpan' );
-if ( not -d $perldev_overlay ) {
+my $perldev_overlay = File::Spec->catfile($tmp_overlay_dir, 'perl-gcpan');
+if (not -d $perldev_overlay)
+{
 
     # create perldev overlay dir if not present
-    mkpath( $perldev_overlay, 1, 0755 )
-      or fatal( ERR_FOLDER_CREATE, $perldev_overlay, $! );
+    mkpath($perldev_overlay, 1, 0755)
+      or fatal(ERR_FOLDER_CREATE, $perldev_overlay, $!);
 }
 
 # Now we export our overlay directory into the session's env vars
 $ENV{PORTDIR_OVERLAY} = $tmp_overlay_dir;
 
 # Take care of List requests. This should return all the ebuilds managed by g-cpan
-if ($list) {
+if ($list)
+{
     print_ok("Generating list of modules managed by g-cpan");
     my @managed = get_gcpans();
     exit();
 }
 
-if ($generate) {
+if ($generate)
+{
     install_module($_) for (@ARGV);
 }
 
-if ($install) {
+if ($install)
+{
     install_module($_) for (@ARGV);
     emerge_module();
 }
 
-if ($upgrade) {
-    if (@ARGV) {
+if ($upgrade)
+{
+    if (@ARGV)
+    {
         upgrade_module($_) for (@ARGV);
         emerge_module($_);
     }
-    else {
+    else
+    {
         my @GLIST = get_gcpans();
         upgrade_module($_) for (@GLIST);
         emerge_module(@GLIST);
@@ -345,8 +358,6 @@ clean_up();
 exit;
 
 ##############
-
-
 
 =pod  
 
@@ -459,3 +470,4 @@ Please report bugs via http://bugs.gentoo.org/ or https://bugs.gentoo.org/
 =head1 cvs Header $Header: $ 
 
 =cut
+

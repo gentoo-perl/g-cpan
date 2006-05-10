@@ -16,50 +16,51 @@ require Exporter;
 
 our @ISA = qw(Exporter UNIVERSAL );
 
-#our @EXPORT = qw( getAvailableEbuilds 
-	#getCPANPackages	
+#our @EXPORT = qw( getAvailableEbuilds
+#getCPANPackages
 #);
 
 our $VERSION = '0.01';
-sub _init {
-	my ($self, %args ) = @_;
-	return if $self->{_init}{__PACKAGE__}++;
-	$self->Gentoo::Ebuild::_init(%args);
-	$self->Gentoo::Config::_init(%args);
+
+sub _init
+{
+    my ($self, %args) = @_;
+    return if $self->{_init}{__PACKAGE__}++;
+    $self->Gentoo::Ebuild::_init(%args);
+    $self->Gentoo::Config::_init(%args);
 }
 
 sub UNIVERSAL::debug
 {
-	my ($package, $file, $line ) = caller();
-	my $subroutine = (caller(1))[3] || $package;
-	print STDERR "In $subroutine ($file:$line):\n",
-				Data::Dumper->Dump( [$_[0]] );
+    my ($package, $file, $line) = caller();
+    my $subroutine = (caller(1))[3] || $package;
+    print STDERR "In $subroutine ($file:$line):\n", Data::Dumper->Dump([$_[0]]);
 }
-sub new {
-	 my $proto = shift;
-	 my %args = @_;
-	 my $class = ref($proto) || $proto;
-	 my $self = {};
 
-	 $self->{modules} = {};
-	 if ($args{portage_categories}) 
-	 { $self->{portage_categories} = @{$args{portage_categories}}; }
-	 $self->{DEBUG} = $args{debug};
-	 $self->{packagelist} = [];
+sub new
+{
+    my $proto = shift;
+    my %args  = @_;
+    my $class = ref($proto) || $proto;
+    my $self  = {};
 
-	 bless( $self, $class );
-	 return $self;
+    $self->{modules} = {};
+    if ($args{portage_categories}) { $self->{portage_categories} = @{$args{portage_categories}}; }
+    $self->{DEBUG}       = $args{debug};
+    $self->{packagelist} = [];
+
+    bless($self, $class);
+    return $self;
 }
 
 sub DESTROY
 {
-	my ($self) = @_;
-	return if $self->{DESTROY}{__PACKAGE__}++;
+    my ($self) = @_;
+    return if $self->{DESTROY}{__PACKAGE__}++;
 
-	$self->Gentoo::Config::DESTROY();
-	$self->Gentoo::Ebuild::DESTROY();
+    $self->Gentoo::Config::DESTROY();
+    $self->Gentoo::Ebuild::DESTROY();
 }
-
 
 1;
 __END__
