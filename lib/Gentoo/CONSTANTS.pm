@@ -6,5 +6,4 @@ use constant ERR_OPEN_WRITE      => "Couldn't open (write) file '%s' : %s";    #
 use constant ERR_FOLDER_OPEN     => "Couldn't open folder '%s', %s";           # foldername, $!
 use constant ERR_FOLDER_CREATE   => "Couldn't create folder '%s' : %s";        # foldername, $!
 
-
 1;

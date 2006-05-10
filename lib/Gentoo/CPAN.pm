@@ -3,10 +3,9 @@ package Gentoo::CPAN;
 use 5.008007;
 use strict;
 use warnings;
-use CPAN;
 use File::Spec;
-
-use Gentoo::CONSTANTS;
+use CPAN;
+use File::Path;
 
 # These libraries were influenced and largely written by
 # Christian Hartmann <ian@gentoo.org> originally. All of the good
@@ -149,14 +148,14 @@ sub getCPANPackages
 }
 
 
-sub makeCPANstub {
+sub makeCPANstub 
+{
     my $self = shift;
     my $cpan_cfg_dir  = File::Spec->catfile($ENV{HOME},    CPAN_CFG_DIR);
     my $cpan_cfg_file = File::Spec->catfile($cpan_cfg_dir, CPAN_CFG_NAME);
 
-    print_warn ("No CPAN Config found, auto-generating a basic one in $cpan_cfg_dir");
     if(not -d $cpan_cfg_dir) {
-        mkpath($cpan_cfg_dir, 1, 0755 ) or fatal(ERR_FOLDER_CREATE, $cpan_cfg_dir, $!);
+        mkpath($cpan_cfg_dir, 1, 0755 ) or fatal($Gentoo::ERR_FOLDER_CREATE, $cpan_cfg_dir, $!);
     }
 
     my $tmp_dir       = -d $ENV{TMPDIR}      ? defined($ENV{TMPDIR})      : $ENV{HOME};
@@ -174,7 +173,7 @@ sub makeCPANstub {
     my $unzip_prog    = -x DEF_UNZIP_PROG    ? DEF_UNZIP_PROG    : '';
     my $wget_prog     = -x DEF_WGET_PROG     ? DEF_WGET_PROG     : '';
 
-    open CPANCONF, ">$cpan_cfg_file" or fatal(ERR_FOLDER_CREATE, $cpan_cfg_file, $!);
+    open CPANCONF, ">$cpan_cfg_file" or fatal($Gentoo::ERR_FOLDER_CREATE, $cpan_cfg_file, $!);
     print CPANCONF <<"SHERE";
 
 # This is CPAN.pm's systemwide configuration file. This file provides
