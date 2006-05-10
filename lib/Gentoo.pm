@@ -9,7 +9,7 @@ use Data::Dumper;
 #### Gentoo.pm is the primary if these aren't accessed directly.
 
 use Gentoo::Config;
-use Gentoo::Ebuild;
+use Gentoo::Portage;
 use Gentoo::CPAN;
 
 # These libraries were influenced and largely written by
@@ -29,7 +29,7 @@ sub _init
 {
     my ($self, %args) = @_;
     return if $self->{_init}{__PACKAGE__}++;
-    $self->Gentoo::Ebuild::_init(%args);
+    $self->Gentoo::Portage::_init(%args);
     $self->Gentoo::Config::_init(%args);
 }
 
@@ -62,7 +62,7 @@ sub DESTROY
     return if $self->{DESTROY}{__PACKAGE__}++;
 
     $self->Gentoo::Config::DESTROY();
-    $self->Gentoo::Ebuild::DESTROY();
+    $self->Gentoo::Portage::DESTROY();
 }
 
 1;

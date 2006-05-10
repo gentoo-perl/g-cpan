@@ -1,4 +1,4 @@
-package Gentoo::Ebuild;
+package Gentoo::Portage;
 
 use 5.008007;
 use strict;

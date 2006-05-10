@@ -3,7 +3,7 @@
 #
 #         FILE:  10cpan_packages.t
 #
-#  DESCRIPTION:  Test Gentoo::Ebuild Functionality
+#  DESCRIPTION:  Test Gentoo::CPAN Functionality
 #
 #        FILES:  ---
 #         BUGS:  ---

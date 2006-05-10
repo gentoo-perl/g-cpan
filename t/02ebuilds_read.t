@@ -3,7 +3,7 @@
 #
 #         FILE:  02ebuilds_read.t
 #
-#  DESCRIPTION:  Test Gentoo::Ebuild Functionality
+#  DESCRIPTION:  Test Gentoo::Portage Functionality
 #
 #        FILES:  ---
 #         BUGS:  ---
