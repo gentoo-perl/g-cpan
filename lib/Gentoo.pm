@@ -4,12 +4,16 @@ use 5.008007;
 use strict;
 use warnings;
 use Data::Dumper;
+
+#### Load the other namespaces. 
+#### Gentoo.pm is the primary if these aren't accessed directly.
+
 use Gentoo::Config;
 use Gentoo::Ebuild;
 use Gentoo::CPAN;
 
 # These libraries were influenced and largely written by
-# Christian Harmann <ian@gentoo.org> originally. All of the good
+# Christian Hartmann <ian@gentoo.org> originally. All of the good
 # parts are ian's - the rest is mcummings messing around.
 
 require Exporter;
@@ -21,7 +25,6 @@ our @ISA = qw(Exporter UNIVERSAL );
 #);
 
 our $VERSION = '0.01';
-
 sub _init
 {
     my ($self, %args) = @_;

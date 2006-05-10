@@ -20,37 +20,16 @@ use YAML::Node;
 # While Writing - TO REMOVE - MPC
 use lib "../lib/";
 use Gentoo;
-use Gentoo::Config;
+use Gentoo::CONSTANTS;
 
 use constant PATH_PKG_VAR => '/var/db/pkg/';
-##### CPAN CONFIG #####
-use constant CPAN_CFG_DIR  => '.cpan/CPAN';
-use constant CPAN_CFG_NAME => 'MyConfig.pm';
 
-# defaults tools for CPAN Config
-use constant DEF_FTP_PROG      => '/usr/bin/ftp';
-use constant DEF_GPG_PROG      => '/usr/bin/gpg';
-use constant DEF_GZIP_PROG     => '/bin/gzip';
-use constant DEF_LYNX_PROG     => '/usr/bin/lynx';
-use constant DEF_MAKE_PROG     => '/usr/bin/make';
-use constant DEF_NCFTPGET_PROG => '/usr/bin/ncftpget';
-use constant DEF_LESS_PROG     => '/usr/bin/less';
-use constant DEF_TAR_PROG      => '/bin/tar';
-use constant DEF_UNZIP_PROG    => '/usr/bin/unzip';
-use constant DEF_WGET_PROG     => '/usr/bin/wget';
-use constant DEF_BASH_PROG     => '/bin/bash';
 
+##### Establish our tmpdir
+unless ($ENV{TMPDIR}) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
 #MPC
 my $DEBUG;
 my $modules;
-##### ERRORS constants (easy internationalisation ;-) #####
-use constant ERR_FILE_NOTFOUND   => "Couldn't find file '%s'";                 # filename
-use constant ERR_FOLDER_NOTFOUND => "Couldn't find folder '%s'";               # foldername
-use constant ERR_OPEN_READ       => "Couldn't open (read) file '%s' : %s";     # filename, $!
-use constant ERR_OPEN_WRITE      => "Couldn't open (write) file '%s' : %s";    # filename, $!
-use constant ERR_FOLDER_OPEN     => "Couldn't open folder '%s', %s";           # foldername, $!
-use constant ERR_FOLDER_CREATE   => "Couldn't create folder '%s' : %s";        # foldername, $!
-
 my $VERSION = "0.14.0";
 my $prog    = basename($0);
 
@@ -66,7 +45,7 @@ use Getopt::Long;
 Getopt::Long::Configure("bundling");
 
 # Init all options (has to be done to perform the 'sum test' later)
-my ($verbose, $search, $install, $upgrade, $generate, $list, $pretend, $ask) = (0, 0, 0, 0, 0, 0, 0, 0);
+my ($debug, $verbose, $search, $install, $upgrade, $generate, $list, $pretend, $ask) = (0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 # Set colors here so we can use them at will anywhere :)
 my $green = color("bold green");
@@ -84,6 +63,7 @@ GetOptions(
     'pretend|p'  => \$pretend,
     'ask|a'      => \$ask,
     'generate|g' => \$generate,
+    'debug|d'    => \$debug,
     'help|h'     => sub { exit_usage(); }
   )
   or exit_usage();
@@ -108,10 +88,13 @@ if ($search + $list + $install + $generate + $upgrade + $pretend + $ask == 0)
 # Output error if no arguments
 if ((scalar(@ARGV) == 0) and !(defined($upgrade) or defined($list)))
 {
-    print_err("Not even one module name or expression given !\n");
+    print_err("Not even one module name or expression given!\n");
     print "${white}Please consult ${cyan}$prog ${green}--help${reset} for more information\n\n";
     exit();
 }
+
+my $GentooCPAN = Gentoo->new();
+
 
 ######################
 # CPAN Special Stuff #
@@ -119,6 +102,7 @@ if ((scalar(@ARGV) == 0) and !(defined($upgrade) or defined($list)))
 
 # Don't do autointalls via ExtUtils::AutoInstall
 $ENV{PERL_EXTUTILS_AUTOINSTALL} = "--skipdeps";
+$ENV{PERL_MM_USE_DEFAULT}=1;
 
 # Do we need to generate a config ?
 eval 'use CPAN::Config;';
@@ -133,7 +117,7 @@ if (   (($needs_cpan_stub) || ($> > 0))
     $needs_cpan_stub = 1;
 
     # Generate a fake config for CPAN
-    cpan_stub();
+    makeCPANstub();
 }
 else
 {
@@ -234,7 +218,6 @@ unless (scalar(@OVERLAYS) > 0)
         print_err("The option you have chosen isn't supported without a configured overlay.\n");
         exit();
     }
-    unless ($ENV{TMPDIR}) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
     $tmp_overlay_dir = "$ENV{TMPDIR}/perl-modules_$$";
 
     # Create the tmp_overlay_dir in the even that it is a 'real' temp dir

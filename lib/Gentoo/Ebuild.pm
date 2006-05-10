@@ -7,7 +7,7 @@ use warnings;
 use DirHandle;
 
 # These libraries were influenced and largely written by
-# Christian Harmann <ian@gentoo.org> originally. All of the good
+# Christian Hartmann <ian@gentoo.org> originally. All of the good
 # parts are ian's - the rest is mcummings messing around.
 
 require Exporter;
