@@ -161,34 +161,41 @@ if (-f "$cat_file")
     #
     #  Use braces to localize the $/ assignment, so we don't get bitten later.
     #
-    my $data;
     local $/ = undef;
-    open(FH, "/etc/portage/categories") || die;
-    $data = <FH>;
-    close FH;
-    unless (grep "gcpan", $data)
+    use IO::File;
+    my $cat_read = IO::File->new($cat_file,'<')
+        or croak "Can't open '$cat_file': $OS_ERROR";
+    if (defined $cat_read)
     {
-
-        if (open(CATEG, ">/etc/portage/categories"))
+        my $data = <$cat_read>;
+        undef $cat_read;
+        autoflush STDOUT 1;
+        unless (grep "gcpan", $data)
         {
-            print CATEG "perl-gcpan";
-            close(CATEG);
-        }
-        else
-        {
-            print_err("Insufficient permissions to edit /etc/portage/categories");
-            print_err("Please run $prog as a user with sufficient permissions");
-            exit;
+            my $cat_write = IO::File->new($cat_file,'>>');
+            if (defined $cat_write)
+            {
+                print $cat_write "perl-gcpan";
+                undef $cat_write;
+                autoflush STDOUT 1;
+            }
+            else
+            {
+                print_err("Insufficient permissions to edit /etc/portage/categories");
+                print_err("Please run $prog as a user with sufficient permissions");
+                exit;
+            }
         }
     }
 
 }
 else
 {
-    if (open(CATEG, ">/etc/portage/categories"))
+    use IO::File;
+    my $cat_write = IO::File->new($cat_file,'>');
+    if (defined $cat_write)
     {
-        print CATEG "perl-gcpan";
-        close(CATEG);
+        print $cat_write "perl-gcpan";
     }
     else
     {
