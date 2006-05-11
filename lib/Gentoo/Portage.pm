@@ -4,7 +4,21 @@ use 5.008007;
 use strict;
 use warnings;
 
-use DirHandle;
+use Cwd qw(getcwd abs_path cwd);
+use File::Find ();
+
+# Set the variable $File::Find::dont_use_nlink if you're using AFS,
+# since AFS cheats.
+
+# for the convenience of &wanted calls, including -eval statements:
+use vars qw/*name *dir *prune/;
+*name   = *File::Find::name;
+*dir    = *File::Find::dir;
+*prune  = *File::Find::prune;
+
+my @store_found_dirs;
+my @store_found_ebuilds;
+sub wanted;
 
 # These libraries were influenced and largely written by
 # Christian Hartmann <ian@gentoo.org> originally. All of the good
@@ -30,9 +44,14 @@ sub getAvailableEbuilds
     {
 
         # - get list of ebuilds >
-        my $_cat_handle = new DirHandle($portdir . "/" . $catPackage);
-        while (defined($_ = $_cat_handle->read))
+        my $startdir = &cwd;
+        chdir($portdir . "/" . $catPackage);
+        @store_found_ebuilds = [];
+        File::Find::find({wanted => \&wanted_ebuilds}, ".");
+        chdir($startdir);
+        foreach (@store_found_ebuilds)
         {
+            $_ =~ s{^\./}{}xms;
             if ($_ =~ m/(.+)\.ebuild$/)
             {
                 next if ($_ eq "skel.ebuild");
@@ -42,8 +61,13 @@ sub getAvailableEbuilds
             {
                 if (-d $portdir . "/" . $catPackage . "/" . $_)
                 {
-                    my $_ebuild_dh = new DirHandle($portdir . "/" . $catPackage . "/" . $_);
-                    while (defined($_ = $_ebuild_dh->read))
+                    $_ =~ s{^\./}{}xms;
+                    my $startdir = &cwd;
+                    chdir($portdir . "/" . $catPackage . "/" . $_ );
+                    @store_found_ebuilds = [];
+                    File::Find::find({wanted => \&wanted_ebuilds},  "." );
+                    chdir($startdir);
+                    foreach (@store_found_ebuilds)
                     {
                         if ($_ =~ m/(.+)\.ebuild$/)
                         {
@@ -98,16 +122,19 @@ sub getAvailableVersions
         "profiles"  => 1
     );
     my @matches = ();
-    #my $dhp;
-    #my $tc;
-    #my $tp;
 
     foreach my $tc (@{$self->{portage_categories}})
     {
 		next if  ( ! -d "$portdir/$tc" );
-        my $dhp = new DirHandle($portdir . "/" . $tc);
-        while (defined(my $tp = $dhp->read))
+        @store_found_dirs = [];
+        my $startdir = &cwd;
+        chdir($portdir . "/" . $tc);
+        # Traverse desired filesystems
+        File::Find::find({wanted => \&wanted_dirs}, "." );
+        chdir($startdir);
+        foreach my $tp (@store_found_dirs)
         {
+            $tp =~ s{^\./}{}xms;
 
             # - not excluded and $_ is a dir?
             if (!$excludeDirs{$tp} && -d $portdir . "/" . $tc . "/" . $tp)
@@ -141,8 +168,21 @@ sub getAvailableVersions
                 }
             }
         }
-        undef $dhp;
     }
+}
+
+sub wanted_dirs {
+    my ($dev,$ino,$mode,$nlink,$uid,$gid);
+    (($dev,$ino,$mode,$nlink,$uid,$gid) = lstat($_)) &&
+    -d _ &&
+    ($name !~ m|/files|) &&
+    ($name !~ m|/CVS|) &&
+    push @store_found_dirs, $name;
+}
+
+sub wanted_ebuilds {
+    /\.ebuild\z/s
+    && push @store_found_ebuilds, $name;
 }
 
 sub DESTROY

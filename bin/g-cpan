@@ -211,26 +211,30 @@ else
 my $gcpan_run = Gentoo->new();
 #my $portdir = $gcpan_run->getValue("PORTDIR");
 $gcpan_run->{'portage_bases'}{$gcpan_run->getValue("PORTDIR")} = 1;
-my $overlay = $gcpan_run->getValue("PORTDIR_OVERLAY");
+my $overlay = $gcpan_run->getValue("PORTDIR_OVERLAY")||undef;
 #my @overlays = [];
 
-if ($overlay =~ m/\b\s.*/)
+if ($overlay)
 {
-	my @overlays = map { split ' ' } $overlay;
-	foreach (@overlays) 
-	{
-		$gcpan_run->{'portage_bases'}{$_} = 1;
-	}
+    if ($overlay =~ m/\b\s.*/)
+    {
+	    my @overlays = map { split ' ' } $overlay;
+    	foreach (@overlays) 
+    	{
+    		$gcpan_run->{'portage_bases'}{$_} = 1;
+    	}
 	
-}
-else
-{
-	$gcpan_run->{'portage_bases'}{$overlay} = 1;
+    }
+    else
+    {
+    	$gcpan_run->{'portage_bases'}{$overlay} = 1;
+    }
 }
 
 $gcpan_run->{portage_categories} = \@perl_dirs;
 foreach my $portage_root (keys %{$gcpan_run->{'portage_bases'}} ) {
 		if ( -d $portage_root) {
+            print_info($prog,"Cataloging $portage_root");
     		$gcpan_run->getAvailableVersions($portage_root)
 		}
 }
