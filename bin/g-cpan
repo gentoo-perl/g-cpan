@@ -16,11 +16,12 @@ use Term::ANSIColor;
 use Cwd qw(getcwd abs_path cwd);
 use YAML;
 use YAML::Node;
+use Carp;
 
 # While Writing - TO REMOVE - MPC
 use lib "../lib/";
 use Gentoo;
-use Gentoo::CONSTANTS;
+use Gentoo::UI::Console;
 
 use constant PATH_PKG_VAR => '/var/db/pkg/';
 
@@ -30,6 +31,7 @@ unless ($ENV{TMPDIR}) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
 #MPC
 my $DEBUG;
 my $modules;
+#END MPC
 my $VERSION = "0.14.0";
 my $prog    = basename($0);
 
@@ -72,15 +74,15 @@ GetOptions(
 #
 if ($search + $list + $install + $generate + $upgrade + $ask > 1)
 {
-    print_err("You can't combine actions with each other.\n");
-    print "${white}Please consult ${cyan}$prog ${green}--help${reset} or ${cyan}man $prog${reset} for more information\n\n";
+    print_err($prog,"You can't combine actions with each other.\n");
+    print_out("${white}Please consult ${cyan}$prog ${green}--help${reset} or ${cyan}man $prog${reset} for more information\n\n");
     exit();
 }
 
 if ($search + $list + $install + $generate + $upgrade + $pretend + $ask == 0)
 {
-    print_err("You haven't told $prog what to do.\n");
-    print "${white}Please consult ${cyan}$prog ${green}--help${reset} or ${cyan}man $prog${reset} for more information\n\n";
+    print_err($prog,"You haven't told $prog what to do.\n");
+    print_out("${white}Please consult ${cyan}$prog ${green}--help${reset} or ${cyan}man $prog${reset} for more information\n\n");
 
     exit();
 }
@@ -88,17 +90,18 @@ if ($search + $list + $install + $generate + $upgrade + $pretend + $ask == 0)
 # Output error if no arguments
 if ((scalar(@ARGV) == 0) and !(defined($upgrade) or defined($list)))
 {
-    print_err("Not even one module name or expression given!\n");
-    print "${white}Please consult ${cyan}$prog ${green}--help${reset} for more information\n\n";
+    print_err($prog,"Not even one module name or expression given!\n");
+    print_out("${white}Please consult ${cyan}$prog ${green}--help${reset} for more information\n\n");
     exit();
 }
 
-my $GentooCPAN = Gentoo->new();
 
 
 ######################
 # CPAN Special Stuff #
 ######################
+
+my $GentooCPAN = Gentoo->new();
 
 # Don't do autointalls via ExtUtils::AutoInstall
 $ENV{PERL_EXTUTILS_AUTOINSTALL} = "--skipdeps";
@@ -115,9 +118,11 @@ if (   (($needs_cpan_stub) || ($> > 0))
 
     # In case match comes from the UID test
     $needs_cpan_stub = 1;
+    
+    print_warn("No CPAN Config found, auto-generating a basic one");
 
     # Generate a fake config for CPAN
-    makeCPANstub();
+    $GentooCPAN->makeCPANstub();
 }
 else
 {
@@ -140,7 +145,7 @@ if ($search)
         # Assume they gave us module-name instead of module::name
         # which is bad, because CPAN can't convert it ;p
 
-        print_ok("Searching for $expr on CPAN");
+        print_ok($prog,"Searching for $expr on CPAN");
         unless (CPAN::Shell->i("/$expr/"))
         {
             $expr =~ s/-/::/g;
@@ -148,7 +153,6 @@ if ($search)
         }
     }
 
-    clean_up();
     exit;
 }
 
@@ -163,8 +167,7 @@ if (-f "$cat_file")
     #
     local $/ = undef;
     use IO::File;
-    my $cat_read = IO::File->new($cat_file,'<')
-        or croak "Can't open '$cat_file': $OS_ERROR";
+    my $cat_read = IO::File->new($cat_file,'<');
     if (defined $cat_read)
     {
         my $data = <$cat_read>;
@@ -205,6 +208,39 @@ else
     }
 }
 
+my $gcpan_run = Gentoo->new();
+#my $portdir = $gcpan_run->getValue("PORTDIR");
+$gcpan_run->{'portage_bases'}{$gcpan_run->getValue("PORTDIR")} = 1;
+my $overlay = $gcpan_run->getValue("PORTDIR_OVERLAY");
+#my @overlays = [];
+
+if ($overlay =~ m/\b\s.*/)
+{
+	my @overlays = map { split ' ' } $overlay;
+	foreach (@overlays) 
+	{
+		$gcpan_run->{'portage_bases'}{$_} = 1;
+	}
+	
+}
+else
+{
+	$gcpan_run->{'portage_bases'}{$overlay} = 1;
+}
+
+$gcpan_run->{portage_categories} = \@perl_dirs;
+foreach my $portage_root (keys %{$gcpan_run->{'portage_bases'}} ) {
+		if ( -d $portage_root) {
+    		$gcpan_run->getAvailableVersions($portage_root)
+		}
+}
+$gcpan_run->debug;
+exit();
+# MPC - left off here
+#####################################################################################
+
+
+
 # Set our temporary overlay directory for the scope of this run.
 # By setting an overlay directory, we bypass the predefined portage
 # directory and allow portage to build a package outside of its
@@ -222,7 +258,7 @@ unless (scalar(@OVERLAYS) > 0)
 {
     if ($generate or $pretend)
     {
-        print_err("The option you have chosen isn't supported without a configured overlay.\n");
+        print_err($prog,"The option you have chosen isn't supported without a configured overlay.\n");
         exit();
     }
     $tmp_overlay_dir = "$ENV{TMPDIR}/perl-modules_$$";
@@ -231,7 +267,7 @@ unless (scalar(@OVERLAYS) > 0)
     if (not -d $tmp_overlay_dir)
     {
         mkpath($tmp_overlay_dir, 1, 0755)
-          or fatal(ERR_FOLDER_CREATE, $tmp_overlay_dir, $!);
+          or fatal($Gentoo::ERR_FOLDER_CREATE, $tmp_overlay_dir, $!);
     }
     push @OVERLAYS, $tmp_overlay_dir;
 }
@@ -253,15 +289,15 @@ foreach my $o_dir (@OVERLAYS)
         $o_reset         = 0;
         if ($verbose)
         {
-            print_info("Setting $tmp_overlay_dir as the PORTDIR_OVERLAY for this session.");
+            print_info($prog,"Setting $tmp_overlay_dir as the PORTDIR_OVERLAY for this session.");
         }
         last;
     }
 }
 if ($o_reset > 0)
 {
-    print_err("You don't have permission to work in any of the portage overlays.");
-    print_err("Please run $prog as a user with sufficient permissions.\n");
+    print_err($prog,"You don't have permission to work in any of the portage overlays.");
+    print_err($prog,"Please run $prog as a user with sufficient permissions.\n");
     exit();
 }
 
@@ -286,11 +322,11 @@ foreach my $pdir (@perl_dirs)
 # Part of this is to find an overlay the user running this session can actually write to
 
 # Grab the whole available arches list, to include them later in ebuilds
-print_info("Grabbing arch list") if $verbose;
+print_info($prog,"Grabbing arch list") if $verbose;
 my $arches = do
 {
     open my $tmp, "<$PORTAGE_DIR/profiles/arch.list"
-      or fatal(ERR_OPEN_READ, "$PORTAGE_DIR/profiles/arch.list", $!);
+      or fatal($Gentoo::ERR_OPEN_READ, "$PORTAGE_DIR/profiles/arch.list", $!);
     join " ", map { chomp; $_ } <$tmp>;
 };
 
@@ -303,7 +339,7 @@ if (not -d $perldev_overlay)
 
     # create perldev overlay dir if not present
     mkpath($perldev_overlay, 1, 0755)
-      or fatal(ERR_FOLDER_CREATE, $perldev_overlay, $!);
+      or fatal($Gentoo::ERR_FOLDER_CREATE, $perldev_overlay, $!);
 }
 
 # Now we export our overlay directory into the session's env vars
@@ -312,7 +348,7 @@ $ENV{PORTDIR_OVERLAY} = $tmp_overlay_dir;
 # Take care of List requests. This should return all the ebuilds managed by g-cpan
 if ($list)
 {
-    print_ok("Generating list of modules managed by g-cpan");
+    print_ok($prog,"Generating list of modules managed by g-cpan");
     my @managed = get_gcpans();
     exit();
 }
@@ -343,7 +379,62 @@ if ($upgrade)
     }
 }
 
-clean_up();
+# cab - Takes care of system's sanity
+END {
+
+    #Clean out the /tmp tree we were using
+    #I know this looks weird, but since clean_up is invoked on a search, where OVERLAYS isn't ever defined,
+    # we first need to see if it exists, then need to remove only if it has content (the old exists vs. defined)
+    
+    if ( (defined($ENV{TMPDIR}) ) and ( defined($tmp_overlay_dir) && ($tmp_overlay_dir =~ m/^$ENV{TMPDIR}/) ) ) { 
+        print_info("Cleaning temporary overlay\n") if $verbose;
+        rmtree( ["$tmp_overlay_dir"] );
+    }
+}
+
+
+
+# cab - nice help message ! ;)
+sub exit_usage {
+    print <<"USAGE";
+${white}Usage : ${cyan}$prog ${green}<Switch(es)> ${cyan}Module Name(s)${reset}
+
+${green}--ask,-a${reset}
+    Ask before installing
+
+${green}--generate,-g${reset}
+    Generate ebuilds only (Requires working overlays)
+
+${green}--install,-i${reset}
+    Try to generate ebuild for the given module name
+    and, if successful, emerge it. Important : installation
+    requires exact CPAN Module Name.
+
+${green}--list,-l${reset}
+    This command generates a list of the Perl modules and ebuilds
+    handled by $prog.
+
+${green}--pretend,-p${reset}
+    Pretend (show actions, but don't emerge). This still generates
+    new ebuilds.
+
+${green}--search,-s${reset}
+    Search CPAN for the given expression (similar to
+    the "m /EXPR/" from the CPAN Shell). Searches are
+    case insensitive.
+
+${green}--upgrade,-u${reset}
+    Try to list and upgrade all Perl modules managed by $prog.
+    It generate up-to-date ebuilds, then emerge then.
+
+${green}--verbose,-v${reset}
+    Enable (some) verbose output.
+
+USAGE
+
+    exit;
+}
+
 
 exit;
 

@@ -59,7 +59,8 @@ sub new
     my $self  = {};
 
     $self->{modules} = {};
-    if ($args{portage_categories}) { $self->{portage_categories} = @{$args{portage_categories}}; }
+	$self->{portage_categories} = [];
+	$self->{portage_bases} = {};
     $self->{DEBUG}       = $args{debug};
     $self->{packagelist} = [];
 

@@ -31,15 +31,16 @@ BEGIN { use_ok(' Gentoo'); }
 my $GC = Gentoo->new();
 ok( defined($GC), 'new() works' );
 
-
+my $portdir;
 # Can we get the PORTDIR value?
-ok( $GC->getValue("PORTDIR"), 'getValue("PORTDIR") worked' );
+ok(  $portdir = $GC->getValue("PORTDIR"), 'getValue("PORTDIR") worked' );
 
-$GC->getAvailableEbuilds('gnustep-base');
+$GC->getAvailableEbuilds($portdir,'gnustep-base');
 # Test getting the contents of a directory
 ok( $GC->{packagelist}, 'Grabbed gnustep-base' );
+
 $GC->{portage_categories} = [ "gnustep-base" ];
-$GC->getAvailableVersions();
+$GC->getAvailableVersions($portdir);
 ok( $GC->{modules}, 'Digested available versions' );
 ok( $GC->{modules}{portage_lc}, 'Portage_lc check' );
 ok( $GC->{modules}{portage_lc_realversion}, 'Digested available versions' );

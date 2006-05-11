@@ -23,14 +23,14 @@ our $VERSION = '0.01';
 sub getAvailableEbuilds
 {
     my $self        = shift;
+	my $portdir     = shift;
     my $catPackage  = shift;
     my @packagelist = ();
-
-    if (-e $self->{portdir} . "/" . $catPackage)
+    if (-e $portdir . "/" . $catPackage)
     {
 
         # - get list of ebuilds >
-        my $_cat_handle = new DirHandle($self->{portdir} . "/" . $catPackage);
+        my $_cat_handle = new DirHandle($portdir . "/" . $catPackage);
         while (defined($_ = $_cat_handle->read))
         {
             if ($_ =~ m/(.+)\.ebuild$/)
@@ -40,9 +40,9 @@ sub getAvailableEbuilds
             }
             else
             {
-                if (-d $self->{portdir} . "/" . $catPackage . "/" . $_)
+                if (-d $portdir . "/" . $catPackage . "/" . $_)
                 {
-                    my $_ebuild_dh = new DirHandle($self->{portdir} . "/" . $catPackage . "/" . $_);
+                    my $_ebuild_dh = new DirHandle($portdir . "/" . $catPackage . "/" . $_);
                     while (defined($_ = $_ebuild_dh->read))
                     {
                         if ($_ =~ m/(.+)\.ebuild$/)
@@ -57,9 +57,11 @@ sub getAvailableEbuilds
     }
     else
     {
-        if (-d $self->{portdir})
+        if (-d $portdir)
         {
-            die("\n" . $self->{portdir} . "/" . $catPackage . " DOESNT EXIST\n");
+            if ($self->{debug}) {
+                warn("\n" . $portdir . "/" . $catPackage . " DOESN'T EXIST\n");
+            }
         }
         else
         {
@@ -84,6 +86,7 @@ sub getEbuildVersionSpecial
 sub getAvailableVersions
 {
     my $self        = shift;
+	my $portdir     = shift;
     my %excludeDirs = (
         "."         => 1,
         ".."        => 1,
@@ -95,20 +98,21 @@ sub getAvailableVersions
         "profiles"  => 1
     );
     my @matches = ();
-    my $dhp;
-    my $tc;
-    my $tp;
+    #my $dhp;
+    #my $tc;
+    #my $tp;
 
-    foreach $tc (@{$self->{portage_categories}})
+    foreach my $tc (@{$self->{portage_categories}})
     {
-        $dhp = new DirHandle($self->{portdir} . "/" . $tc);
-        while (defined($tp = $dhp->read))
+		next if  ( ! -d "$portdir/$tc" );
+        my $dhp = new DirHandle($portdir . "/" . $tc);
+        while (defined(my $tp = $dhp->read))
         {
 
             # - not excluded and $_ is a dir?
-            if (!$excludeDirs{$tp} && -d $self->{portdir} . "/" . $tc . "/" . $tp)
+            if (!$excludeDirs{$tp} && -d $portdir . "/" . $tc . "/" . $tp)
             {
-                getAvailableEbuilds($self, $tc . "/" . $tp);
+                getAvailableEbuilds($self, $portdir, $tc . "/" . $tp);
                 foreach (@{$self->{packagelist}})
                 {
                     my @tmp_availableVersions = ();
