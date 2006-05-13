@@ -43,7 +43,6 @@ $GC->{portage_categories} = [ "gnustep-base" ];
 $GC->getAvailableVersions($portdir);
 ok( $GC->{modules}, 'Digested available versions' );
 ok( $GC->{modules}{portage_lc}, 'Portage_lc check' );
-ok( $GC->{modules}{portage_lc_realversion}, 'Digested available versions' );
 ok( $GC->{modules}{portage}, 'Digested available versions' );
 foreach my $ebuild (keys %{$GC->{moduels}{portage_lc}} ) {
 	ok($ebuild, '$ebuild has value');

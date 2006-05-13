@@ -6,6 +6,11 @@ use warnings;
 
 use Cwd qw(getcwd abs_path cwd);
 use File::Find ();
+use Memoize;
+
+
+memoize('getAvailableEbuilds');
+memoize('getEbuildVersionSpecial');
 
 # Set the variable $File::Find::dont_use_nlink if you're using AFS,
 # since AFS cheats.
@@ -111,6 +116,7 @@ sub getAvailableVersions
 {
     my $self        = shift;
 	my $portdir     = shift;
+	my $find_ebuild = shift;
     my %excludeDirs = (
         "."         => 1,
         ".."        => 1,
@@ -121,24 +127,30 @@ sub getAvailableVersions
         "virtual"   => 1,
         "profiles"  => 1
     );
-    my @matches = ();
 
+    if ($find_ebuild) {
+        return if ( $self->{modules}{'found_ebuild'}{lc($find_ebuild)} );
+    }
     foreach my $tc (@{$self->{portage_categories}})
     {
 		next if  ( ! -d "$portdir/$tc" );
         @store_found_dirs = [];
+		# Where we started
         my $startdir = &cwd;
+		# chdir to our target dir
         chdir($portdir . "/" . $tc);
         # Traverse desired filesystems
         File::Find::find({wanted => \&wanted_dirs}, "." );
+		# Return to where we started
         chdir($startdir);
-        foreach my $tp (@store_found_dirs)
+        foreach my $tp (sort @store_found_dirs)
         {
             $tp =~ s{^\./}{}xms;
 
             # - not excluded and $_ is a dir?
             if (!$excludeDirs{$tp} && -d $portdir . "/" . $tc . "/" . $tp)
             {
+				if ($find_ebuild) { next unless (lc($find_ebuild) eq lc($tp)) }
                 getAvailableEbuilds($self, $portdir, $tc . "/" . $tp);
                 foreach (@{$self->{packagelist}})
                 {
@@ -148,8 +160,7 @@ sub getAvailableVersions
                     # - get highest version >
                     if ($#tmp_availableVersions > -1)
                     {
-                        $self->{modules}{'portage_lc_realversion'}{lc($tp)} = (sort(@tmp_availableVersions))[$#tmp_availableVersions];
-                        $self->{modules}{'portage_lc'}{lc($tp)}             = $self->{modules}{'portage_lc_realversion'}{lc($tp)};
+                        $self->{modules}{'portage_lc'}{lc($tp)}             = (sort(@tmp_availableVersions))[$#tmp_availableVersions];
 
                         # - get rid of -rX >
                         $self->{modules}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)-r[0-9+]/$1/;
@@ -164,6 +175,13 @@ sub getAvailableVersions
 
                         $self->{modules}{'portage'}{lc($tp)}{'name'}     = $tp;
                         $self->{modules}{'portage'}{lc($tp)}{'category'} = $tc;
+						if ($find_ebuild) {
+							if ($self->{modules}{'portage_lc'}{lc($find_ebuild)})
+							{
+								$self->{modules}{'found_ebuild'}{lc($find_ebuild)} = 1;
+								last;
+							}
+						}
                     }
                 }
             }

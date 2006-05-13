@@ -17,6 +17,9 @@ use Cwd qw(getcwd abs_path cwd);
 use YAML;
 use YAML::Node;
 use Carp;
+use Memoize;
+
+memoize('scanTree');
 
 # While Writing - TO REMOVE - MPC
 use lib "../lib/";
@@ -28,10 +31,7 @@ use constant PATH_PKG_VAR => '/var/db/pkg/';
 
 ##### Establish our tmpdir
 unless ($ENV{TMPDIR}) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
-#MPC
-my $DEBUG;
-my $modules;
-#END MPC
+
 my $VERSION = "0.14.0";
 my $prog    = basename($0);
 
@@ -47,7 +47,7 @@ use Getopt::Long;
 Getopt::Long::Configure("bundling");
 
 # Init all options (has to be done to perform the 'sum test' later)
-my ($debug, $verbose, $search, $install, $upgrade, $generate, $list, $pretend, $ask) = (0, 0, 0, 0, 0, 0, 0, 0, 0);
+my ($debug, $verbose, $search, $install, $upgrade, $generate, $list, $pretend, $ask, $cpan_reload ) = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 # Set colors here so we can use them at will anywhere :)
 my $green = color("bold green");
@@ -66,6 +66,7 @@ GetOptions(
     'ask|a'      => \$ask,
     'generate|g' => \$generate,
     'debug|d'    => \$debug,
+    'cpan_reload' => \$cpan_reload,
     'help|h'     => sub { exit_usage(); }
   )
   or exit_usage();
@@ -208,11 +209,12 @@ else
     }
 }
 
-my $gcpan_run = Gentoo->new();
-#my $portdir = $gcpan_run->getValue("PORTDIR");
+my $gcpan_run = Gentoo->new(
+   'cpan_reload' => $cpan_reload,
+   'DEBUG'       => $debug,
+   );
 $gcpan_run->{'portage_bases'}{$gcpan_run->getValue("PORTDIR")} = 1;
 my $overlay = $gcpan_run->getValue("PORTDIR_OVERLAY")||undef;
-#my @overlays = [];
 
 if ($overlay)
 {
@@ -230,15 +232,62 @@ if ($overlay)
     	$gcpan_run->{'portage_bases'}{$overlay} = 1;
     }
 }
-
-$gcpan_run->{portage_categories} = \@perl_dirs;
-foreach my $portage_root (keys %{$gcpan_run->{'portage_bases'}} ) {
-		if ( -d $portage_root) {
-            print_info($prog,"Cataloging $portage_root");
-    		$gcpan_run->getAvailableVersions($portage_root)
-		}
+elsif ($generate or $pretend)
+{
+    print_err($prog,"The option you have chosen isn't supported without a configured overlay.\n");
+    exit();
 }
-$gcpan_run->debug;
+
+# Set portage_categories to our defined list of perl_dirs
+$gcpan_run->{portage_categories} = \@perl_dirs;
+
+for $_ (@ARGV)
+{
+    scanTree($_);
+	unless($gcpan_run->{'modules'}{'found_ebuild'}{lc($_)}) 
+	{
+        # Generate an ebuild - nothing found currently in the tree
+		print_info($prog,"Generating ebuild for $_");
+        generateEbuild($_);
+	}
+
+}
+#$gcpan_run->debug;
+# Loop through the supplied module names
+sub scanTree
+{
+    {
+    	foreach my $portage_root (keys %{$gcpan_run->{'portage_bases'}} ) 
+    	{
+    		if ( -d $portage_root) 
+    		{
+                print_ok($prog,"Scanning $portage_root for $_");
+    			$gcpan_run->getAvailableVersions($portage_root,$_);
+    		}
+            # Pop out of the loop if we've found the module
+	    	last if ($gcpan_run->{'modules'}{'found_ebuild'}{lc($_)});
+	    }
+    }
+}
+
+
+sub generateEbuild
+{
+    $gcpan_run->getCPANPackages($_);
+    unless ($gcpan_run->{'modules'}{'found_module'}{lc($_)})
+    {
+        print_err("$prog","Unable to coerce this ebuild out of cpan.");
+    }
+    # We should have enough information stored away in gcpan_run now to be
+    # able to generate an ebuild now. The only item we're missing is the
+    # dependency information, so let's grab that now :)
+    #print "NAME: " . lc($_) . "\n";
+    #print "DESCRIPTION: " . $gcpan_run->{modules}{'cpan_description'}{lc($_)}
+    #. "\n";
+    #print "SRC_URI: " . $gcpan_run->{modules}{'cpan_src_uri'}{lc($_)} ."\n";
+
+
+}
 exit();
 # MPC - left off here
 #####################################################################################
@@ -434,6 +483,9 @@ ${green}--upgrade,-u${reset}
 ${green}--verbose,-v${reset}
     Enable (some) verbose output.
 
+${green}--cpan_reload${reset}
+    Reload the CPAN index
+
 USAGE
 
     exit;
@@ -506,6 +558,10 @@ Create ebuilds as needed for the (list of) modules provided, but don't perform t
 =item B<-s,--search>
 
 Search CPAN for the provided module. 
+
+=item B<--cpan_reload>
+
+Reload CPAN's index online
 
 =item B<-u,--upgrade>
 

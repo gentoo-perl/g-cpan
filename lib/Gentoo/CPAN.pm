@@ -57,12 +57,17 @@ sub new
 
 sub getCPANPackages
 {
-    my $self              = shift;
-    my $force_cpan_reload = shift;
-    my $cpan_pn           = "";
-    my @tmp_v             = ();
+    my $self        = shift;
+    my $find_module = shift;
+    my $cpan_pn     = "";
+    my @tmp_v       = ();
 
-    if ($force_cpan_reload)
+    if ($find_module)
+    {
+        return
+          if ($self->{modules}{'found_module'}{lc($find_module)});
+    }
+    if ($self->{cpan_reload})
     {
 
         # - User forced reload of the CPAN index >
@@ -77,8 +82,15 @@ sub getCPANPackages
             # - Fetch CPAN-filename and cut out the filename of the tarball.
             #   We are not using $mod->id here because doing so would end up
             #   missing a lot of our ebuilds/packages >
-            $cpan_pn = $mod->cpan_file;
+            my $cpan_desc;
+            my $cpan_src_uri = $cpan_pn = $mod->cpan_file;
             $cpan_pn =~ s|.*/||;
+            $cpan_src_uri =~ m{(\(.*\))}xms;
+            if ($mod->description) {
+                $cpan_desc = $mod->description
+            } else {
+                $cpan_desc = "";
+            }
 
             if ($mod->cpan_version eq "undef"
                 && ($cpan_pn =~ m/ / || $cpan_pn eq "" || !$cpan_pn))
@@ -140,6 +152,18 @@ sub getCPANPackages
                     next if ($cpan_version == 0);
                     $self->{modules}{'cpan'}{$cpan_pn} = $cpan_version;
                     $self->{modules}{'cpan_lc'}{lc($cpan_pn)} = $cpan_version;
+                    $self->{modules}{'cpan_description'}{lc($cpan_pn)} =
+                        $cpan_desc;
+                    $self->{modules}{'cpan_src_uri'}{lc($cpan_pn)} =
+                        $cpan_src_uri;
+                    if ($find_module)
+                    {
+                        if ($self->{modules}{'cpan_lc'}{lc($find_module)})
+                        {
+                            $self->{modules}{'found_module'}{lc($find_module)} = $self->{modules}{'cpan_lc'}{lc($cpan_pn)};
+                            last;
+                        }
+                    }
                 }
             }
         }
@@ -147,31 +171,31 @@ sub getCPANPackages
     return 0;
 }
 
-
-sub makeCPANstub 
+sub makeCPANstub
 {
-    my $self = shift;
-    my $cpan_cfg_dir  = File::Spec->catfile($ENV{HOME},    CPAN_CFG_DIR);
+    my $self          = shift;
+    my $cpan_cfg_dir  = File::Spec->catfile($ENV{HOME}, CPAN_CFG_DIR);
     my $cpan_cfg_file = File::Spec->catfile($cpan_cfg_dir, CPAN_CFG_NAME);
 
-    if(not -d $cpan_cfg_dir) {
-        mkpath($cpan_cfg_dir, 1, 0755 ) or fatal($Gentoo::ERR_FOLDER_CREATE, $cpan_cfg_dir, $!);
+    if (not -d $cpan_cfg_dir)
+    {
+        mkpath($cpan_cfg_dir, 1, 0755) or fatal($Gentoo::ERR_FOLDER_CREATE, $cpan_cfg_dir, $!);
     }
 
-    my $tmp_dir       = -d $ENV{TMPDIR}      ? defined($ENV{TMPDIR})      : $ENV{HOME};
-    my $ftp_proxy     =    $ENV{ftp_proxy}   ? defined($ENV{ftp_proxy})   : '';
-    my $http_proxy    =    $ENV{http_proxy}  ? defined($ENV{http_proxy})  : '';
-    my $user_shell    = -x $ENV{SHELL}       ? defined($ENV{SHELL})       : DEF_BASH_PROG;
-    my $ftp_prog      = -x DEF_FTP_PROG      ? DEF_FTP_PROG      : '';
-    my $gpg_prog      = -x DEF_GPG_PROG      ? DEF_GPG_PROG      : '';
-    my $gzip_prog     = -x DEF_GZIP_PROG     ? DEF_GZIP_PROG     : '';
-    my $lynx_prog     = -x DEF_LYNX_PROG     ? DEF_LYNX_PROG     : '';
-    my $make_prog     = -x DEF_MAKE_PROG     ? DEF_MAKE_PROG     : '';
-    my $ncftpget_prog = -x DEF_NCFTPGET_PROG ? DEF_NCFTPGET_PROG : '';
-    my $less_prog     = -x DEF_LESS_PROG     ? DEF_LESS_PROG     : '';
-    my $tar_prog      = -x DEF_TAR_PROG      ? DEF_TAR_PROG      : '';
-    my $unzip_prog    = -x DEF_UNZIP_PROG    ? DEF_UNZIP_PROG    : '';
-    my $wget_prog     = -x DEF_WGET_PROG     ? DEF_WGET_PROG     : '';
+    my $tmp_dir       = -d $ENV{TMPDIR}      ? defined($ENV{TMPDIR})     : $ENV{HOME};
+    my $ftp_proxy     = $ENV{ftp_proxy}      ? defined($ENV{ftp_proxy})  : '';
+    my $http_proxy    = $ENV{http_proxy}     ? defined($ENV{http_proxy}) : '';
+    my $user_shell    = -x $ENV{SHELL}       ? defined($ENV{SHELL})      : DEF_BASH_PROG;
+    my $ftp_prog      = -x DEF_FTP_PROG      ? DEF_FTP_PROG              : '';
+    my $gpg_prog      = -x DEF_GPG_PROG      ? DEF_GPG_PROG              : '';
+    my $gzip_prog     = -x DEF_GZIP_PROG     ? DEF_GZIP_PROG             : '';
+    my $lynx_prog     = -x DEF_LYNX_PROG     ? DEF_LYNX_PROG             : '';
+    my $make_prog     = -x DEF_MAKE_PROG     ? DEF_MAKE_PROG             : '';
+    my $ncftpget_prog = -x DEF_NCFTPGET_PROG ? DEF_NCFTPGET_PROG         : '';
+    my $less_prog     = -x DEF_LESS_PROG     ? DEF_LESS_PROG             : '';
+    my $tar_prog      = -x DEF_TAR_PROG      ? DEF_TAR_PROG              : '';
+    my $unzip_prog    = -x DEF_UNZIP_PROG    ? DEF_UNZIP_PROG            : '';
+    my $wget_prog     = -x DEF_WGET_PROG     ? DEF_WGET_PROG             : '';
 
     open CPANCONF, ">$cpan_cfg_file" or fatal($Gentoo::ERR_FOLDER_CREATE, $cpan_cfg_file, $!);
     print CPANCONF <<"SHERE";
@@ -223,6 +247,5 @@ SHERE
 
     close CPANCONF;
 }
-
 
 1;
