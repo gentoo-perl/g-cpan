@@ -17,6 +17,7 @@ use Cwd qw(getcwd abs_path cwd);
 use YAML;
 use YAML::Node;
 use Carp;
+use IO::File;
 use Memoize;
 
 memoize('scanTree');
@@ -167,7 +168,6 @@ if (-f "$cat_file")
     #  Use braces to localize the $/ assignment, so we don't get bitten later.
     #
     local $/ = undef;
-    use IO::File;
     my $cat_read = IO::File->new($cat_file,'<');
     if (defined $cat_read)
     {
@@ -195,7 +195,6 @@ if (-f "$cat_file")
 }
 else
 {
-    use IO::File;
     my $cat_write = IO::File->new($cat_file,'>');
     if (defined $cat_write)
     {
@@ -215,6 +214,22 @@ my $gcpan_run = Gentoo->new(
    );
 $gcpan_run->{'portage_bases'}{$gcpan_run->getValue("PORTDIR")} = 1;
 my $overlay = $gcpan_run->getValue("PORTDIR_OVERLAY")||undef;
+$gcpan_run->{'sources'} = $gcpan_run->getValue("DISTDIR");
+
+my $test_overlay = IO::File->new($gcpan_run->{'sources'} 
+        . "/test-gpcan", ">");
+if ( print $test_overlay "1" ) 
+{
+    undef $test_overlay;
+    unlink($gcpan_run->{'sources'} . "/test-gcpan");
+}
+else
+{
+    undef $test_overlay;
+    $gcpan_run->{'sources'} = -d $ENV{TMPDIR} ? defined($ENV{TMPDIR}) :
+        $ENV{"HOME"} . "/.cpan/sources";
+}
+
 
 if ($overlay)
 {
@@ -241,19 +256,69 @@ elsif ($generate or $pretend)
 # Set portage_categories to our defined list of perl_dirs
 $gcpan_run->{portage_categories} = \@perl_dirs;
 
-for $_ (@ARGV)
+for $_ (@ARGV) 
 {
-    scanTree($_);
-	unless($gcpan_run->{'modules'}{'found_ebuild'}{lc($_)}) 
+    generatePackage($_);
+}
+
+
+
+
+sub generatePackage {
+    # Since all we are concerned with is the final name of the package, this
+    # should be a safe substitution
+    my $module = $_;
+    $module =~ s{::}{-}xms;
+    scanTree($module);
+	unless($gcpan_run->{'modules'}{'found_ebuild'}{lc($module)}) 
 	{
         # Generate an ebuild - nothing found currently in the tree
-		print_info($prog,"Generating ebuild for $_");
-        generateEbuild($_);
-	}
+		print_info($prog,"Generating ebuild for $module");
+        $gcpan_run->getCPANPackages($module);
+        unless ($gcpan_run->{'modules'}{'found_module'}{lc($module)})
+        {
+            print_err("$prog","Unable to coerce this ebuild ($module) out of cpan.");
+        }
+        else
+        {
+        # We have a cpan package that matches the request. Time
+        # to write an ebuild for it.
+        $gcpan_run->unpackModule($module);
 
-}
+            print "NAME: " . lc($module) . "\n";
+            print "DESCRIPTION: " . $gcpan_run->{modules}{'cpan'}{lc($module)}{'description'}
+            . "\n";
+            print "SRC_URI: " . $gcpan_run->{modules}{'cpan'}{lc($module)}{'src_uri'} ."\n";
+            print "DEPENDS: ";
+            foreach my $dep (keys
+            %{$gcpan_run->{modules}{'cpan'}{lc($module)}{'depends'}} )
+            {
+                next unless (defined $dep && $dep ne '');
+                print "$dep - " .
+                $gcpan_run->{modules}{'cpan'}{lc($module)}{'depends'}{lc($dep)} .
+                "\n";
+            }
+    #
+    # Steps to follow at this point:
+    # 0.4 Unpack archive - DONE
+    # 1. Download tarball  - DONE
+    # 2. Unpack and perl Makefile.PL -DONE
+    # 3. $gcpan_run->findDeps -DONE
+    # 4. Write ebuild;
+    # 5. Verify deps
+    # 5.1 Verify Deps exis in portage
+    # 5.1.1 Verify Deps exist in cpan
+
+        }
+   	}
+    else
+    {
+        print_ok($prog,"Ebuild already exists for $module");
+    }
 #$gcpan_run->debug;
 # Loop through the supplied module names
+
+}
 sub scanTree
 {
     {
@@ -281,11 +346,10 @@ sub generateEbuild
     # We should have enough information stored away in gcpan_run now to be
     # able to generate an ebuild now. The only item we're missing is the
     # dependency information, so let's grab that now :)
-    #print "NAME: " . lc($_) . "\n";
-    #print "DESCRIPTION: " . $gcpan_run->{modules}{'cpan_description'}{lc($_)}
-    #. "\n";
-    #print "SRC_URI: " . $gcpan_run->{modules}{'cpan_src_uri'}{lc($_)} ."\n";
-
+    print "NAME: " . lc($_) . "\n";
+    print "DESCRIPTION: " . $gcpan_run->{modules}{'cpan'}{lc($_)}{'description'}
+    . "\n";
+    print "SRC_URI: " . $gcpan_run->{modules}{'cpan'}{lc($_)}{'src_uri'} ."\n";
 
 }
 exit();

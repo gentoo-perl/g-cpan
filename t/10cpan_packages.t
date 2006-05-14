@@ -46,14 +46,11 @@ $GC->getCPANPackages();
 # Test getting the contents of a directory
 ok( $GC->{modules}, 'Digested available versions' );
 ok( $GC->{modules}{cpan}, 'Portage_lc check' );
-ok( $GC->{modules}{cpan_lc}, 'Digested available versions' );
-foreach my $mod (keys %{$GC->{moduels}{cpan}} ) {
+#ok( $GC->{modules}{cpan_lc}, 'Digested available versions' );
+foreach my $mod (keys %{$GC->{modules}{cpan}} ) {
 	ok($mod, '$mod has value');
-	ok($GC->{modules}{cpan}{$mod}, '$mod has version');
-}
-foreach my $mod (keys %{$GC->{modules}{cpan_lc}} ) {
-	ok($mod, '$mod has value');
-	ok($GC->{modules}{cpan_lc}{$mod}, "$mod name check");
+	ok($GC->{modules}{cpan}{$mod}{'name'}, '$mod has version');
+	ok($GC->{modules}{cpan}{$mod}{'src_uri'}, '$mod has version');
 }
 
 #MPC $GC->debug;
