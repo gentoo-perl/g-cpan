@@ -6,11 +6,6 @@ use warnings;
 
 use Cwd qw(getcwd abs_path cwd);
 use File::Find ();
-use Memoize;
-
-
-memoize('getAvailableEbuilds');
-memoize('getEbuildVersionSpecial');
 
 # Set the variable $File::Find::dont_use_nlink if you're using AFS,
 # since AFS cheats.

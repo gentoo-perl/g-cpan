@@ -18,9 +18,6 @@ use YAML;
 use YAML::Node;
 use Carp;
 use IO::File;
-use Memoize;
-
-memoize('scanTree');
 
 # While Writing - TO REMOVE - MPC
 use lib "../lib/";
@@ -258,46 +255,143 @@ $gcpan_run->{portage_categories} = \@perl_dirs;
 
 for $_ (@ARGV) 
 {
-    generatePackage($_);
+    my $module = $_;
+    generatePackageInfo($module);
+    
 }
 
 
 
 
-sub generatePackage {
+sub generatePackageInfo {
     # Since all we are concerned with is the final name of the package, this
     # should be a safe substitution
-    my $module = $_;
-    $module =~ s{::}{-}xms;
-    scanTree($module);
-	unless($gcpan_run->{'modules'}{'found_ebuild'}{lc($module)}) 
+    my $ebuild_wanted = shift;
+    # Grab specific info for this module
+    $gcpan_run->getCPANInfo($ebuild_wanted);
+    $gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'portage_name'} =
+        $gcpan_run->transformCPANname($gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'src_uri'});
+    my $original_ebuild = $ebuild_wanted;
+    $ebuild_wanted =~ s{::}{-}xms;
+    # Simple transform of name to something portage friendly
+    # Scan portage for the ebuild name
+    &scanTree($ebuild_wanted);
+	unless($gcpan_run->{'modules'}{'found_ebuild'}{lc($ebuild_wanted)}) 
 	{
-        # Generate an ebuild - nothing found currently in the tree
-		print_info($prog,"Generating ebuild for $module");
-        $gcpan_run->getCPANPackages($module);
-        unless ($gcpan_run->{'modules'}{'found_module'}{lc($module)})
+        
+        my $portage_name =
+            $gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'};
+        # Ebuild wasn't found - scan for the nice version of the module name
+        &scanTree($gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'});
+        
+        # We had success in finding this module under a different name
+        if
+        ($gcpan_run->{'modules'}{'found_ebuild'}{lc($gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'})})
         {
-            print_err("$prog","Unable to coerce this ebuild ($module) out of cpan.");
+            print_info($prog,"Found ebuild under CPAN name (".
+                $gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'} . ")");
+            $ebuild_wanted =
+                $gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'};
         }
-        else
-        {
-        # We have a cpan package that matches the request. Time
-        # to write an ebuild for it.
-        $gcpan_run->unpackModule($module);
+    }
+    else
+    {
+    $gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'} =
+        $ebuild_wanted;
+    }
 
-            print "NAME: " . lc($module) . "\n";
-            print "DESCRIPTION: " . $gcpan_run->{modules}{'cpan'}{lc($module)}{'description'}
-            . "\n";
-            print "SRC_URI: " . $gcpan_run->{modules}{'cpan'}{lc($module)}{'src_uri'} ."\n";
-            print "DEPENDS: ";
-            foreach my $dep (keys
-            %{$gcpan_run->{modules}{'cpan'}{lc($module)}{'depends'}} )
+    # Second round - we've looked for the package in portage two different 
+    # ways now, time to get serious and create it ourselves
+	unless($gcpan_run->{'modules'}{'found_ebuild'}{lc($ebuild_wanted)}) 
+    {
+        # Generate info - nothing found currently in the tree
+        if ($gcpan_run->{'cpan'}{lc($original_ebuild)}{'name'})
+        {
+            print_info($prog,"Generating ebuild for " . $gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'name'});
+
+        # We have a cpan package that matches the request. 
+        # Let's unpack it and get all the deps out of it.
+        $gcpan_run->unpackModule($gcpan_run->{'cpan'}{lc($original_ebuild)}{'name'});
+
+        foreach my $dep (keys
+            %{$gcpan_run->{'cpan'}{lc($original_ebuild)}{'depends'}} )
             {
                 next unless (defined $dep && $dep ne '');
-                print "$dep - " .
-                $gcpan_run->{modules}{'cpan'}{lc($module)}{'depends'}{lc($dep)} .
-                "\n";
+                next if ($dep eq "perl");
+                # Make sure we have information relevant to each of the deps
+                generatePackageInfo($dep);
             }
+        
+      # Write ebuild here?
+    $gcpan_run->debug;
+    my @overlays = map { split ' ' } $overlay;
+    foreach my $target_dir (@overlays)
+    {
+        if ( -d $target_dir )
+        {
+            my $gcpan_dir = File::Spec->catdir($target_dir, "perl-gcpan");
+            unless ( -d $gcpan_dir )
+            {
+                print_info($prog,"Create directory '$gcpan_dir'");# if $verbose;
+                mkdir($gcpan_dir, 0755) or fatal($Gentoo::ERR_FOLDER_CREATE, $gcpan_dir, $!);
+            }
+            my $ebuild_dir = File::Spec->catdir($gcpan_dir,
+            $gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'portage_name'});
+            unless (-d $ebuild_dir )
+            {
+                print_info($prog,"Create directory '$ebuild_dir'");# if $verbose;
+                mkdir($ebuild_dir, 0755) or fatal($Gentoo::ERR_FOLDER_CREATE,
+                $ebuild_dir, $!);
+            }
+            my $files_dir = File::Spec->catdir($ebuild_dir,'files');
+            unless (-d $files_dir )
+            {
+                print_info($prog,"Create directory '$files_dir'");# if $verbose;
+                mkdir($files_dir, 0755) or fatal($Gentoo::ERR_FOLDER_CREATE,
+                $files_dir, $!);
+            }
+            my $ebuild=
+            File::Spec->catdir($ebuild_dir,$gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'portage_name'}.
+            ".ebuild");
+                open EBUILD, ">$ebuild" or fatal($Gentoo::ERR_OPEN_WRITE, $ebuild, $!);
+    print EBUILD <<"HERE";
+# Copyright 1999-2005 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+# This ebuild generated by $prog $VERSION
+
+inherit perl-module
+
+S=\${WORKDIR}/
+DESCRIPTION="$gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'description'}"
+SRC_URI="mirror://cpan/authors/id/$gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'src_uri'}"
+HOMEPAGE="http://www.cpan.org/modules/by-authors/id//\${P}.readme"
+
+IUSE=""
+
+SLOT="0"
+LICENSE="|| ( Artistic GPL-2 )"
+KEYWORDS=""
+
+DEPEND="
+HERE
+foreach my $dep (keys
+            %{$gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'depends'}} )
+            {
+            next unless (defined $dep && $dep ne '');
+            next if ($dep eq "perl");
+            my $portage_name =
+            lc($gcpan_run->{'cpan'}{lc($dep)}{'portage_name'});
+            print EBUILD $gcpan_run->{modules}{portage}{$portage_name}{'category'}
+            . "/" .
+            $gcpan_run->{modules}{portage}{lc($portage_name)}{'name'} . "\n";
+
+            }
+            print EBUILD "\"\n";
+            close EBUILD;
+        }
+    }
+
+
     #
     # Steps to follow at this point:
     # 0.4 Unpack archive - DONE
@@ -310,191 +404,57 @@ sub generatePackage {
     # 5.1.1 Verify Deps exist in cpan
 
         }
-   	}
+  	}
     else
     {
-        print_ok($prog,"Ebuild already exists for $module");
+        print_ok($prog,"Ebuild already exists for $ebuild_wanted");
     }
-#$gcpan_run->debug;
+    
+        # open $FH-portage_name?, ">someebuild";
+        #print "\n\n";
+        #print "NAME: " . $module_info{'portage_name'} . "-" . $module_info{'version'} . "\n";
+        #print "SRC_URI: mirror://cpan/authors/id/" . $module_info{'src_uri'} . "\n";
+        #print "DESCRIPTION: " . $module_info{'description'} . "\n";
+        #print "DEPS: ";
+ #$gcpan_run->debug;
 # Loop through the supplied module names
 
 }
 sub scanTree
 {
-    {
+    my $module = shift;
     	foreach my $portage_root (keys %{$gcpan_run->{'portage_bases'}} ) 
     	{
     		if ( -d $portage_root) 
     		{
-                print_ok($prog,"Scanning $portage_root for $_");
-    			$gcpan_run->getAvailableVersions($portage_root,$_);
+                #next unless ($module);
+                print_ok($prog,"Scanning $portage_root for $module");
+    			$gcpan_run->getAvailableVersions($portage_root,$module);
     		}
             # Pop out of the loop if we've found the module
-	    	last if ($gcpan_run->{'modules'}{'found_ebuild'}{lc($_)});
+	    	last if ($gcpan_run->{'modules'}{'found_ebuild'}{lc($module)});
 	    }
-    }
 }
 
 
 sub generateEbuild
 {
-    $gcpan_run->getCPANPackages($_);
-    unless ($gcpan_run->{'modules'}{'found_module'}{lc($_)})
+    my $module = shift;
+    $gcpan_run->getCPANPackages($module);
+    unless ($gcpan_run->{'modules'}{'found_module'}{lc($module)})
     {
         print_err("$prog","Unable to coerce this ebuild out of cpan.");
     }
     # We should have enough information stored away in gcpan_run now to be
     # able to generate an ebuild now. The only item we're missing is the
     # dependency information, so let's grab that now :)
-    print "NAME: " . lc($_) . "\n";
-    print "DESCRIPTION: " . $gcpan_run->{modules}{'cpan'}{lc($_)}{'description'}
+    print "NAME: " . lc($module) . "\n";
+    print "DESCRIPTION: " . $gcpan_run->{'cpan'}{lc($module)}{'description'}
     . "\n";
-    print "SRC_URI: " . $gcpan_run->{modules}{'cpan'}{lc($_)}{'src_uri'} ."\n";
+    print "SRC_URI: " . $gcpan_run->{'cpan'}{lc($module)}{'src_uri'} ."\n";
 
 }
-exit();
-# MPC - left off here
-#####################################################################################
 
-
-
-# Set our temporary overlay directory for the scope of this run.
-# By setting an overlay directory, we bypass the predefined portage
-# directory and allow portage to build a package outside of its
-# normal tree.
-my $tmp_overlay_dir;
-
-my @ebuild_list;    #this array needs to be seriously observed.
-
-# Set up global paths
-my $PORTAGE_DIR     = getPortdir();
-my $PORTAGE_DISTDIR = getPortDist();
-my @OVERLAYS        = getOverlay();
-
-unless (scalar(@OVERLAYS) > 0)
-{
-    if ($generate or $pretend)
-    {
-        print_err($prog,"The option you have chosen isn't supported without a configured overlay.\n");
-        exit();
-    }
-    $tmp_overlay_dir = "$ENV{TMPDIR}/perl-modules_$$";
-
-    # Create the tmp_overlay_dir in the even that it is a 'real' temp dir
-    if (not -d $tmp_overlay_dir)
-    {
-        mkpath($tmp_overlay_dir, 1, 0755)
-          or fatal($Gentoo::ERR_FOLDER_CREATE, $tmp_overlay_dir, $!);
-    }
-    push @OVERLAYS, $tmp_overlay_dir;
-}
-
-# o_reset will be used to catch if went through all of the overlay dirs successfully -
-# open to better ways :) mcummings
-my $o_reset = 1;
-
-foreach my $o_dir (@OVERLAYS)
-{
-
-    # See if we can create a file
-    next if ($o_dir =~ m/^$/);
-    if (open(TMP, ">$o_dir/g-cpan-test"))
-    {
-        close(TMP);
-        unlink("$o_dir/g-cpan-test");
-        $tmp_overlay_dir = $o_dir;
-        $o_reset         = 0;
-        if ($verbose)
-        {
-            print_info($prog,"Setting $tmp_overlay_dir as the PORTDIR_OVERLAY for this session.");
-        }
-        last;
-    }
-}
-if ($o_reset > 0)
-{
-    print_err($prog,"You don't have permission to work in any of the portage overlays.");
-    print_err($prog,"Please run $prog as a user with sufficient permissions.\n");
-    exit();
-}
-
-my @OVERLAY_PERLS;
-my @PORTAGE_DEV_PERL;
-my @TMP_DEV_PERL_DIRS;
-
-foreach my $pdir (@perl_dirs)
-{
-    my $tmp_dir = File::Spec->catdir($PORTAGE_DIR, $pdir);
-    push @PORTAGE_DEV_PERL, $tmp_dir;
-    foreach my $odir (@OVERLAYS)
-    {
-        my $otmp = File::Spec->catdir($odir, $pdir);
-        push @OVERLAY_PERLS, $otmp;
-    }
-    my $vtmp_dir = File::Spec->catdir(PATH_PKG_VAR, $pdir);
-    push @TMP_DEV_PERL_DIRS, $vtmp_dir;
-}
-
-# Create the ebuild in PORTDIR_OVERLAY, if it is defined and exists
-# Part of this is to find an overlay the user running this session can actually write to
-
-# Grab the whole available arches list, to include them later in ebuilds
-print_info($prog,"Grabbing arch list") if $verbose;
-my $arches = do
-{
-    open my $tmp, "<$PORTAGE_DIR/profiles/arch.list"
-      or fatal($Gentoo::ERR_OPEN_READ, "$PORTAGE_DIR/profiles/arch.list", $!);
-    join " ", map { chomp; $_ } <$tmp>;
-};
-
-# Now we cat our dev-perl directory onto our overlay directory.
-# This is done so that portage records the appropriate path
-#i.e. dev-perl/package
-my $perldev_overlay = File::Spec->catfile($tmp_overlay_dir, 'perl-gcpan');
-if (not -d $perldev_overlay)
-{
-
-    # create perldev overlay dir if not present
-    mkpath($perldev_overlay, 1, 0755)
-      or fatal($Gentoo::ERR_FOLDER_CREATE, $perldev_overlay, $!);
-}
-
-# Now we export our overlay directory into the session's env vars
-$ENV{PORTDIR_OVERLAY} = $tmp_overlay_dir;
-
-# Take care of List requests. This should return all the ebuilds managed by g-cpan
-if ($list)
-{
-    print_ok($prog,"Generating list of modules managed by g-cpan");
-    my @managed = get_gcpans();
-    exit();
-}
-
-if ($generate)
-{
-    install_module($_) for (@ARGV);
-}
-
-if ($install)
-{
-    install_module($_) for (@ARGV);
-    emerge_module();
-}
-
-if ($upgrade)
-{
-    if (@ARGV)
-    {
-        upgrade_module($_) for (@ARGV);
-        emerge_module($_);
-    }
-    else
-    {
-        my @GLIST = get_gcpans();
-        upgrade_module($_) for (@GLIST);
-        emerge_module(@GLIST);
-    }
-}
 
 # cab - Takes care of system's sanity
 END {
@@ -503,9 +463,10 @@ END {
     #I know this looks weird, but since clean_up is invoked on a search, where OVERLAYS isn't ever defined,
     # we first need to see if it exists, then need to remove only if it has content (the old exists vs. defined)
     
-    if ( (defined($ENV{TMPDIR}) ) and ( defined($tmp_overlay_dir) && ($tmp_overlay_dir =~ m/^$ENV{TMPDIR}/) ) ) { 
+    if (defined($ENV{TMPDIR}) )
+    {
         print_info("Cleaning temporary overlay\n") if $verbose;
-        rmtree( ["$tmp_overlay_dir"] );
+        #rmtree( ["$tmp_overlay_dir"] );
     }
 }
 
