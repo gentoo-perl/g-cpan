@@ -269,24 +269,33 @@ sub generatePackageInfo {
     my $ebuild_wanted = shift;
     # Grab specific info for this module
     $gcpan_run->getCPANInfo($ebuild_wanted);
-    $gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'portage_name'} =
-        $gcpan_run->transformCPANname($gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'src_uri'});
+    # If we found something on cpan, transform the portage_name
+    # It's possible to not find something on cpan at this point - we're just
+    # trying to pre-seed the portage_name
+    if ($gcpan_run->{'cpan'}{lc($ebuild_wanted)})
+    { 
+        $gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'portage_name'} =
+            $gcpan_run->transformCPANname($gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'src_uri'});
+    }
+    
+    # Save a copy of the originally requested name for later use
     my $original_ebuild = $ebuild_wanted;
-    $ebuild_wanted =~ s{::}{-}xms;
     # Simple transform of name to something portage friendly
+    $ebuild_wanted =~ s{::}{-}xms;
     # Scan portage for the ebuild name
     &scanTree($ebuild_wanted);
-	unless($gcpan_run->{'modules'}{'found_ebuild'}{lc($ebuild_wanted)}) 
+	unless($gcpan_run->{'ebuilds'}{'found_ebuild'}{lc($ebuild_wanted)}) 
 	{
         
+        # Ebuild wasn't found - scan for the nice version of the module name
         my $portage_name =
             $gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'};
-        # Ebuild wasn't found - scan for the nice version of the module name
+        next if (lc($original_ebuild) eq "perl");
         &scanTree($gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'});
         
         # We had success in finding this module under a different name
         if
-        ($gcpan_run->{'modules'}{'found_ebuild'}{lc($gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'})})
+        ($gcpan_run->{'ebuilds'}{'found_ebuild'}{lc($gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'})})
         {
             print_info($prog,"Found ebuild under CPAN name (".
                 $gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'} . ")");
@@ -302,12 +311,15 @@ sub generatePackageInfo {
 
     # Second round - we've looked for the package in portage two different 
     # ways now, time to get serious and create it ourselves
-	unless($gcpan_run->{'modules'}{'found_ebuild'}{lc($ebuild_wanted)}) 
+	unless($gcpan_run->{'ebuilds'}{'found_ebuild'}{lc($ebuild_wanted)}) 
     {
         # Generate info - nothing found currently in the tree
+        $gcpan_run->debug;
+        next if (lc($gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'}) eq "perl");
+        print STDERR "Was called for $ebuild_wanted vs. $original_ebuild\n";
         if ($gcpan_run->{'cpan'}{lc($original_ebuild)}{'name'})
         {
-            print_info($prog,"Generating ebuild for " . $gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'name'});
+            print_info($prog,"Generating ebuild for " . $gcpan_run->{'cpan'}{lc($original_ebuild)}{'name'});
 
         # We have a cpan package that matches the request. 
         # Let's unpack it and get all the deps out of it.
@@ -316,10 +328,12 @@ sub generatePackageInfo {
         foreach my $dep (keys
             %{$gcpan_run->{'cpan'}{lc($original_ebuild)}{'depends'}} )
             {
-                next unless (defined $dep && $dep ne '');
+                next unless (defined $dep && $dep ne '' );
                 next if ($dep eq "perl");
                 # Make sure we have information relevant to each of the deps
                 generatePackageInfo($dep);
+            # Reindex one last time for anything we build after the fact
+            scanTree($gcpan_run->{'cpan'}{lc($dep)}{'portage_name'});
             }
         
       # Write ebuild here?
@@ -336,7 +350,7 @@ sub generatePackageInfo {
                 mkdir($gcpan_dir, 0755) or fatal($Gentoo::ERR_FOLDER_CREATE, $gcpan_dir, $!);
             }
             my $ebuild_dir = File::Spec->catdir($gcpan_dir,
-            $gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'portage_name'});
+            $gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'});
             unless (-d $ebuild_dir )
             {
                 print_info($prog,"Create directory '$ebuild_dir'");# if $verbose;
@@ -351,8 +365,7 @@ sub generatePackageInfo {
                 $files_dir, $!);
             }
             my $ebuild=
-            File::Spec->catdir($ebuild_dir,$gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'portage_name'}.
-            ".ebuild");
+            File::Spec->catdir($ebuild_dir,$gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'}."-".$gcpan_run->{'cpan'}{lc($original_ebuild)}{'version'}. ".ebuild");
                 open EBUILD, ">$ebuild" or fatal($Gentoo::ERR_OPEN_WRITE, $ebuild, $!);
     print EBUILD <<"HERE";
 # Copyright 1999-2005 Gentoo Foundation
@@ -361,10 +374,12 @@ sub generatePackageInfo {
 
 inherit perl-module
 
-S=\${WORKDIR}/
-DESCRIPTION="$gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'description'}"
-SRC_URI="mirror://cpan/authors/id/$gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'src_uri'}"
-HOMEPAGE="http://www.cpan.org/modules/by-authors/id//\${P}.readme"
+S=\${WORKDIR}/$gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_sdir'}
+
+DESCRIPTION="$gcpan_run->{'cpan'}{lc($original_ebuild)}{'description'}"
+HOMEPAGE="http://search.cpan.org/search?query=\${PN}"
+SRC_URI="mirror://cpan/authors/id/$gcpan_run->{'cpan'}{lc($original_ebuild)}{'src_uri'}"
+
 
 IUSE=""
 
@@ -375,15 +390,15 @@ KEYWORDS=""
 DEPEND="
 HERE
 foreach my $dep (keys
-            %{$gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'depends'}} )
+            %{$gcpan_run->{'cpan'}{lc($original_ebuild)}{'depends'}} )
             {
             next unless (defined $dep && $dep ne '');
             next if ($dep eq "perl");
             my $portage_name =
-            lc($gcpan_run->{'cpan'}{lc($dep)}{'portage_name'});
-            print EBUILD $gcpan_run->{modules}{portage}{$portage_name}{'category'}
+                lc($gcpan_run->{'cpan'}{lc($dep)}{'portage_name'});
+            print EBUILD $gcpan_run->{ebuilds}{portage}{$portage_name}{'category'}
             . "/" .
-            $gcpan_run->{modules}{portage}{lc($portage_name)}{'name'} . "\n";
+            $gcpan_run->{ebuilds}{portage}{lc($portage_name)}{'name'} . "\n";
 
             }
             print EBUILD "\"\n";
@@ -423,16 +438,16 @@ foreach my $dep (keys
 sub scanTree
 {
     my $module = shift;
+    return unless ($module);
     	foreach my $portage_root (keys %{$gcpan_run->{'portage_bases'}} ) 
     	{
     		if ( -d $portage_root) 
     		{
-                #next unless ($module);
                 print_ok($prog,"Scanning $portage_root for $module");
     			$gcpan_run->getAvailableVersions($portage_root,$module);
     		}
             # Pop out of the loop if we've found the module
-	    	last if ($gcpan_run->{'modules'}{'found_ebuild'}{lc($module)});
+	    	last if ($gcpan_run->{'ebuilds'}{'found_ebuild'}{lc($module)});
 	    }
 }
 
@@ -441,7 +456,7 @@ sub generateEbuild
 {
     my $module = shift;
     $gcpan_run->getCPANPackages($module);
-    unless ($gcpan_run->{'modules'}{'found_module'}{lc($module)})
+    unless ($gcpan_run->{'ebuilds'}{'found_module'}{lc($module)})
     {
         print_err("$prog","Unable to coerce this ebuild out of cpan.");
     }

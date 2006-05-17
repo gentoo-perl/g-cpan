@@ -120,8 +120,10 @@ sub unpackModule {
     $pack->make;
     $pack->unforce if $pack->can("unforce") && exists $obj->{'force_update'};
     delete $obj->{'force_update'};
-    my $tmp_dir = -d $ENV{TMPDIR} ? defined( $ENV{TMPDIR} ) : $ENV{HOME};
-    $tmp_dir = $pack->{build_dir};
+    my $tmp_dir = $pack->{build_dir};
+    # While we're at it, get the ${S} dir for the ebuld ;)
+    $self->{'cpan'}{lc($module_name)}{'portage_sdir'} = $pack->{build_dir};
+    $self->{'cpan'}{lc($module_name)}{'portage_sdir'} =~ s{.*/}{}xmsg; 
     FindDeps( $self, $tmp_dir, $module_name );
 
     # Most modules don't list module-build as a dep - so we force it if there
@@ -174,6 +176,7 @@ sub FindDeps {
                         foreach my $module ( keys %{$ar_type} ) {
                             next if ( $module eq "" );
                             next if ( $module =~ /Cwd/i );
+                            next if (lc($module) eq "perl");
                             next unless ($module);
                             $self->{'cpan'}{ lc($module_name) }
                               {'depends'}{ $module } = $ar_type->{$module};
@@ -203,6 +206,10 @@ sub FindDeps {
                         next unless $p;
                         while ( $p =~ m/(?:\s)([\w\:]+)=>q\[(.*?)\],?/g ) {
                             my $module  = $1;
+                            next if ( $module eq "" );
+                            next if ( $module =~ /Cwd/i );
+                            next if (lc($module) eq "perl");
+                            next unless ($module);
                             my $version = $2;
                             $self->{'cpan'}{ lc($module_name) }
                               {'depends'}{ $module } = $version;
@@ -228,7 +235,7 @@ sub FindDeps {
                         local ($/) = "";
                         while (<$fh>) {
                             chomp;
-                            my ($p) = m/^\s+$type\s+=>\s+\{(.*?)\}/smx;
+                            my ($p) = m/^\s+$type\s+=>\s+\{(.*?)(?:\#.*)?\}/smx;
                             next unless $p;
                             undef($/);
 
@@ -237,7 +244,11 @@ sub FindDeps {
                             foreach my $pa (@list) {
                                 $pa =~ s/\n|\s+|\'//mg;
                                 if ($pa) {
-                                    my ( $module, $vers ) = split( /=>/, $pa );
+                                    my ( $module, $vers ) = split( /=>/, $pa ); 
+                                    next if ( $module eq "" );
+                                    next if ( $module =~ /Cwd/i );
+                                    next if (lc($module) eq "perl");
+                                    next unless ($module);
                                     $self->{'cpan'}{ lc($module_name) }
                                       {'depends'}{ $module } = $vers;
                                 }
@@ -284,9 +295,6 @@ sub transformCPANVersion
     $filename =~ tr/A-Za-z0-9\./-/c;
     $filename =~ s/\.pm//;             # e.g. CGI.pm
 
-    # We don't want to try and handle the package perl itself
-    return if ( $filename eq "perl" );
-
     # Remove double .'s - happens on occasion with odd packages
     $filenamever =~ s/\.$//;
 
@@ -323,9 +331,6 @@ sub transformCPANname {
     unless ($filename) { print STDERR "$name yielded $filename\n"; sleep(4); }
     $filename =~ tr/A-Za-z0-9\./-/c;
     $filename =~ s/\.pm//;             # e.g. CGI.pm
-
-    # We don't want to try and handle the package perl itself
-    return if ( $filename eq "perl" );
 
     # Remove double .'s - happens on occasion with odd packages
     $filenamever =~ s/\.$//;

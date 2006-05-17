@@ -124,7 +124,7 @@ sub getAvailableVersions
     );
 
     if ($find_ebuild) {
-        return if ( $self->{modules}{'found_ebuild'}{lc($find_ebuild)} );
+        return if ( $self->{ebuilds}{'found_ebuild'}{lc($find_ebuild)} );
     }
     foreach my $tc (@{$self->{portage_categories}})
     {
@@ -155,25 +155,25 @@ sub getAvailableVersions
                     # - get highest version >
                     if ($#tmp_availableVersions > -1)
                     {
-                        $self->{modules}{'portage_lc'}{lc($tp)}             = (sort(@tmp_availableVersions))[$#tmp_availableVersions];
+                        $self->{ebuilds}{'portage_lc'}{lc($tp)}             = (sort(@tmp_availableVersions))[$#tmp_availableVersions];
 
                         # - get rid of -rX >
-                        $self->{modules}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)-r[0-9+]/$1/;
-                        $self->{modules}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)-rc[0-9+]/$1/;
-                        $self->{modules}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)_p[0-9+]/$1/;
-                        $self->{modules}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)_pre[0-9+]/$1/;
+                        $self->{ebuilds}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)-r[0-9+]/$1/;
+                        $self->{ebuilds}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)-rc[0-9+]/$1/;
+                        $self->{ebuilds}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)_p[0-9+]/$1/;
+                        $self->{ebuilds}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)_pre[0-9+]/$1/;
 
                         # - get rid of other stuff we don't want >
-                        $self->{modules}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)_alpha[0-9+]?/$1/;
-                        $self->{modules}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)_beta[0-9+]?/$1/;
-                        $self->{modules}{'portage_lc'}{lc($tp)} =~ s/[a-zA-Z]+$//;
+                        $self->{ebuilds}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)_alpha[0-9+]?/$1/;
+                        $self->{ebuilds}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)_beta[0-9+]?/$1/;
+                        $self->{ebuilds}{'portage_lc'}{lc($tp)} =~ s/[a-zA-Z]+$//;
 
-                        $self->{modules}{'portage'}{lc($tp)}{'name'}     = $tp;
-                        $self->{modules}{'portage'}{lc($tp)}{'category'} = $tc;
+                        $self->{ebuilds}{'portage'}{lc($tp)}{'name'}     = $tp;
+                        $self->{ebuilds}{'portage'}{lc($tp)}{'category'} = $tc;
 						if ($find_ebuild) {
-							if ($self->{modules}{'portage_lc'}{lc($find_ebuild)})
+							if ($self->{ebuilds}{'portage_lc'}{lc($find_ebuild)})
 							{
-								$self->{modules}{'found_ebuild'}{lc($find_ebuild)} = 1;
+								$self->{ebuilds}{'found_ebuild'}{lc($find_ebuild)} = 1;
 								last;
 							}
 						}
