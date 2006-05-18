@@ -3,6 +3,7 @@ package Gentoo::Portage;
 use 5.008007;
 use strict;
 use warnings;
+use Shell qw(ebuild emerge);
 
 use Cwd qw(getcwd abs_path cwd);
 use File::Find ();
@@ -28,7 +29,7 @@ require Exporter;
 
 our @ISA = qw(Exporter Gentoo);
 
-our @EXPORT = qw( getAvailableEbuilds getAvailableVersions );
+our @EXPORT = qw( getAvailableEbuilds getAvailableVersions generate_digest emerge_ebuild );
 
 our $VERSION = '0.01';
 
@@ -168,8 +169,28 @@ sub getAvailableVersions
                         $self->{ebuilds}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)_beta[0-9+]?/$1/;
                         $self->{ebuilds}{'portage_lc'}{lc($tp)} =~ s/[a-zA-Z]+$//;
 
-                        $self->{ebuilds}{'portage'}{lc($tp)}{'name'}     = $tp;
-                        $self->{ebuilds}{'portage'}{lc($tp)}{'category'} = $tc;
+                        if ($tc eq "perl-core" and (keys %{$self->{'portage_bases'}}) )
+                        {
+                            # We have a perl-core module - can we satisfy it with a virtual/perl-?
+                            foreach my $portage_root (keys %{$self->{'portage_bases'}} )
+                            {
+                                if ( -d $portage_root)
+                                {
+                                    if (-d "$portage_root/virtual/perl-$tp" )
+                                    {
+                                        $self->{ebuilds}{'portage'}{lc($tp)}{'name'}     = "perl-$tp";
+                                        $self->{ebuilds}{'portage'}{lc($tp)}{'category'} = "virtual";
+                                        last;
+                                    }
+                                }
+                            }
+                            
+                        }
+                        else
+                        {
+                            $self->{ebuilds}{'portage'}{lc($tp)}{'name'}     = $tp;
+                            $self->{ebuilds}{'portage'}{lc($tp)}{'category'} = $tc;
+                        }
 						if ($find_ebuild) {
 							if ($self->{ebuilds}{'portage_lc'}{lc($find_ebuild)})
 							{
@@ -182,6 +203,24 @@ sub getAvailableVersions
             }
         }
     }
+    return($self);
+}
+
+sub generate_digest {
+    my $self = shift;
+    # Full path to the ebuild file in question
+    my $ebuild = shift;
+    ebuild($ebuild,"digest");
+}
+
+sub emerge_ebuild {
+    my $self = shift;
+    my $pkg = shift;
+    my @flags = @_;
+    foreach my $flag (@flags) { print STDERR "$flag " }
+    # emerge forks and returns, which confuses this process. So
+    # we call it the old fashioned way :(
+    system( "emerge", @flags, $pkg);
 }
 
 sub wanted_dirs {

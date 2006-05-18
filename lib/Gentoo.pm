@@ -61,6 +61,7 @@ sub new
     $self->{modules} = {};
 	$self->{portage_categories} = [];
 	$self->{portage_bases} = {};
+    $self->{cpan_reload} = $args{cpan_reload};
     $self->{DEBUG}       = $args{debug};
     $self->{packagelist} = [];
 

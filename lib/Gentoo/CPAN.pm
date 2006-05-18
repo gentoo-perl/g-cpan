@@ -11,6 +11,7 @@ use YAML::Node;
 use Memoize;
 use Cwd qw(getcwd abs_path cwd);
 use File::Basename;
+use Shell qw(perl);
 
 memoize('transformCPANname');
 memoize('FindDeps');
@@ -75,9 +76,11 @@ sub getCPANInfo {
     if ( $self->{cpan_reload} ) {
         # - User forced reload of the CPAN index >
         CPAN::Index->force_reload();
+        # Reset so we don't run it for every module after the initial reload
+        $self->{cpan_reload} = 0;
     }
     
-    my $mod = CPAN::Shell->expand( "Module", $find_module ) ; 
+    my $mod = CPAN::Shell->expandany( $find_module ) ; 
 # - Fetch CPAN-filename and cut out the filename of the tarball.
 #   We are not using $mod->id here because doing so would end up
 #   missing a lot of our ebuilds/packages >
@@ -115,12 +118,29 @@ sub unpackModule {
         $pack->called_for( $obj->id );
     }
 
-    #$pack->called_for( $obj->id );
     # Initiate a perl Makefile.PL process - necessary to generate the deps
-    $pack->make;
+    # Grab the tarball and unpack it
+    $pack->get;
+    my $tmp_dir = $pack->{build_dir};
+    # Set our starting point
+    my ($startdir)  = &cwd;
+    # chdir to where we were unpacked
+    chdir($tmp_dir) or die "Unable to enter dir $tmp_dir:$!\n";
+    # If we have a Makefile.PL, run it to generate Makefile
+    if ( -f "Makefile.PL")
+    {
+        perl("Makefile.PL")
+    }
+    # If we have a Build.PL, run it to generate the Build script
+    if ( -f "Build.PL")
+    {
+        perl("Build.PL")
+    }
+    # Return whence we came
+    chdir($startdir);
+
     $pack->unforce if $pack->can("unforce") && exists $obj->{'force_update'};
     delete $obj->{'force_update'};
-    my $tmp_dir = $pack->{build_dir};
     # While we're at it, get the ${S} dir for the ebuld ;)
     $self->{'cpan'}{lc($module_name)}{'portage_sdir'} = $pack->{build_dir};
     $self->{'cpan'}{lc($module_name)}{'portage_sdir'} =~ s{.*/}{}xmsg; 
