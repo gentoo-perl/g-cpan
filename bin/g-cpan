@@ -71,6 +71,12 @@ GetOptions(
   )
   or exit_usage();
 
+if  ( ($install or $ask or $buildpkg or $buildpkgonly or $upgrade) and ($> > 0
+) and !$pretend )
+{
+    print_err($prog,"ERROR - INSUFFICIENT PERMISSIONS TO RUN EMERGE");
+    exit();
+}
 # Array containing the original values passed for installing
 my @passed_to_install = @ARGV;
 
@@ -79,7 +85,7 @@ my @really_install;
 
 # Output error if more than one switch is activated
 #
-if ($search + $list + $install + $generate + $upgrade + $ask + $buildpkg + $buildpkgonly > 1)
+if ($search + $list + $install + $generate + $ask + $buildpkg + $buildpkgonly > 1)
 {
     print_err($prog, "You can't combine actions with each other.\n");
     print_out("${white}Please consult ${cyan}$prog ${green}--help${reset} or ${cyan}man $prog${reset} for more information\n\n");
@@ -269,7 +275,7 @@ elsif ($generate or $pretend)
 # Set portage_categories to our defined list of perl_dirs
 $gcpan_run->{portage_categories} = \@perl_dirs;
 
-if ($list)
+if ($list or $upgrade)
 {
     my @overlays = map { split ' ' } $overlay;
     foreach my $overlay_dir (@overlays)
@@ -279,8 +285,8 @@ if ($list)
             $prog, "OVERLAY: $gcpan_dir"
           )
           if ($list);
-        opendir PDIR, $gcpan_dir
-          or warn($Gentoo::ERR_FOLDER_OPEN, $gcpan_dir, $!);
+        if (opendir PDIR, $gcpan_dir )
+        {
         while (my $file = readdir PDIR)
         {
             next
@@ -291,21 +297,28 @@ if ($list)
               if ($upgrade);
         }
         closedir PDIR;
+    } 
+    else
+    {
+        print_warn($prog,"Couldn't open folder $gcpan_dir: $!");
+      }
     }
 }
 
-if ($generate or $install or $pretend or $buildpkg or $buildpkgonly)
+if ($generate or $install or $pretend or $buildpkg or $buildpkgonly or
+$upgrade)
 {
     for my $module (@passed_to_install)
     {
         generatePackageInfo($module);
-        print_ok($prog, "Ebuild written for $module");
-        push @really_install, $gcpan_run->{'cpan'}{lc($module)}{'portage_name'};
     }
 }
 
-if ($install or $pretend or $buildpkg or $buildpkgonly)
+if ($install or $pretend or $buildpkg or $buildpkgonly or $upgrade)
 {
+    if (@really_install)
+    {
+        
     for my $ebuild (@really_install)
     {
         print_ok($prog, "Calling emerge for $ebuild\n") if ($verbose);
@@ -316,10 +329,23 @@ if ($install or $pretend or $buildpkg or $buildpkgonly)
         push @flags, "--buildpkg" if $buildpkg > 0;
         push @flags, "--buildpkgonly" if $buildpkgonly > 0;
 
-        print_info($prog, "Calling: emerge --oneshot $ebuild") if ($verbose);
+        print_info($prog, "Calling: emerge --oneshot @flags $ebuild") if ($verbose);
         $gcpan_run->emerge_ebuild($ebuild, @flags);
 
     }
+}
+else
+{
+    if ($upgrade)
+    {
+        print_info($prog,"Everything was up to date, nothing to do!");
+    }
+    else
+    {
+        print_err($prog,"Nothing to install!!");
+    }
+
+}
 }
 
 sub generatePackageInfo
@@ -328,6 +354,9 @@ sub generatePackageInfo
     # Since all we are concerned with is the final name of the package, this
     # should be a safe substitution
     my $ebuild_wanted = shift;
+
+    #In the event this is an upgrade, go ahead and do the lame s/-/::/
+    if ($upgrade) { $ebuild_wanted =~ s{-}{::}gxms }
 
     # Grab specific info for this module
     $gcpan_run->getCPANInfo($ebuild_wanted);
@@ -347,10 +376,11 @@ sub generatePackageInfo
     $ebuild_wanted =~ s{::}{-}xms;
 
     # Scan portage for the ebuild name
-    &scanTree($ebuild_wanted);
-    unless ($gcpan_run->{'ebuilds'}{'found_ebuild'}{lc($ebuild_wanted)})
+    &scanTree($ebuild_wanted) unless ($upgrade && (grep {/$ebuild_wanted/}
+            @passed_to_install));
+    unless ($gcpan_run->{'ebuilds'}{'found_ebuild'}{lc($ebuild_wanted)} or
+            ($upgrade && (grep {/$ebuild_wanted/} @passed_to_install)))
     {
-
         # Ebuild wasn't found - scan for the nice version of the module name
         my $portage_name = $gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'};
         next if (lc($original_ebuild) eq "perl");
@@ -378,7 +408,6 @@ sub generatePackageInfo
         next if (lc($gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'}) eq "perl");
         if ($gcpan_run->{'cpan'}{lc($original_ebuild)}{'name'})
         {
-            print_info($prog, "Generating ebuild for " . $gcpan_run->{'cpan'}{lc($original_ebuild)}{'name'});
 
             # We have a cpan package that matches the request.
             # Let's unpack it and get all the deps out of it.
@@ -391,6 +420,13 @@ sub generatePackageInfo
 
                 # Make sure we have information relevant to each of the deps
                 generatePackageInfo($dep);
+
+                # Remove dep from list of modules to install later on - no
+                # more dup'd installs!
+                if (grep {/$dep/} @passed_to_install)
+                {
+                    @really_install = grep {!/$dep/} @really_install;
+                }
 
                 # Reindex one last time for anything we build after the fact
                 scanTree($gcpan_run->{'cpan'}{lc($dep)}{'portage_name'});
@@ -407,23 +443,33 @@ sub generatePackageInfo
                     unless (-d $gcpan_dir)
                     {
                         print_info($prog, "Create directory '$gcpan_dir'") if ($verbose);
-                        mkdir($gcpan_dir, 0755) or fatal($Gentoo::ERR_FOLDER_CREATE, $gcpan_dir, $!);
+                        mkdir($gcpan_dir, 0755) or
+                        fatal(print_err($prog,"Couldn't create folder $gcpan_dir: $!"));
                     }
                     my $ebuild_dir = File::Spec->catdir($gcpan_dir, $gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'});
                     unless (-d $ebuild_dir)
                     {
                         print_info($prog, "Create directory '$ebuild_dir'") if ($verbose);
-                        mkdir($ebuild_dir, 0755) or fatal($Gentoo::ERR_FOLDER_CREATE, $ebuild_dir, $!);
+                        mkdir($ebuild_dir, 0755) or 
+                        fatal(print_err($prog,"Couldn't create folder $gcpan_dir: $!"));
                     }
                     my $files_dir = File::Spec->catdir($ebuild_dir, 'files');
                     unless (-d $files_dir)
                     {
                         print_info($prog, "Create directory '$files_dir'") if ($verbose);
-                        mkdir($files_dir, 0755) or fatal($Gentoo::ERR_FOLDER_CREATE, $files_dir, $!);
+                        mkdir($files_dir, 0755) or 
+                        fatal(print_err($prog,"Couldn't create folder $gcpan_dir: $!"));
                     }
                     my $ebuild = File::Spec->catdir($ebuild_dir,
                         $gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'} . "-" . $gcpan_run->{'cpan'}{lc($original_ebuild)}{'version'} . ".ebuild");
-                    open EBUILD, ">$ebuild" or fatal($Gentoo::ERR_OPEN_WRITE, $ebuild, $!);
+
+                    # Break out if we already have an ebuild (upgrade or
+                    # mistake in the code)
+                    unless (-f $ebuild )
+                    {
+                    print_info($prog, "Generating ebuild for " . $gcpan_run->{'cpan'}{lc($original_ebuild)}{'name'});
+                    open EBUILD, ">$ebuild" or 
+                        fatal(print_err($prog,"Couldn't open(write) file $ebuild: $!"));
                     print EBUILD <<"HERE";
 # Copyright 1999-2005 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
@@ -461,7 +507,19 @@ HERE
                     close EBUILD;
                     print_info($prog, "Ebuild generated for $ebuild_wanted");
                     $gcpan_run->generate_digest($ebuild);
+                    if (!$upgrade or ($upgrade && (grep {/$ebuild_wanted/}
+            @passed_to_install)))
+                    {
+                        push @really_install, $ebuild_wanted;
+                    }
                     last;
+                }
+                else
+                {
+                    print_info($prog, "$ebuild_wanted already up to date") if
+                        ($upgrade);
+                    last;
+                }
                 }
             }
 

@@ -85,8 +85,8 @@ sub print_out{
 # IN: 0 scalar pattern sprintf format
 #     x LIST   variables filling blank in pattern
 #################################################
-sub fatal { my $femfat =  sprintf(shift, @_);
-	print_err($femfat) and exit();
+sub fatal { 
+	exit();
  }
 
 

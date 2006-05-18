@@ -217,7 +217,6 @@ sub emerge_ebuild {
     my $self = shift;
     my $pkg = shift;
     my @flags = @_;
-    foreach my $flag (@flags) { print STDERR "$flag " }
     # emerge forks and returns, which confuses this process. So
     # we call it the old fashioned way :(
     system( "emerge", @flags, $pkg);
