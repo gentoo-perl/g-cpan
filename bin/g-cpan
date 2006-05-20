@@ -29,7 +29,7 @@ use constant PATH_PKG_VAR => '/var/db/pkg/';
 ##### Establish our tmpdir
 unless ($ENV{TMPDIR}) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
 
-my $VERSION = "0.14.0";
+our $VERSION = "0.14.0";
 my $prog    = basename($0);
 
 my %dep_list  = ();
