@@ -41,14 +41,14 @@ ok( $GC->{packagelist}, 'Grabbed gnustep-base' );
 
 $GC->{portage_categories} = [ "gnustep-base" ];
 $GC->getAvailableVersions($portdir);
-ok( $GC->{modules}, 'Digested available versions' );
-ok( $GC->{modules}{portage_lc}, 'Portage_lc check' );
-ok( $GC->{modules}{portage}, 'Digested available versions' );
-foreach my $ebuild (keys %{$GC->{moduels}{portage_lc}} ) {
+ok( $GC->{ebuilds}, 'Digested available versions' );
+ok( $GC->{ebuilds}{portage_lc}, 'Portage_lc check' );
+ok( $GC->{ebuilds}{portage}, 'Digested available versions' );
+foreach my $ebuild (keys %{$GC->{ebuilds}{portage_lc}} ) {
 	ok($ebuild, '$ebuild has value');
-	ok($GC->{modules}{portage_lc}{$ebuild}, '$ebuild has version');
+	ok($GC->{ebuilds}{portage_lc}{$ebuild}, '$ebuild has version');
 }
 foreach my $ebuild (keys %{$GC->{modules}{portage}} ) {
-	ok($GC->{modules}{portage}{$ebuild}{name}, "$ebuild name check");
+	ok($GC->{ebuilds}{portage}{$ebuild}{name}, "$ebuild name check");
 	ok($GC->{modules}{portage}{$ebuild}{category}, "$ebuild category check");
 }

@@ -25,11 +25,13 @@ if (   ( ($needs_cpan_stub) || ( $> > 0 ) )
 	plan skip_all => 'Tests impossible without a configured CPAN::Config';
 }
 else {
-	plan qw(no_plan);
+	plan tests => 7;
 }
 
 use strict;
 use warnings;
+
+my $module = "Module::Build";
 
 # Verify we can load Gentoo name space
 BEGIN { use_ok(' Gentoo'); }
@@ -42,15 +44,12 @@ ok( defined($GC), 'new() works' );
 # Can we get the PORTDIR value?
 ok( $GC->getValue("PORTDIR"), 'getValue("PORTDIR") worked' );
 
-$GC->getCPANPackages();
+$GC->getCPANInfo($module);
 # Test getting the contents of a directory
-ok( $GC->{modules}, 'Digested available versions' );
-ok( $GC->{modules}{cpan}, 'Portage_lc check' );
-#ok( $GC->{modules}{cpan_lc}, 'Digested available versions' );
-foreach my $mod (keys %{$GC->{modules}{cpan}} ) {
-	ok($mod, '$mod has value');
-	ok($GC->{modules}{cpan}{$mod}{'name'}, '$mod has version');
-	ok($GC->{modules}{cpan}{$mod}{'src_uri'}, '$mod has version');
-}
+ok( $GC->{cpan}, 'Information for $module obtained' );
+ok($GC->{cpan}{lc($module)}{'version'}, '$module has version');
+ok($GC->{cpan}{lc($module)}{'name'}, '$module has a name');
+ok($GC->{cpan}{lc($module)}{'src_uri'}, '$module has src_uri');
+ok($GC->{cpan}{lc($module)}{'description'}, '$module has a description');
 
 #MPC $GC->debug;

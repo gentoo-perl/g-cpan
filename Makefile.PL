@@ -5,8 +5,8 @@ my @programs_to_install = qw ( g-cpan );
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 WriteMakefile(
-    NAME              => 'Gentoo',
-    VERSION_FROM      => 'lib/Gentoo.pm', # finds $VERSION
+    NAME              => 'g-cpan',
+    VERSION_FROM      => 'bin/g-cpan', # finds $VERSION
 	EXE_FILES         => [ map "bin/$_", @programs_to_install ],
     PREREQ_PM         => {
 						'File::Spec'       => 0,

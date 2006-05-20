@@ -54,7 +54,7 @@ sub new {
     my $class = ref($proto) || $proto;
     my $self  = {};
 
-    $self->{modules}            = {};
+    $self->{cpan}            = {};
     $self->{portage_categories} = @{ $args{portage_categories} };
     $self->{DEBUG}              = $args{debug};
     $self->{portdir}            = $args{portdir};

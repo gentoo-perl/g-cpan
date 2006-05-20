@@ -305,8 +305,7 @@ if ($list or $upgrade)
     }
 }
 
-if ($generate or $install or $pretend or $buildpkg or $buildpkgonly or
-$upgrade)
+if ($generate or $install or $pretend or $buildpkg or $buildpkgonly or $ask or $upgrade)
 {
     for my $module (@passed_to_install)
     {
@@ -314,7 +313,7 @@ $upgrade)
     }
 }
 
-if ($install or $pretend or $buildpkg or $buildpkgonly or $upgrade)
+if ($install or $pretend or $buildpkg or $buildpkgonly or $upgrade or $ask)
 {
     if (@really_install)
     {
@@ -528,6 +527,11 @@ HERE
     else
     {
         print_ok($prog, "Ebuild already exists for $ebuild_wanted");
+        if (grep {/$original_ebuild/} @passed_to_install)
+        {
+            push @really_install, $gcpan_run->{'ebuilds'}{'portage'}{lc($ebuild_wanted)}{'name'};
+        }
+
     }
 
 }
