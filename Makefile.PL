@@ -14,11 +14,13 @@ WriteMakefile(
 						'File::Basename'   => 0,
 						'File::Copy'       => 0,
 						'Term::ANSIColor'  => 0,
+                        'Test::More'       => 0,
+                        'File::Find'       => 0,
 						'YAML'             => 0,
 	                    'YAML::Node'       => 0,
 						}, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
-      (ABSTRACT_FROM  => 'bin/g-cpan', # retrieve abstract from module
+      (ABSTRACT  =>      'Install modules from CPAN in a portage friendly way', 
        AUTHOR         => 'Michael Cummings <mcummings@gentoo.org>') : ()),
     LIBS              => [''], # e.g., '-lm'
     DEFINE            => '', # e.g., '-DHAVE_SOMETHING'

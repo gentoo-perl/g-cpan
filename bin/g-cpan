@@ -638,21 +638,19 @@ exit;
 
 
 
-=head1 Name
+=head1 NAME
 
 g-cpan 
 - install CPAN-provided Perl modules using Gentoo's Portage 
 
 
-=head1 Synopsis
+=head1 SYNOPSIS
 
 B<g-cpan> [B<-a>| B<--ask>]  [B<-g>| B<--generate>]  [B<-i>| B<--install>]  [B<-l>| B<--list >]  [B<-p>| B<--pretend >] [B<-s>| B<--search>] [B<-u>| B<--upgrade >] [B<-v>| B<--verbose>]  <I<module-name>> 
 
-=head1 Description
+=head1 DESCRIPTION
 
-B<g-cpan> is a perl script
-that installs a CPAN module (including its dependencies) using Gentoo's
-Portage.  It saves dependency information and  stored files as if they were installed through a regular ebuild.  
+B<g-cpan> is a perl script that installs a CPAN module (including its dependencies) using Gentoo's Portage.  It saves dependency information and stored files as if they were installed through a regular ebuild.  
 
 =head1 CPAN Configuration
 
