@@ -367,6 +367,11 @@ sub generatePackageInfo
     {
         $gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'portage_name'} = $gcpan_run->transformCPANname($gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'src_uri'});
     }
+    else
+    {
+        print_err($prog,"$ebuild_wanted is not a CPAN module!");
+        return;
+    }
 
     # Save a copy of the originally requested name for later use
     my $original_ebuild = $ebuild_wanted;
