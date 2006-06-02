@@ -54,10 +54,8 @@ sub new {
     my $class = ref($proto) || $proto;
     my $self  = {};
 
-    $self->{cpan}            = {};
-    $self->{portage_categories} = @{ $args{portage_categories} };
-    $self->{DEBUG}              = $args{debug};
-    $self->{portdir}            = $args{portdir};
+    $self->{cpan}               = {};
+    $self->{DEBUG}              = $args{debug}||"";
 
     bless( $self, $class );
     return $self;
@@ -68,28 +66,32 @@ sub getCPANInfo {
     my $find_module = shift;
     my @tmp_v       = ();
 
-    unless ($find_module) 
-    {
-        croak("No module supplied")
+    unless ($find_module) {
+        croak("No module supplied");
     }
-        
+
     if ( $self->{cpan_reload} ) {
+
         # - User forced reload of the CPAN index >
         CPAN::Index->force_reload();
+
         # Reset so we don't run it for every module after the initial reload
         $self->{cpan_reload} = 0;
     }
-    
-    my $mod = CPAN::Shell->expandany( $find_module )  or return; 
+
+    my $mod = CPAN::Shell->expandany($find_module) or return;
+
 # - Fetch CPAN-filename and cut out the filename of the tarball.
 #   We are not using $mod->id here because doing so would end up
 #   missing a lot of our ebuilds/packages >
 # Addendum. Appears we are missing items both ways - have to test both the name in cpan_file and the mod->id. :/
-            next unless ($mod->id);
-            $self->{'cpan'}{lc($find_module)}{'description'} = $mod->{RO}{'description'}||"No description available";
-            $self->{'cpan'}{lc($find_module)}{'src_uri'} = $mod->{RO}{'CPAN_FILE'};
-            $self->{'cpan'}{lc($find_module)}{'name'} = $mod->id;
-            $self->{'cpan'}{lc($find_module)}{'version'} = $mod->{RO}{'CPAN_VERSION'}|| "0";
+    next unless ( $mod->id );
+    $self->{'cpan'}{ lc($find_module) }{'description'} =
+      $mod->{RO}{'description'} || "No description available";
+    $self->{'cpan'}{ lc($find_module) }{'src_uri'} = $mod->{RO}{'CPAN_FILE'};
+    $self->{'cpan'}{ lc($find_module) }{'name'}    = $mod->id;
+    $self->{'cpan'}{ lc($find_module) }{'version'} = $mod->{RO}{'CPAN_VERSION'}
+      || "0";
     return;
 }
 
@@ -121,48 +123,47 @@ sub unpackModule {
     # Grab the tarball and unpack it
     $pack->get;
     my $tmp_dir = $pack->{build_dir};
+
     # Set our starting point
     my $localf = $pack->{localfile};
-    $self->{'cpan'}{lc($module_name)}{'cpan_tarball'} = $pack->{localfile};
-    my ($startdir)  = &cwd;
+    $self->{'cpan'}{ lc($module_name) }{'cpan_tarball'} = $pack->{localfile};
+    my ($startdir) = &cwd;
+
     # chdir to where we were unpacked
     chdir($tmp_dir) or die "Unable to enter dir $tmp_dir:$!\n";
+
     # If we have a Makefile.PL, run it to generate Makefile
-    if ( -f "Makefile.PL")
-    {
-        perl("Makefile.PL")
+    if ( -f "Makefile.PL" ) {
+        perl("Makefile.PL");
     }
+
     # If we have a Build.PL, run it to generate the Build script
-    if ( -f "Build.PL")
-    {
-        perl("Build.PL")
+    if ( -f "Build.PL" ) {
+        perl("Build.PL");
     }
+
     # Return whence we came
     chdir($startdir);
 
     $pack->unforce if $pack->can("unforce") && exists $obj->{'force_update'};
     delete $obj->{'force_update'};
+
     # While we're at it, get the ${S} dir for the ebuld ;)
-    $self->{'cpan'}{lc($module_name)}{'portage_sdir'} = $pack->{build_dir};
-    $self->{'cpan'}{lc($module_name)}{'portage_sdir'} =~ s{.*/}{}xmsg; 
+    $self->{'cpan'}{ lc($module_name) }{'portage_sdir'} = $pack->{build_dir};
+    $self->{'cpan'}{ lc($module_name) }{'portage_sdir'} =~ s{.*/}{}xmsg;
     FindDeps( $self, $tmp_dir, $module_name );
 
     # Most modules don't list module-build as a dep - so we force it if there
     # is a Build.PL file
     if ( -f "Build.PL" ) {
-        $self->{'cpan'}{ lc($module_name) }{'depends'}
-          {"Module::Build"} = '0';
+        $self->{'cpan'}{ lc($module_name) }{'depends'}{"Module::Build"} = '0';
     }
 
     # Final measure - if somehow we got an undef along the way, set to 0
-    foreach my $dep (
-        keys %{ $self->{'cpan'}{ lc($module_name) }{'depends'} } )
+    foreach my $dep ( keys %{ $self->{'cpan'}{ lc($module_name) }{'depends'} } )
     {
         unless (
-            defined(
-                $self->{'cpan'}{ lc($module_name) }{'depends'}{$dep}
-            )
-          )
+            defined( $self->{'cpan'}{ lc($module_name) }{'depends'}{$dep} ) )
         {
             $self->{'cpan'}{ lc($module_name) }{'depends'}{$dep} = "0";
         }
@@ -197,10 +198,10 @@ sub FindDeps {
                         foreach my $module ( keys %{$ar_type} ) {
                             next if ( $module eq "" );
                             next if ( $module =~ /Cwd/i );
-                            next if (lc($module) eq "perl");
+                            next if ( lc($module) eq "perl" );
                             next unless ($module);
-                            $self->{'cpan'}{ lc($module_name) }
-                              {'depends'}{ $module } = $ar_type->{$module};
+                            $self->{'cpan'}{ lc($module_name) }{'depends'}
+                              {$module} = $ar_type->{$module};
                         }
                     }
                 }
@@ -226,14 +227,14 @@ sub FindDeps {
        }x;
                         next unless $p;
                         while ( $p =~ m/(?:\s)([\w\:]+)=>q\[(.*?)\],?/g ) {
-                            my $module  = $1;
+                            my $module = $1;
                             next if ( $module eq "" );
                             next if ( $module =~ /Cwd/i );
-                            next if (lc($module) eq "perl");
+                            next if ( lc($module) eq "perl" );
                             next unless ($module);
                             my $version = $2;
-                            $self->{'cpan'}{ lc($module_name) }
-                              {'depends'}{ $module } = $version;
+                            $self->{'cpan'}{ lc($module_name) }{'depends'}
+                              {$module} = $version;
                         }
 
                         last;
@@ -265,13 +266,13 @@ sub FindDeps {
                             foreach my $pa (@list) {
                                 $pa =~ s/\n|\s+|\'//mg;
                                 if ($pa) {
-                                    my ( $module, $vers ) = split( /=>/, $pa ); 
+                                    my ( $module, $vers ) = split( /=>/, $pa );
                                     next if ( $module eq "" );
                                     next if ( $module =~ /Cwd/i );
-                                    next if (lc($module) eq "perl");
+                                    next if ( lc($module) eq "perl" );
                                     next unless ($module);
                                     $self->{'cpan'}{ lc($module_name) }
-                                      {'depends'}{ $module } = $vers;
+                                      {'depends'}{$module} = $vers;
                                 }
                             }
                             last;
@@ -294,8 +295,7 @@ sub FindDeps {
 
 }
 
-sub transformCPANVersion
-{
+sub transformCPANVersion {
     my $self = shift;
     my $name = shift;
     return unless ( defined($name) );
@@ -328,9 +328,8 @@ sub transformCPANVersion
     if ( substr( $filenamever, 0, 1 ) eq '.' ) {
         $filenamever = 0 . $filenamever;
     }
-    return ( $filenamever );
+    return ($filenamever);
 }
-
 
 sub transformCPANname {
     my $self = shift;
@@ -365,7 +364,7 @@ sub transformCPANname {
     if ( substr( $filenamever, 0, 1 ) eq '.' ) {
         $filenamever = 0 . $filenamever;
     }
-    return ( $filename );
+    return ($filename);
 }
 
 sub makeCPANstub {
@@ -378,15 +377,15 @@ sub makeCPANstub {
           or fatal( $Gentoo::ERR_FOLDER_CREATE, $cpan_cfg_dir, $! );
     }
 
-    my $tmp_dir   = -d $ENV{TMPDIR} ? $ENV{TMPDIR}     : $ENV{HOME};
-    my $ftp_proxy = defined( $ENV{ftp_proxy} ) ? $ENV{ftp_proxy}  : '';
+    my $tmp_dir   = -d $ENV{TMPDIR}            ? $ENV{TMPDIR}    : $ENV{HOME};
+    my $ftp_proxy = defined( $ENV{ftp_proxy} ) ? $ENV{ftp_proxy} : '';
     my $http_proxy = defined( $ENV{http_proxy} ) ? $ENV{http_proxy} : '';
-    my $user_shell = defined( $ENV{SHELL} )   ? $ENV{SHELL}  : DEF_BASH_PROG;
-    my $ftp_prog   = -f DEF_FTP_PROG  ? DEF_FTP_PROG           : '';
-    my $gpg_prog   = -f DEF_GPG_PROG  ? DEF_GPG_PROG           : '';
-    my $gzip_prog  = -f DEF_GZIP_PROG ? DEF_GZIP_PROG          : '';
-    my $lynx_prog  = -f DEF_LYNX_PROG ? DEF_LYNX_PROG          : '';
-    my $make_prog  = -f DEF_MAKE_PROG ? DEF_MAKE_PROG          : '';
+    my $user_shell = defined( $ENV{SHELL} ) ? $ENV{SHELL}   : DEF_BASH_PROG;
+    my $ftp_prog   = -f DEF_FTP_PROG        ? DEF_FTP_PROG  : '';
+    my $gpg_prog   = -f DEF_GPG_PROG        ? DEF_GPG_PROG  : '';
+    my $gzip_prog  = -f DEF_GZIP_PROG       ? DEF_GZIP_PROG : '';
+    my $lynx_prog  = -f DEF_LYNX_PROG       ? DEF_LYNX_PROG : '';
+    my $make_prog  = -f DEF_MAKE_PROG       ? DEF_MAKE_PROG : '';
     my $ncftpget_prog = -f DEF_NCFTPGET_PROG ? DEF_NCFTPGET_PROG : '';
     my $less_prog     = -f DEF_LESS_PROG     ? DEF_LESS_PROG     : '';
     my $tar_prog      = -f DEF_TAR_PROG      ? DEF_TAR_PROG      : '';
@@ -446,3 +445,81 @@ SHERE
 }
 
 1;
+
+=pod
+
+=head1 NAME
+
+Gentoo::CPAN - Perform CPAN calls, emulating some functionality where possible
+for a portage friendly environment
+
+=head1 SYNOPSIS
+
+    use Gentoo::CPAN;
+    my $obj = Gentoo::CPAN->new();
+    $obj->getCPANInfo("Module::Build");
+    my $version = $obj->{cpan}{lc("Module::Build")}{'version'};
+    my $realname = $obj->{cpan}{lc($module)}{'name'};
+    my $srcuri = $obj->{cpan}{lc($module)}{'src_uri'};
+    my $desc = $obj->{cpan}{lc($module)}{'description'};
+
+=head1 DESCRIPTION
+
+The C<Gentoo::CPAN> class gives us a method of working with CPAN modules. In
+part it emulates the behavior of L<CPAN> itself, in other parts it simply
+relies on L<CPAN> to do the work for us.
+
+=head1 METHODS
+
+=over 4
+
+=item my $obj = Gentoo::CPAN->new();
+
+Create a new Gentoo CPAN object.
+
+=item $obj->getCPANInfo($somemodule);
+
+Given the name of a CPAN module, extract the information from CPAN on this
+object and populate the $obj hash. Provides:
+
+=over 4
+
+=item $obj->{cpan}{lc($module)}{'version'}
+
+Version number
+
+=item $obj->{cpan}{lc($module)}{'name'}
+
+CPAN's name for the distribution
+
+=item $obj->{cpan}{lc($module)}{'src_uri'}
+
+The context path on cpan for the module source
+
+=item $obj->{cpan}{lc($module)}{'description'}
+
+Description, if available
+
+=back
+
+=item $obj->unpackModule($somemodule)
+
+Grabs the module from CPAN and unpacks it. It then procedes to scan for
+dependencies, filling in $obj->{'cpan'}{lc($somemodule)}{'depends'} with and
+deps that were found (hash). 
+
+=item $obj->transformCPANVersion($somemodule)
+
+=item $obj->transformCPANName($somemodule)
+
+Returns a portage friend version or module name from the name that is used on
+CPAN. Useful for modules that use names or versions that would break as a
+portage ebuild.
+
+=item $obj->makeCPANstub()
+
+Generates a default CPAN stub file if none exists in the user's environment
+
+=back
+
+=cut

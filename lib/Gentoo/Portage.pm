@@ -13,9 +13,9 @@ use File::Find ();
 
 # for the convenience of &wanted calls, including -eval statements:
 use vars qw/*name *dir *prune/;
-*name   = *File::Find::name;
-*dir    = *File::Find::dir;
-*prune  = *File::Find::prune;
+*name  = *File::Find::name;
+*dir   = *File::Find::dir;
+*prune = *File::Find::prune;
 
 my @store_found_dirs;
 my @store_found_ebuilds;
@@ -29,67 +29,58 @@ require Exporter;
 
 our @ISA = qw(Exporter Gentoo);
 
-our @EXPORT = qw( getAvailableEbuilds getAvailableVersions generate_digest emerge_ebuild );
+our @EXPORT =
+  qw( getAvailableEbuilds getAvailableVersions generate_digest emerge_ebuild );
 
 our $VERSION = '0.01';
 
 # Description:
 # @listOfEbuilds = getAvailableEbuilds($PORTDIR, category/packagename);
-sub getAvailableEbuilds
-{
+sub getAvailableEbuilds {
     my $self        = shift;
-	my $portdir     = shift;
+    my $portdir     = shift;
     my $catPackage  = shift;
     my @packagelist = ();
-    if (-e $portdir . "/" . $catPackage)
-    {
+    if ( -e $portdir . "/" . $catPackage ) {
 
         # - get list of ebuilds >
         my $startdir = &cwd;
-        chdir($portdir . "/" . $catPackage);
+        chdir( $portdir . "/" . $catPackage );
         @store_found_ebuilds = [];
-        File::Find::find({wanted => \&wanted_ebuilds}, ".");
+        File::Find::find( { wanted => \&wanted_ebuilds }, "." );
         chdir($startdir);
-        foreach (@store_found_ebuilds)
-        {
+        foreach (@store_found_ebuilds) {
             $_ =~ s{^\./}{}xms;
-            if ($_ =~ m/(.+)\.ebuild$/)
-            {
-                next if ($_ eq "skel.ebuild");
-                push(@{$self->{packagelist}}, $_);
+            if ( $_ =~ m/(.+)\.ebuild$/ ) {
+                next if ( $_ eq "skel.ebuild" );
+                push( @{ $self->{packagelist} }, $_ );
             }
-            else
-            {
-                if (-d $portdir . "/" . $catPackage . "/" . $_)
-                {
+            else {
+                if ( -d $portdir . "/" . $catPackage . "/" . $_ ) {
                     $_ =~ s{^\./}{}xms;
                     my $startdir = &cwd;
-                    chdir($portdir . "/" . $catPackage . "/" . $_ );
+                    chdir( $portdir . "/" . $catPackage . "/" . $_ );
                     @store_found_ebuilds = [];
-                    File::Find::find({wanted => \&wanted_ebuilds},  "." );
+                    File::Find::find( { wanted => \&wanted_ebuilds }, "." );
                     chdir($startdir);
-                    foreach (@store_found_ebuilds)
-                    {
-                        if ($_ =~ m/(.+)\.ebuild$/)
-                        {
-                            next if ($_ eq "skel.ebuild");
-                            push(@{$self->{packagelist}}, $_);
+                    foreach (@store_found_ebuilds) {
+                        if ( $_ =~ m/(.+)\.ebuild$/ ) {
+                            next if ( $_ eq "skel.ebuild" );
+                            push( @{ $self->{packagelist} }, $_ );
                         }
                     }
                 }
             }
         }
     }
-    else
-    {
-        if (-d $portdir)
-        {
-            if ($self->{debug}) {
-                warn("\n" . $portdir . "/" . $catPackage . " DOESN'T EXIST\n");
+    else {
+        if ( -d $portdir ) {
+            if ( $self->{debug} ) {
+                warn(
+                    "\n" . $portdir . "/" . $catPackage . " DOESN'T EXIST\n" );
             }
         }
-        else
-        {
+        else {
             die("\nPORTDIR hasn't been defined!\n\n");
         }
     }
@@ -99,20 +90,19 @@ sub getAvailableEbuilds
 # Description:
 # Returns version of an ebuild. (Without -rX string etc.)
 # $version = getEbuildVersionSpecial("foo-1.23-r1.ebuild");
-sub getEbuildVersionSpecial
-{
+sub getEbuildVersionSpecial {
     my $ebuildVersion = shift;
-    $ebuildVersion = substr($ebuildVersion, 0, length($ebuildVersion) - 7);
-    $ebuildVersion =~ s/^([a-zA-Z0-9\-_\/\+]*)-([0-9\.]+[a-zA-Z]?)([\-r|\-rc|_alpha|_beta|_pre|_p]?)/$2$3/;
+    $ebuildVersion = substr( $ebuildVersion, 0, length($ebuildVersion) - 7 );
+    $ebuildVersion =~
+s/^([a-zA-Z0-9\-_\/\+]*)-([0-9\.]+[a-zA-Z]?)([\-r|\-rc|_alpha|_beta|_pre|_p]?)/$2$3/;
 
     return $ebuildVersion;
 }
 
-sub getAvailableVersions
-{
+sub getAvailableVersions {
     my $self        = shift;
-	my $portdir     = shift;
-	my $find_ebuild = shift;
+    my $portdir     = shift;
+    my $find_ebuild = shift;
     my %excludeDirs = (
         "."         => 1,
         ".."        => 1,
@@ -125,121 +115,190 @@ sub getAvailableVersions
     );
 
     if ($find_ebuild) {
-        return if ( $self->{ebuilds}{'found_ebuild'}{lc($find_ebuild)} );
+        return if ( $self->{ebuilds}{'found_ebuild'}{ lc($find_ebuild) } );
     }
-    foreach my $tc (@{$self->{portage_categories}})
-    {
-		next if  ( ! -d "$portdir/$tc" );
+    foreach my $tc ( @{ $self->{portage_categories} } ) {
+        next if ( !-d "$portdir/$tc" );
         @store_found_dirs = [];
-		# Where we started
+
+        # Where we started
         my $startdir = &cwd;
-		# chdir to our target dir
-        chdir($portdir . "/" . $tc);
+
+        # chdir to our target dir
+        chdir( $portdir . "/" . $tc );
+
         # Traverse desired filesystems
-        File::Find::find({wanted => \&wanted_dirs}, "." );
-		# Return to where we started
+        File::Find::find( { wanted => \&wanted_dirs }, "." );
+
+        # Return to where we started
         chdir($startdir);
-        foreach my $tp (sort @store_found_dirs)
-        {
+        foreach my $tp ( sort @store_found_dirs ) {
             $tp =~ s{^\./}{}xms;
 
             # - not excluded and $_ is a dir?
-            if (!$excludeDirs{$tp} && -d $portdir . "/" . $tc . "/" . $tp)
-            {
-				if ($find_ebuild) { next unless (lc($find_ebuild) eq lc($tp)) }
-                getAvailableEbuilds($self, $portdir, $tc . "/" . $tp);
-                foreach (@{$self->{packagelist}})
-                {
+            if ( !$excludeDirs{$tp} && -d $portdir . "/" . $tc . "/" . $tp ) {
+                if ($find_ebuild) {
+                    next
+                      unless ( lc($find_ebuild) eq lc($tp) );
+                }
+                getAvailableEbuilds( $self, $portdir, $tc . "/" . $tp );
+                foreach ( @{ $self->{packagelist} } ) {
                     my @tmp_availableVersions = ();
-                    push(@tmp_availableVersions, getEbuildVersionSpecial($_));
+                    push( @tmp_availableVersions, getEbuildVersionSpecial($_) );
 
                     # - get highest version >
-                    if ($#tmp_availableVersions > -1)
-                    {
-                        $self->{ebuilds}{'portage_lc'}{lc($tp)}             = (sort(@tmp_availableVersions))[$#tmp_availableVersions];
+                    if ( $#tmp_availableVersions > -1 ) {
+                        $self->{ebuilds}{'portage_lc'}{ lc($tp) } =
+                          ( sort(@tmp_availableVersions) )
+                          [$#tmp_availableVersions];
 
                         # - get rid of -rX >
-                        $self->{ebuilds}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)-r[0-9+]/$1/;
-                        $self->{ebuilds}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)-rc[0-9+]/$1/;
-                        $self->{ebuilds}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)_p[0-9+]/$1/;
-                        $self->{ebuilds}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)_pre[0-9+]/$1/;
+                        $self->{ebuilds}{'portage_lc'}{ lc($tp) } =~
+                          s/([a-zA-Z0-9\-_\/]+)-r[0-9+]/$1/;
+                        $self->{ebuilds}{'portage_lc'}{ lc($tp) } =~
+                          s/([a-zA-Z0-9\-_\/]+)-rc[0-9+]/$1/;
+                        $self->{ebuilds}{'portage_lc'}{ lc($tp) } =~
+                          s/([a-zA-Z0-9\-_\/]+)_p[0-9+]/$1/;
+                        $self->{ebuilds}{'portage_lc'}{ lc($tp) } =~
+                          s/([a-zA-Z0-9\-_\/]+)_pre[0-9+]/$1/;
 
                         # - get rid of other stuff we don't want >
-                        $self->{ebuilds}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)_alpha[0-9+]?/$1/;
-                        $self->{ebuilds}{'portage_lc'}{lc($tp)} =~ s/([a-zA-Z0-9\-_\/]+)_beta[0-9+]?/$1/;
-                        $self->{ebuilds}{'portage_lc'}{lc($tp)} =~ s/[a-zA-Z]+$//;
+                        $self->{ebuilds}{'portage_lc'}{ lc($tp) } =~
+                          s/([a-zA-Z0-9\-_\/]+)_alpha[0-9+]?/$1/;
+                        $self->{ebuilds}{'portage_lc'}{ lc($tp) } =~
+                          s/([a-zA-Z0-9\-_\/]+)_beta[0-9+]?/$1/;
+                        $self->{ebuilds}{'portage_lc'}{ lc($tp) } =~
+                          s/[a-zA-Z]+$//;
 
-                        if ($tc eq "perl-core" and (keys %{$self->{'portage_bases'}}) )
+                        if ( $tc eq "perl-core"
+                            and ( keys %{ $self->{'portage_bases'} } ) )
                         {
-                            # We have a perl-core module - can we satisfy it with a virtual/perl-?
-                            foreach my $portage_root (keys %{$self->{'portage_bases'}} )
+
+          # We have a perl-core module - can we satisfy it with a virtual/perl-?
+                            foreach my $portage_root (
+                                keys %{ $self->{'portage_bases'} } )
                             {
-                                if ( -d $portage_root)
-                                {
-                                    if (-d "$portage_root/virtual/perl-$tp" )
-                                    {
-                                        $self->{ebuilds}{'portage'}{lc($tp)}{'name'}     = "perl-$tp";
-                                        $self->{ebuilds}{'portage'}{lc($tp)}{'category'} = "virtual";
+                                if ( -d $portage_root ) {
+                                    if ( -d "$portage_root/virtual/perl-$tp" ) {
+                                        $self->{ebuilds}{'portage'}{ lc($tp) }
+                                          {'name'} = "perl-$tp";
+                                        $self->{ebuilds}{'portage'}{ lc($tp) }
+                                          {'category'} = "virtual";
                                         last;
                                     }
                                 }
                             }
-                            
+
                         }
-                        else
-                        {
-                            $self->{ebuilds}{'portage'}{lc($tp)}{'name'}     = $tp;
-                            $self->{ebuilds}{'portage'}{lc($tp)}{'category'} = $tc;
+                        else {
+                            $self->{ebuilds}{'portage'}{ lc($tp) }{'name'} =
+                              $tp;
+                            $self->{ebuilds}{'portage'}{ lc($tp) }{'category'} =
+                              $tc;
                         }
-						if ($find_ebuild) {
-							if ($self->{ebuilds}{'portage_lc'}{lc($find_ebuild)})
-							{
-								$self->{ebuilds}{'found_ebuild'}{lc($find_ebuild)} = 1;
-								last;
-							}
-						}
+                        if ($find_ebuild) {
+                            if ( $self->{ebuilds}{'portage_lc'}
+                                { lc($find_ebuild) } )
+                            {
+                                $self->{ebuilds}{'found_ebuild'}
+                                  { lc($find_ebuild) } = 1;
+                                last;
+                            }
+                        }
                     }
                 }
             }
         }
     }
-    return($self);
+    return ($self);
 }
 
 sub generate_digest {
     my $self = shift;
+
     # Full path to the ebuild file in question
     my $ebuild = shift;
-    ebuild($ebuild,"digest");
+    ebuild( $ebuild, "digest" );
 }
 
 sub emerge_ebuild {
-    my $self = shift;
-    my $pkg = shift;
+    my $self  = shift;
+    my $pkg   = shift;
     my @flags = @_;
+
     # emerge forks and returns, which confuses this process. So
     # we call it the old fashioned way :(
-    system( "emerge", @flags, $pkg);
+    system( "emerge", @flags, $pkg );
 }
 
 sub wanted_dirs {
-    my ($dev,$ino,$mode,$nlink,$uid,$gid);
-    (($dev,$ino,$mode,$nlink,$uid,$gid) = lstat($_)) &&
-    -d _ &&
-    ($name !~ m|/files|) &&
-    ($name !~ m|/CVS|) &&
-    push @store_found_dirs, $name;
+    my ( $dev, $ino, $mode, $nlink, $uid, $gid );
+    ( ( $dev, $ino, $mode, $nlink, $uid, $gid ) = lstat($_) )
+      && -d _
+      && ( $name !~ m|/files| )
+      && ( $name !~ m|/CVS| )
+      && push @store_found_dirs, $name;
 }
 
 sub wanted_ebuilds {
     /\.ebuild\z/s
-    && push @store_found_ebuilds, $name;
+      && push @store_found_ebuilds, $name;
 }
 
-sub DESTROY
-{
+sub DESTROY {
     my ($self) = @_;
     return if $self->{DESTROY}{__PACKAGE__}++;
 }
 
 1;
+
+=pod
+
+=head1 NAME
+
+Gentoo::Portage - perl access to portage information and commands
+
+=head1 SYNOPSIS
+
+    use Gentoo;
+    my $obj = Gentoo->new();
+    my $portdir = $obj->getValue("PORTDIR");
+    $obj->getAvailableEbuilds($portdir,'category');
+    $obj->getAvailableVersions($portdir);
+    
+=head1 DESCRIPTION
+
+The C<Gentoo::Portage> class provides access to portage tools and tree
+information.
+
+=head1 METHODS
+
+=over 4
+
+=item $obj->getAvailableEbuilds($portdir, $package);
+
+Providing the PORTDIR you want to invesitage, and either the name of the
+category or the category/package you are interested, this will populate an
+array in $obj->{packagelist} of the available ebuilds.
+
+=item $obj->getAvailableVersions($portdir,[$ebuildname])
+
+Given the portage directory and the name of a package (optional), check
+portage to see if the ebuild exists and which versions are available.
+
+=item $obj->getEbuildVersionSpecial($ebuild)
+
+Given the full name of an ebuild (foo-1.3.4-rc5.ebuild), this function will
+return the actual version of the ebuild after stripping out the portage
+related syntax.
+
+=item $obj->generate_digest($path_to_ebuild)
+
+Given the full path to an ebuild, generate a digest via C<ebuild PKG digest>
+
+=item $obj->emerge_ebuild($pkg, @flags)
+
+Given the name of a package and any optional flags, emerge the package with
+portage.
+
+=cut
