@@ -235,19 +235,20 @@ my $overlay = $gcpan_run->getValue("PORTDIR_OVERLAY") || undef;
 $gcpan_run->{'sources'} = $gcpan_run->getValue("DISTDIR");
 
 # Make sure we have write access to the DISTDIR
-my $test_overlay = IO::File->new($gcpan_run->{'sources'} . "/test-gpcan", ">");
-if (print $test_overlay "1" )
+if ($generate or $install or $pretend or $buildpkg or $buildpkgonly or $ask or $upgrade)
 {
-    undef $test_overlay;
-    unlink($gcpan_run->{'sources'} . "/test-gcpan");
+my $test_dist_writes = $gcpan_run->{'sources'} . "/test-gcpan";
+my $test_distdir = IO::File->new($test_dist_writes, ">");
+if ($test_distdir )
+{
+    undef $test_distdir;
+    unlink $test_dist_writes;
 }
 else
 {
-    undef $test_overlay;
-    $gcpan_run->{'sources'} =
-      -d $ENV{TMPDIR}
-      ? defined($ENV{TMPDIR})
-      : $ENV{"HOME"} . "/.cpan/sources";
+    undef $test_distdir;
+    fatal(print_err($prog,"No write access to DISTDIR: $!"));
+}
 }
 
 if ($overlay)
@@ -357,8 +358,16 @@ sub generatePackageInfo
     #In the event this is an upgrade, go ahead and do the lame s/-/::/
     if ($upgrade) { $ebuild_wanted =~ s{-}{::}gxms }
 
+
     # Grab specific info for this module
     $gcpan_run->getCPANInfo($ebuild_wanted);
+        unless ( $gcpan_run->{'cpan'}{lc($ebuild_wanted)})
+        {
+    # Fallback to trying the /-/::/ trick - we avoid this the first time
+    # in case the module actually employs a - in its name
+            $ebuild_wanted =~ s{-}{::}gxms;
+            $gcpan_run->getCPANInfo($ebuild_wanted);
+        }
 
     # If we found something on cpan, transform the portage_name
     # It's possible to not find something on cpan at this point - we're just
@@ -369,8 +378,8 @@ sub generatePackageInfo
     }
     else
     {
-        print_err($prog,"$ebuild_wanted is not a CPAN module!");
-        return;
+            print_err($prog,"$ebuild_wanted is not a CPAN module!");
+            return;
     }
 
     # Save a copy of the originally requested name for later use
@@ -494,9 +503,11 @@ SLOT="0"
 LICENSE="|| ( Artistic GPL-2 )"
 KEYWORDS="$keywords"
 
-DEPEND="
 HERE
 
+                if (keys  %{$gcpan_run->{'cpan'}{lc($original_ebuild)}{'depends'}})
+                {
+                    print EBUILD "DEPEND=\"";
                     foreach my $dep (keys %{$gcpan_run->{'cpan'}{lc($original_ebuild)}{'depends'}})
                     {
                         next unless (defined $dep && $dep ne '');
@@ -509,6 +520,13 @@ HERE
                     }
                     print EBUILD "\"\n";
                     close EBUILD;
+                }
+                    if ( -f
+                        $gcpan_run->{'cpan'}{lc($original_ebuild)}{'cpan_tarball'})
+                    {
+                        print_info($prog,"Copying $gcpan_run->{'cpan'}{lc($original_ebuild)}{'cpan_tarball'} to $gcpan_run->{'sources'}") if $verbose;
+                        copy($gcpan_run->{'cpan'}{lc($original_ebuild)}{'cpan_tarball'},$gcpan_run->{'sources'});
+                    }
                     print_info($prog, "Ebuild generated for $ebuild_wanted");
                     $gcpan_run->generate_digest($ebuild);
                     if (!$upgrade or ($upgrade && (grep {/$ebuild_wanted/}

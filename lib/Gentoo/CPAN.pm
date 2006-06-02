@@ -118,11 +118,12 @@ sub unpackModule {
         $pack->called_for( $obj->id );
     }
 
-    # Initiate a perl Makefile.PL process - necessary to generate the deps
     # Grab the tarball and unpack it
     $pack->get;
     my $tmp_dir = $pack->{build_dir};
     # Set our starting point
+    my $localf = $pack->{localfile};
+    $self->{'cpan'}{lc($module_name)}{'cpan_tarball'} = $pack->{localfile};
     my ($startdir)  = &cwd;
     # chdir to where we were unpacked
     chdir($tmp_dir) or die "Unable to enter dir $tmp_dir:$!\n";
@@ -377,20 +378,20 @@ sub makeCPANstub {
           or fatal( $Gentoo::ERR_FOLDER_CREATE, $cpan_cfg_dir, $! );
     }
 
-    my $tmp_dir   = -d $ENV{TMPDIR} ? defined( $ENV{TMPDIR} )    : $ENV{HOME};
-    my $ftp_proxy = $ENV{ftp_proxy} ? defined( $ENV{ftp_proxy} ) : '';
-    my $http_proxy = $ENV{http_proxy} ? defined( $ENV{http_proxy} ) : '';
-    my $user_shell = -x $ENV{SHELL}   ? defined( $ENV{SHELL} ) : DEF_BASH_PROG;
-    my $ftp_prog   = -x DEF_FTP_PROG  ? DEF_FTP_PROG           : '';
-    my $gpg_prog   = -x DEF_GPG_PROG  ? DEF_GPG_PROG           : '';
-    my $gzip_prog  = -x DEF_GZIP_PROG ? DEF_GZIP_PROG          : '';
-    my $lynx_prog  = -x DEF_LYNX_PROG ? DEF_LYNX_PROG          : '';
-    my $make_prog  = -x DEF_MAKE_PROG ? DEF_MAKE_PROG          : '';
-    my $ncftpget_prog = -x DEF_NCFTPGET_PROG ? DEF_NCFTPGET_PROG : '';
-    my $less_prog     = -x DEF_LESS_PROG     ? DEF_LESS_PROG     : '';
-    my $tar_prog      = -x DEF_TAR_PROG      ? DEF_TAR_PROG      : '';
-    my $unzip_prog    = -x DEF_UNZIP_PROG    ? DEF_UNZIP_PROG    : '';
-    my $wget_prog     = -x DEF_WGET_PROG     ? DEF_WGET_PROG     : '';
+    my $tmp_dir   = -d $ENV{TMPDIR} ? $ENV{TMPDIR}     : $ENV{HOME};
+    my $ftp_proxy = defined( $ENV{ftp_proxy} ) ? $ENV{ftp_proxy}  : '';
+    my $http_proxy = defined( $ENV{http_proxy} ) ? $ENV{http_proxy} : '';
+    my $user_shell = defined( $ENV{SHELL} )   ? $ENV{SHELL}  : DEF_BASH_PROG;
+    my $ftp_prog   = -f DEF_FTP_PROG  ? DEF_FTP_PROG           : '';
+    my $gpg_prog   = -f DEF_GPG_PROG  ? DEF_GPG_PROG           : '';
+    my $gzip_prog  = -f DEF_GZIP_PROG ? DEF_GZIP_PROG          : '';
+    my $lynx_prog  = -f DEF_LYNX_PROG ? DEF_LYNX_PROG          : '';
+    my $make_prog  = -f DEF_MAKE_PROG ? DEF_MAKE_PROG          : '';
+    my $ncftpget_prog = -f DEF_NCFTPGET_PROG ? DEF_NCFTPGET_PROG : '';
+    my $less_prog     = -f DEF_LESS_PROG     ? DEF_LESS_PROG     : '';
+    my $tar_prog      = -f DEF_TAR_PROG      ? DEF_TAR_PROG      : '';
+    my $unzip_prog    = -f DEF_UNZIP_PROG    ? DEF_UNZIP_PROG    : '';
+    my $wget_prog     = -f DEF_WGET_PROG     ? DEF_WGET_PROG     : '';
 
     open CPANCONF, ">$cpan_cfg_file"
       or fatal( $Gentoo::ERR_FOLDER_CREATE, $cpan_cfg_file, $! );
