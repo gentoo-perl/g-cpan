@@ -19,12 +19,8 @@ use YAML::Node;
 use Carp;
 use IO::File;
 
-# While Writing - TO REMOVE - MPC
-use lib "../lib/";
 use Gentoo;
 use Gentoo::UI::Console;
-
-use constant PATH_PKG_VAR => '/var/db/pkg/';
 
 ##### Establish our tmpdir
 unless ( $ENV{TMPDIR} ) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
@@ -571,6 +567,7 @@ HERE
 
                             }
                             print $EBUILD "\"\n";
+                            print $EBUILD "RDEPEND=\"\$\{DEPEND\}\"\n";
                             undef $EBUILD;
                             autoflush STDOUT 1;
                         }

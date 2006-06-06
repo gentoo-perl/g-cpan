@@ -48,7 +48,7 @@ foreach my $ebuild (keys %{$GC->{ebuilds}{portage_lc}} ) {
 	ok($ebuild, '$ebuild has value');
 	ok($GC->{ebuilds}{portage_lc}{$ebuild}, '$ebuild has version');
 }
-foreach my $ebuild (keys %{$GC->{modules}{portage}} ) {
+foreach my $ebuild (keys %{$GC->{ebuilds}{portage}} ) {
 	ok($GC->{ebuilds}{portage}{$ebuild}{name}, "$ebuild name check");
-	ok($GC->{modules}{portage}{$ebuild}{category}, "$ebuild category check");
+	ok($GC->{ebuilds}{portage}{$ebuild}{category}, "$ebuild category check");
 }
