@@ -14,6 +14,7 @@ use File::Basename;
 use Shell qw(perl);
 
 memoize('transformCPANname');
+memoize('transformCPANVersion');
 memoize('FindDeps');
 
 # These libraries were influenced and largely written by
@@ -24,7 +25,7 @@ require Exporter;
 
 our @ISA = qw(Exporter Gentoo );
 
-our @EXPORT = qw( getCPANInfo makeCPANstub unpackModule transformCPANname
+our @EXPORT = qw( getCPANInfo makeCPANstub unpackModule transformCPANVersion transformCPANname
 );
 
 our $VERSION = '0.01';
@@ -163,7 +164,9 @@ sub unpackModule {
     foreach my $dep ( keys %{ $self->{'cpan'}{ lc($module_name) }{'depends'} } )
     {
         unless (
-            defined( $self->{'cpan'}{ lc($module_name) }{'depends'}{$dep} ) )
+            defined( $self->{'cpan'}{ lc($module_name) }{'depends'}{$dep} ) ||
+         ($self->{'cpan'}{ lc($module_name) }{'depends'}{$dep}   eq "undef" )
+         )
         {
             $self->{'cpan'}{ lc($module_name) }{'depends'}{$dep} = "0";
         }
