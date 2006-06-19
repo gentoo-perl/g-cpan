@@ -80,7 +80,13 @@ sub getCPANInfo {
         $self->{cpan_reload} = 0;
     }
 
-    my $mod = CPAN::Shell->expandany($find_module) or return;
+    my $mod;
+    
+    unless (($mod = CPAN::Shell->expand("Module",$find_module)) ||
+        ($mod = CPAN::Shell->expand("Bundle",$find_module)) ||
+        ($mod = CPAN::Shell->expand("Distribution",$find_module)) ||
+        ($mod = CPAN::Shell->expandany($find_module)) )
+        { return }
 
 # - Fetch CPAN-filename and cut out the filename of the tarball.
 #   We are not using $mod->id here because doing so would end up

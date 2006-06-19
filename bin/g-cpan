@@ -19,8 +19,6 @@ use YAML::Node;
 use Carp;
 use IO::File;
 
-# While Writing - TO REMOVE - MPC
-use lib "../lib/";
 use Gentoo;
 use Gentoo::UI::Console;
 
@@ -29,13 +27,13 @@ use constant PATH_PKG_VAR => '/var/db/pkg/';
 ##### Establish our tmpdir
 unless ( $ENV{TMPDIR} ) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
 
-our $VERSION = "0.14.0";
+our $VERSION = "0.14.0_rc3";
 my $prog = basename($0);
 
 my %dep_list  = ();
 my @perl_dirs = (
     "dev-perl",   "perl-core", "perl-gcpan", "perl-text",
-    "perl-tools", "perl-xml",  "perl-dev"
+    "perl-tools", "perl-xml",  "perl-dev", "dev-lang",
 );
 
 ###############################
@@ -87,7 +85,8 @@ if (    ( $install or $ask or $buildpkg or $buildpkgonly or $upgrade )
 }
 
 # Array containing the original values passed for installing
-my @passed_to_install = @ARGV;
+my %passed_to_install = map { $_ => 1 } @ARGV;
+
 
 # Array that will contain the portage friendly version of the values passed to install
 my @really_install;
@@ -262,7 +261,7 @@ if (   $generate
 }
 
 if ($overlay) {
-    if ( $overlay =~ m/\b\s.*/ ) {
+    if ( $overlay =~ m{\S+\s+\S+} ) {
         my @overlays = map { split ' ' } $overlay;
         foreach (@overlays) {
             $gcpan_run->{'portage_bases'}{$_} = 1;
@@ -296,7 +295,7 @@ if ( $list or $upgrade ) {
                   or $file eq '..';
                 print_info( $prog, "perl-gcpan/$file" )
                   if ($list);
-                push @passed_to_install, $file
+                $passed_to_install{$file} = 1
                   if ($upgrade);
             }
             closedir PDIR;
@@ -315,11 +314,11 @@ if (   $generate
     or $ask
     or $upgrade )
 {
-    for my $module (@passed_to_install) {
+    for my $module (keys %passed_to_install) {
         generatePackageInfo($module);
     }
 }
-
+exit;
 if ( $install or $pretend or $buildpkg or $buildpkgonly or $upgrade or $ask ) {
     if (@really_install) {
 
@@ -359,8 +358,10 @@ sub generatePackageInfo {
     if ($upgrade) { $ebuild_wanted =~ s{-}{::}gxms }
 
     # Grab specific info for this module
-    $gcpan_run->getCPANInfo($ebuild_wanted);
-    unless ( $gcpan_run->{'cpan'}{ lc($ebuild_wanted) } ) {
+    $gcpan_run->getCPANInfo($ebuild_wanted) unless 
+        ($gcpan_run->{'ebuilds'}{'found_ebuild'}{ lc($ebuild_wanted) });
+    unless (( $gcpan_run->{'cpan'}{ lc($ebuild_wanted) } ) or  $gcpan_run->{'ebuilds'}{'found_ebuild'}{ lc($ebuild_wanted) }
+) {
 
         # Fallback to trying the /-/::/ trick - we avoid this the first time
         # in case the module actually employs a - in its name
@@ -375,6 +376,7 @@ sub generatePackageInfo {
         $gcpan_run->{'cpan'}{ lc($ebuild_wanted) }{'portage_name'} =
           $gcpan_run->transformCPANname(
             $gcpan_run->{'cpan'}{ lc($ebuild_wanted) }{'src_uri'} );
+
         $gcpan_run->{'cpan'}{ lc($ebuild_wanted) }{'portage_version'} =
           $gcpan_run->transformCPANVersion(
             $gcpan_run->{'cpan'}{ lc($ebuild_wanted) }{'src_uri'} );
@@ -388,19 +390,18 @@ sub generatePackageInfo {
     my $original_ebuild = $ebuild_wanted;
 
     # Simple transform of name to something portage friendly
-    $ebuild_wanted =~ s{::}{-}xms;
+    $ebuild_wanted =~ s{::}{-}gxms;
 
     # Scan portage for the ebuild name
-    &scanTree($ebuild_wanted)
-      unless ( $upgrade && ( grep { /$ebuild_wanted/ } @passed_to_install ) );
+      unless ( $upgrade && defined( $passed_to_install{$ebuild_wanted} ) )
+    { &scanTree($ebuild_wanted) }
     unless ( $gcpan_run->{'ebuilds'}{'found_ebuild'}{ lc($ebuild_wanted) }
-        or ( $upgrade && ( grep { /$ebuild_wanted/ } @passed_to_install ) ) )
+        or ( $upgrade && defined( $passed_to_install{$ebuild_wanted}  )  ) )
     {
 
         # Ebuild wasn't found - scan for the nice version of the module name
-        my $portage_name =
-          $gcpan_run->{'cpan'}{ lc($original_ebuild) }{'portage_name'};
-        next if ( lc($original_ebuild) eq "perl" );
+        next if (
+        lc($gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'}) eq "perl" );
         &scanTree(
             $gcpan_run->{'cpan'}{ lc($original_ebuild) }{'portage_name'} );
 
@@ -453,12 +454,13 @@ sub generatePackageInfo {
                 }
 
                 # Make sure we have information relevant to each of the deps
-                generatePackageInfo($dep);
+                print_info($prog,"Checking on dependency $dep for $original_ebuild") if ($verbose);
+                unless ($passed_to_install{$dep}) { generatePackageInfo($dep) }
 
                 # Remove dep from list of modules to install later on - no
                 # more dup'd installs!
-                if ( grep { /$dep/ } @passed_to_install ) {
-                    @really_install = grep { !/$dep/ } @really_install;
+                if (defined $passed_to_install{$dep} ) {
+                    @really_install = grep { !/(\s[0,])$dep(\s[0,])/ } @really_install;
                 }
 
                 # Reindex one last time for anything we build after the fact
@@ -554,7 +556,7 @@ HERE
                             }
                           )
                         {
-                            print $EBUILD "DEPEND=\"";
+                            print $EBUILD "DEPEND=\"\n";
                             my %seen_deps;
                             foreach my $dep (
                                 keys %{
@@ -574,10 +576,13 @@ HERE
                                   . $gcpan_run->{ebuilds}{portage}
                                   {$portage_name}{'category'} . "/"
                                   . $gcpan_run->{ebuilds}{portage}
-                                  { $portage_name }{'name'} . "\n";
+                                  { $portage_name }{'name'} . "-" .
+                                  $gcpan_run->{'cpan'}{lc($dep)}{'portage_version'}
+                                  ."\n";
 
                             }
                             print $EBUILD "\"\n";
+                            print $EBUILD "RDPEND=\"\$\{DEPEND\}\"\n";
                             undef $EBUILD;
                             autoflush STDOUT 1;
                         }
@@ -601,8 +606,7 @@ HERE
                             !$upgrade
                             or (
                                 $upgrade
-                                && ( grep { /$ebuild_wanted/ }
-                                    @passed_to_install )
+                                && defined( $passed_to_install{$ebuild_wanted} )
                             )
                           )
                         {
@@ -622,7 +626,8 @@ HERE
     }
     else {
         print_ok( $prog, "Ebuild already exists for $ebuild_wanted" );
-        if ( grep { /$original_ebuild/ } @passed_to_install ) {
+        if (defined $passed_to_install{$original_ebuild} )
+        {
             push @really_install,
               $gcpan_run->{'ebuilds'}{'portage'}{ lc($ebuild_wanted) }{'name'};
         }
@@ -635,6 +640,7 @@ sub scanTree {
     my $module = shift;
     return unless ($module);
     foreach my $portage_root ( keys %{ $gcpan_run->{'portage_bases'} } ) {
+        print_info($prog,"Looking at $portage_root") if ($verbose);
         if ( -d $portage_root ) {
             print_ok( $prog, "Scanning $portage_root for $module" )
               if ($verbose);
@@ -655,8 +661,19 @@ END {
 
     if ( defined( $ENV{TMPDIR} ) ) {
         print_info("Cleaning temporary overlay\n") if $verbose;
-
-        #rmtree( ["$tmp_overlay_dir"] );
+        my ($startdir) = &cwd;
+        chdir($ENV{TMPDIR});
+        opendir(CURD,".");
+        my @dirs = readdir(CURD);
+        closedir(CURD);
+        foreach my $dir (@dirs)
+        {
+            next if ($dir eq ".");
+            next if ($dir eq "..");
+            if ( -d $dir) {
+                rmtree( ["$ENV{TMPDIR}/$dir"] );
+            }
+        }
     }
 }
 
