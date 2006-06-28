@@ -4,6 +4,7 @@ use 5.008007;
 use strict;
 use warnings;
 use Term::ANSIColor;
+use Log::Agent;
 
 #
 #===============================================================================
@@ -50,24 +51,28 @@ sub new {
 sub print_ok {
     my $prog = shift;
     print " ", color("bold green"), "* ", color("reset"), "$prog: ", @_, "\n";
+    logsay "@_";
     return;
 }
 
 sub print_info {
     my $prog = shift;
     print " ", color("bold cyan"), "* ", color("reset"), "$prog: ", @_, "\n";
+    logsay "@_";
     return;
 }
 
 sub print_warn {
     my $prog = shift;
     print " ", color("bold yellow"), "* ", color("reset"), "$prog: ", @_, "\n";
+    logerr "@_";
     return;
 }
 
 sub print_err {
     my $prog = shift;
     print " ", color("bold red"), "* ", color("reset"), "$prog: ", @_, "\n";
+    logerr "@_";
     return;
 }
 

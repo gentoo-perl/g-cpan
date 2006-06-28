@@ -207,7 +207,7 @@ sub FindDeps {
                         foreach my $module ( keys %{$ar_type} ) {
                             next if ( $module eq "" );
                             next if ( $module =~ /Cwd/i );
-                            next if ( lc($module) eq "perl" );
+                            #next if ( lc($module) eq "perl" );
                             next unless ($module);
                             $self->{'cpan'}{ lc($module_name) }{'depends'}
                               {$module} = $ar_type->{$module};
@@ -239,7 +239,7 @@ sub FindDeps {
                             my $module = $1;
                             next if ( $module eq "" );
                             next if ( $module =~ /Cwd/i );
-                            next if ( lc($module) eq "perl" );
+                            #next if ( lc($module) eq "perl" );
                             next unless ($module);
                             my $version = $2;
                             $self->{'cpan'}{ lc($module_name) }{'depends'}
@@ -278,7 +278,7 @@ sub FindDeps {
                                     my ( $module, $vers ) = split( /=>/, $pa );
                                     next if ( $module eq "" );
                                     next if ( $module =~ /Cwd/i );
-                                    next if ( lc($module) eq "perl" );
+                                    #next if ( lc($module) eq "perl" );
                                     next unless ($module);
                                     $self->{'cpan'}{ lc($module_name) }
                                       {'depends'}{$module} = $vers;

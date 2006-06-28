@@ -21,6 +21,9 @@ use IO::File;
 
 use Gentoo;
 use Gentoo::UI::Console;
+    use Log::Agent;
+    use Log::Agent::Driver::File;
+    use Log::Agent::Driver::Silent;
 
 use constant PATH_PKG_VAR => '/var/db/pkg/';
 
@@ -42,8 +45,9 @@ use Getopt::Long;
 Getopt::Long::Configure("bundling");
 
 # Init all options (has to be done to perform the 'sum test' later)
-my ($debug, $verbose, $search, $install, $upgrade, $generate, $list, $pretend, $ask, $cpan_reload, $buildpkg, $buildpkgonly) =
-  (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+my ($debug, $verbose, $search, $install, $upgrade, $generate, $list, $pretend,
+$ask, $cpan_reload, $buildpkg, $buildpkgonly, $log) =
+  (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 # Set colors here so we can use them at will anywhere :)
 my $green = color("bold green");
@@ -58,6 +62,7 @@ GetOptions(
     'install|i'      => \$install,
     'upgrade|u'      => \$upgrade,
     'list|l'         => \$list,
+    'log|L'          => \$log,
     'pretend|p'      => \$pretend,
     'buildpkg|b'     => \$buildpkg,
     'buildpkgonly|B' => \$buildpkgonly,
@@ -68,16 +73,52 @@ GetOptions(
     'help|h'         => sub { exit_usage(); }
 ) or exit_usage();
 
+if ($log and $debug) {
+    print_warn($prog,"*WARNING* - logging debug output can create large logs");
+}
+if ($log) 
+{
+    my $log_test = IO::File->new("/var/log/$prog.err",">");
+    if (!defined $log_test) {
+        print_err("You don't have permission to perform logging: $!");
+        exit();
+    }
+    else
+    {
+        undef $log_test;
+        
+    my $log_driver = Log::Agent::Driver::File->make(
+        -prefix=> "$prog",
+        -magic_open => 0,
+        -stampfmt => 'date',
+        -channels => {
+            'error' => "/var/log/$prog.err",
+            'output' => "/var/log/$prog.log",
+        }
+    );
+    logconfig(-driver => $log_driver);
+}
+}
+else
+{
+    my $log_driver = Log::Agent::Driver::Silent->make();
+    logconfig(-driver => $log_driver);
+}
 if (    ($install or $ask or $buildpkg or $buildpkgonly or $upgrade)
     and ($> > 0)
     and !$pretend)
 {
     print_err($prog, "ERROR - INSUFFICIENT PERMISSIONS TO RUN EMERGE");
+    logerr("ERROR - INSUFFICIENT PERMISSIONS TO RUN EMERGE");
     exit();
 }
 
 # Array containing the original values passed for installing
-my %passed_to_install = map { $_ => 1 } @ARGV;
+my %passed_to_install;
+
+if (scalar(@ARGV) > 0) {
+    %passed_to_install = map { $_ => 1 } @ARGV
+}
 
 # Array that will contain the portage friendly version of the values passed to install
 my @really_install;
@@ -144,27 +185,6 @@ use CPAN;
 ##########
 # main() #
 ##########
-
-# Taking care of Searches. This has to be improved a lot, since it uses a call to
-# CPAN Shell to do the job, thus making it impossible to have a clean output..
-if ($search)
-{
-    foreach my $expr (@ARGV)
-    {
-
-        # Assume they gave us module-name instead of module::name
-        # which is bad, because CPAN can't convert it ;p
-
-        print_ok($prog, "Searching for $expr on CPAN") if ($verbose);
-        unless (CPAN::Shell->i("/$expr/"))
-        {
-            $expr =~ s/-/::/g;
-            CPAN::Shell->i("/$expr/");
-        }
-    }
-
-    exit;
-}
 
 # Confirm that there is an /etc/portage/categories file
 # and that we have an entry for perl-gcpan in it.
@@ -281,8 +301,48 @@ elsif ($generate or $pretend)
 # Set portage_categories to our defined list of perl_dirs
 $gcpan_run->{portage_categories} = \@perl_dirs;
 
+# Taking care of Searches. This has to be improved a lot, since it uses a call to
+# CPAN Shell to do the job, thus making it impossible to have a clean output..
+if ($search)
+{
+    foreach my $expr (@ARGV)
+    {
+
+        my $tree_expr = $expr;
+        $tree_expr =~ s{::}{-}gxms;
+        scanTree(lc($tree_expr));
+        if ($gcpan_run->{'ebuilds'}{'found_ebuild'}{lc($tree_expr)})
+        {
+            print_info($prog,"Ebuild exists for $expr");
+        }
+        else
+        {
+            print_info($prog,"No ebuild exists, pulling up CPAN listings for $expr");
+
+        # Assume they gave us module-name instead of module::name
+        # which is bad, because CPAN can't convert it ;p
+
+        print_ok($prog, "Searching for $expr on CPAN") if ($verbose);
+        unless (CPAN::Shell->i("/$expr/"))
+        {
+            $expr =~ s/-/::/g;
+            CPAN::Shell->i("/$expr/");
+        }
+        }
+    }
+
+    exit;
+}
+
+
 if ($list or $upgrade)
 {
+    if ($upgrade && (scalar(@ARGV >0))) 
+    {
+        %passed_to_install = map { $_ => 1 } @ARGV
+    }
+    else
+    {
     my @overlays = map { split ' ' } $overlay;
     foreach my $overlay_dir (@overlays)
     {
@@ -309,6 +369,7 @@ if ($list or $upgrade)
         }
     }
 }
+}
 
 if (   $generate
     or $install
@@ -323,7 +384,6 @@ if (   $generate
         generatePackageInfo($module);
     }
 }
-exit;
 if ($install or $pretend or $buildpkg or $buildpkgonly or $upgrade or $ask)
 {
     if (@really_install)
@@ -603,6 +663,8 @@ sub scanTree
 {
     my $module = shift;
     return unless ($module);
+    $gcpan_run->debug;
+
     foreach my $portage_root (keys %{$gcpan_run->{'portage_bases'}})
     {
         print_info($prog, "Looking at $portage_root") if ($verbose);
@@ -628,7 +690,7 @@ END
 
     if (defined($ENV{TMPDIR}))
     {
-        print_info("Cleaning temporary overlay\n") if $verbose;
+        print_info("$prog","Cleaning temporary overlay") if $verbose;
         my ($startdir) = &cwd;
         chdir($ENV{TMPDIR});
         opendir(CURD, ".");
@@ -644,6 +706,7 @@ END
             }
         }
     }
+        
 }
 
 # cab - nice help message ! ;)

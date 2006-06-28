@@ -4,7 +4,8 @@ use 5.008007;
 use strict;
 use warnings;
 use Shell qw(ebuild emerge);
-
+use Memoize;
+memoize('getAvailableVersions');
 use Cwd qw(getcwd abs_path cwd);
 use File::Find ();
 

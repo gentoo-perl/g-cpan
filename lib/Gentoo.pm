@@ -4,6 +4,7 @@ use 5.008007;
 use strict;
 use warnings;
 use Data::Dumper;
+use Log::Agent;
 
 #### Load the other namespaces.
 #### Gentoo.pm is the primary if these aren't accessed directly.
@@ -50,6 +51,7 @@ sub UNIVERSAL::debug {
     my $subroutine = ( caller(1) )[3] || $package;
     print STDERR "In $subroutine ($file:$line):\n",
       Data::Dumper->Dump( [ $_[0] ] );
+    logerr("In $subroutine ($file:$line:\n".Data::Dumper->Dump( [ $_[0]]));
 }
 
 sub new {
