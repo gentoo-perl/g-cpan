@@ -13,8 +13,7 @@ use Cwd qw(getcwd abs_path cwd);
 use File::Basename;
 use Shell qw(perl);
 
-memoize('transformCPANname');
-memoize('transformCPANVersion');
+memoize('transformCPAN');
 memoize('FindDeps');
 
 # These libraries were influenced and largely written by
@@ -25,7 +24,7 @@ require Exporter;
 
 our @ISA = qw(Exporter Gentoo );
 
-our @EXPORT = qw( getCPANInfo makeCPANstub unpackModule transformCPANVersion transformCPANname
+our @EXPORT = qw( getCPANInfo makeCPANstub unpackModule transformCPAN 
 );
 
 our $VERSION = '0.01';
@@ -304,20 +303,23 @@ sub FindDeps {
 
 }
 
-sub transformCPANVersion {
+sub transformCPAN {
     my $self = shift;
     my $name = shift;
+    my $req = shift;
     return unless ( defined($name) );
     my $re_path = '(?:.*)?';
     my $re_pkg  = '(?:.*)?';
     my $re_ver  = '(?:v?[\d\.]+[a-z]?)?';
     my $re_suf  = '(?:_(?:alpha|beta|pre|rc|p)(?:\d+)?)?';
-    my $re_rev  = '(?:\-r\d+)?';
+    my $re_rev  = '(?:\-r?\d+)?';
     my $re_ext  = '(?:(?:tar|tgz|zip|bz2|gz|tar\.gz))?';
-    my $re_file =
-      qr/($re_path)\/($re_pkg)-($re_ver)($re_suf)($re_rev)\.($re_ext)/;
-    my ( $modpath, $filename, $filenamever, $filesuf, $filerev, $fileext ) =
-      $name =~ /^$re_file/;
+
+    my $filename = $name;
+    my($modpath, $filenamever, $fileext);
+    $fileext = $1 if $filename =~ s/\.($re_ext)$//;
+    $modpath = $1 if $filename =~ s/^($re_path)\///;
+    $filenamever = $1 if $filename =~ s/-($re_ver$re_suf$re_rev)$//;
 
     # remove underscores
     return unless ($filename);
@@ -328,41 +330,8 @@ sub transformCPANVersion {
     # Remove double .'s - happens on occasion with odd packages
     $filenamever =~ s/\.$//;
 
-    # Remove leading v's - happens on occasion
-    $filenamever =~ s{^v}{}i;
-
-    # Some modules don't use the /\d\.\d\d/ convention, and portage goes
-    # berserk if the ebuild is called ebulldname-.02.ebuild -- so we treat
-    # this special case
-    if ( substr( $filenamever, 0, 1 ) eq '.' ) {
-        $filenamever = 0 . $filenamever;
-    }
-    return ($filenamever);
-}
-
-sub transformCPANname {
-    my $self = shift;
-    my $name = shift;
-    return unless ( defined($name) );
-    my $re_path = '(?:.*)?';
-    my $re_pkg  = '(?:.*)?';
-    my $re_ver  = '(?:v?[\d\.]+[a-z]?)?';
-    my $re_suf  = '(?:_(?:alpha|beta|pre|rc|p)(?:\d+)?)?';
-    my $re_rev  = '(?:\-r\d+)?';
-    my $re_ext  = '(?:(?:tar|tgz|zip|bz2|gz|tar\.gz))?';
-    my $re_file =
-      qr/($re_path)\/($re_pkg)-($re_ver)($re_suf)($re_rev)\.($re_ext)/;
-    my ( $modpath, $filename, $filenamever, $filesuf, $filerev, $fileext ) =
-      $name =~ /^$re_file/;
-
-    # remove underscores
-    return unless ($filename);
-    unless ($filename) { print STDERR "$name yielded $filename\n"; sleep(4); }
-    $filename =~ tr/A-Za-z0-9\./-/c;
-    $filename =~ s/\.pm//;             # e.g. CGI.pm
-
-    # Remove double .'s - happens on occasion with odd packages
-    $filenamever =~ s/\.$//;
+    # rename a double version -0.55-7 to ebuild style -0.55-r7
+    $filenamever =~ s/([0-9.]+)-([0-9.]+)$/$1\.$2/;
 
     # Remove leading v's - happens on occasion
     $filenamever =~ s{^v}{}i;
@@ -373,7 +342,14 @@ sub transformCPANname {
     if ( substr( $filenamever, 0, 1 ) eq '.' ) {
         $filenamever = 0 . $filenamever;
     }
-    return ($filename);
+    if ($req eq "v")
+    {
+        return ($filenamever);
+    }
+    else
+    {
+        return ($filename);
+    }
 }
 
 sub makeCPANstub {

@@ -73,12 +73,9 @@ GetOptions(
     'help|h'         => sub { exit_usage(); }
 ) or exit_usage();
 
-if ($log and $debug) {
-    print_warn($prog,"*WARNING* - logging debug output can create large logs");
-}
 if ($log) 
 {
-    my $log_test = IO::File->new("/var/log/$prog.err",">");
+    my $log_test = IO::File->new("/var/log/$prog/$prog.err",">");
     if (!defined $log_test) {
         print_err("You don't have permission to perform logging: $!");
         exit();
@@ -92,8 +89,8 @@ if ($log)
         -magic_open => 0,
         -stampfmt => 'date',
         -channels => {
-            'error' => "/var/log/$prog.err",
-            'output' => "/var/log/$prog.log",
+            'error' => "/var/log/$prog/$prog.err",
+            'output' => "/var/log/$prog/$prog.log",
         }
     );
     logconfig(-driver => $log_driver);
@@ -103,6 +100,9 @@ else
 {
     my $log_driver = Log::Agent::Driver::Silent->make();
     logconfig(-driver => $log_driver);
+}
+if ($log and $debug) {
+    print_warn($prog,"*WARNING* - logging debug output can create large logs");
 }
 if (    ($install or $ask or $buildpkg or $buildpkgonly or $upgrade)
     and ($> > 0)
@@ -121,7 +121,7 @@ if (scalar(@ARGV) > 0) {
 }
 
 # Array that will contain the portage friendly version of the values passed to install
-my @really_install;
+my %really_install;
 
 # Output error if more than one switch is activated
 #
@@ -386,10 +386,10 @@ if (   $generate
 }
 if ($install or $pretend or $buildpkg or $buildpkgonly or $upgrade or $ask)
 {
-    if (@really_install)
+    if (keys %really_install)
     {
 
-        for my $ebuild (@really_install)
+        for my $ebuild (keys %really_install)
         {
             print_ok($prog, "Calling emerge for $ebuild\n") if ($verbose);
             my @flags;
@@ -446,9 +446,11 @@ sub generatePackageInfo
     # trying to pre-seed the portage_name
     if ($gcpan_run->{'cpan'}{lc($ebuild_wanted)})
     {
-        $gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'portage_name'} = $gcpan_run->transformCPANname($gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'src_uri'});
+        $gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'portage_name'} =
+        $gcpan_run->transformCPAN($gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'src_uri'},"n");
 
-        $gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'portage_version'} = $gcpan_run->transformCPANVersion($gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'src_uri'});
+        $gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'portage_version'} =
+        $gcpan_run->transformCPAN($gcpan_run->{'cpan'}{lc($ebuild_wanted)}{'src_uri'},"v");
     }
     else
     {
@@ -515,7 +517,7 @@ sub generatePackageInfo
                 # more dup'd installs!
                 if (defined $passed_to_install{$dep})
                 {
-                    @really_install = grep { !/(\s[0,])$dep(\s[0,])/ } @really_install;
+                    delete $really_install{$dep};
                 }
 
                 # Reindex one last time for anything we build after the fact
@@ -595,10 +597,20 @@ HERE
                             {
                                 next unless (defined $dep && $dep ne '');
                                 my $portage_name = lc($gcpan_run->{'cpan'}{lc($dep)}{'portage_name'});
-                                next if (defined $seen_deps{$portage_name});
+                                # Last ditch call to scanTree to make sure we
+                                # have info
+                                scanTree($portage_name);
+                                next if (defined($seen_deps{$portage_name}) and $seen_deps{$portage_name} >0);
                                 $seen_deps{$portage_name} = 1;
-                                next if ($portage_name eq "perl");
-                                if (defined($gcpan_run->{'cpan'}{lc($dep)}{'portage_version'}) && ($gcpan_run->{'cpan'}{lc($dep)}{'portage_version'} ne "0"))
+                                print STDERR "$portage_name vs ".$gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'} ."\n";
+                                next if (($portage_name eq "perl") or
+                                    (lc($portage_name) eq
+                                        lc($gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'}
+                                        )));
+                                if
+                                (defined($gcpan_run->{'cpan'}{lc($dep)}{'portage_version'})
+                                    &&  defined($gcpan_run->{'cpan'}{lc($dep)}{'portage_version'})
+                                    && ($gcpan_run->{'cpan'}{lc($dep)}{'portage_version'} ne "0"))
                                 {
                                     print $EBUILD "\t\>\="
                                       . $gcpan_run->{ebuilds}{portage}{$portage_name}{'category'} . "/"
@@ -632,7 +644,7 @@ HERE
                                 && defined($passed_to_install{$ebuild_wanted}))
                           )
                         {
-                            push @really_install, $ebuild_wanted;
+                            $really_install{$ebuild_wanted} = 1;
                         }
                         last;
                     }
@@ -650,9 +662,10 @@ HERE
     else
     {
         print_ok($prog, "Ebuild already exists for $ebuild_wanted");
-        if (defined $passed_to_install{$original_ebuild})
+        if ((defined $passed_to_install{$ebuild_wanted}) or (defined
+                $passed_to_install{$original_ebuild}))
         {
-            push @really_install, $gcpan_run->{'ebuilds'}{'portage'}{lc($ebuild_wanted)}{'name'};
+            $really_install{$ebuild_wanted} = 1;
         }
 
     }
@@ -663,7 +676,6 @@ sub scanTree
 {
     my $module = shift;
     return unless ($module);
-    $gcpan_run->debug;
 
     foreach my $portage_root (keys %{$gcpan_run->{'portage_bases'}})
     {
@@ -726,6 +738,9 @@ ${green}--install,-i${reset}
 ${green}--list,-l${reset}
     This command generates a list of the Perl modules and ebuilds
     handled by $prog.
+
+${green}--log,-L${reset}
+    Log the output of $prog.
 
 ${green}--search,-s${reset}
     Search CPAN for the given expression (similar to
@@ -817,6 +832,10 @@ Install the (list of) modules provided.
 =item B<-l,--list>
 
 List ebuilds that have been generated by g-cpan and reside in your overlay. 
+
+=item B<-L,--log>
+
+Log all output to /var/log/g-cpan/g-cpan.log and g-cpan.err
 
 =item B<-s,--search>
 
