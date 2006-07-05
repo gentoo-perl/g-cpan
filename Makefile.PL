@@ -14,6 +14,8 @@ WriteMakefile(
                         'File::Find'       => 0,
 						'File::Path'       => 0,
 						'File::Spec'       => 0,
+                        'Log::Agent'       => 0,
+                        'Memoize'          => 0,
                         'IO::File'         => 0,
 						'Term::ANSIColor'  => 0,
                         'Test::More'       => 0,
