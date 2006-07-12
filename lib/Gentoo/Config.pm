@@ -139,15 +139,20 @@ sub getValue {
     my $confVal  = shift;
     my $makeconf = getParamFromFile( getFileContents("/etc/make.conf"),
         "$confVal", "lastseen" );
-    if ( !$makeconf ) {
-        $makeconf = getParamFromFile( getFileContents("/etc/make.globals"),
-            "$confVal", "lastseen" );
+    my $filedata =
+    getFileContents("/etc/make.globals").getFileContents("/etc/make.conf");
+    my $param    = getParamFromFile($filedata,$confVal,"lastseen");
+
+    while ($param =~m/\$\{(.+)\}/)
+    {
+        my $fetchparam=getParamFromFile($filedata,$1,"lastseen");
+        $param=~s/\$\{$1\}/$fetchparam/;
     }
 
-    if ( !$makeconf ) {
+    if ( !$param ) {
         return undef;
     }
-    $self->{ lc($confVal) } = $makeconf;
+    $self->{ lc($confVal) } = $param;
 }
 
 sub DESTROY {
