@@ -157,7 +157,13 @@ sub unpackModule {
     # While we're at it, get the ${S} dir for the ebuld ;)
     $self->{'cpan'}{ lc($module_name) }{'portage_sdir'} = $pack->{build_dir};
     $self->{'cpan'}{ lc($module_name) }{'portage_sdir'} =~ s{.*/}{}xmsg;
-    FindDeps( $self, $tmp_dir, $module_name );
+    # If name is bundle::, then scan the bundle's deps, otherwise findep it
+    if (lc($module_name) =~ m{^bundle\::})
+    {
+        UnBundle( $self, $tmp_dir, $module_name ); 
+    } else {
+        FindDeps( $self, $tmp_dir, $module_name );
+    }
 
     # Most modules don't list module-build as a dep - so we force it if there
     # is a Build.PL file
@@ -178,6 +184,58 @@ sub unpackModule {
     }
     return ($self);
 }
+
+sub UnBundle {
+    my $self        = shift;
+    my ($workdir)   = shift;
+    my $module_name = shift;
+    my ($startdir)  = &cwd;
+    chdir($workdir) or die "Unable to enter dir $workdir:$!\n";
+    opendir( CURD, "." );
+    my @dirs = readdir(CURD);
+    closedir(CURD);
+    foreach my $object (@dirs) {
+        next if ( $object eq "." );
+        next if ( $object eq ".." );
+        if ( -f $object ) {
+            if ($object =~ m{\.pm$} )
+                {
+                    my $fh;
+                    my $in_cont = 0;
+                    open ($fh, "$object");
+                    while (<$fh>) {
+                        $in_cont = m/^=(?!head1\s+CONTENTS)/ ? 0 :
+                        m/^=head1\s+CONTENTS/ ? 1 : $in_cont;
+                        next unless $in_cont;
+                        next if /^=/;
+                        s/\#.*//;
+                        next if /^\s+$/;
+                        chomp;
+                        my $module;
+                        my $ver = 0;
+                        my $junk;
+                        if (m{ }) {
+                            ($module,$ver,$junk) = (split " ", $_);
+                            if ($ver !~ m{^\d+}) { $ver = 0}
+                        } else {
+                            $module = (split " ", $_, 2)[0];
+                        }
+
+                       $self->{'cpan'}{ lc($module_name) }{'depends'}{$module}
+                       = $ver;
+                   }
+               }
+           }
+              elsif ( -d $object ) {
+            UnBundle( $self, $object, $module_name );
+            next;
+        }
+
+    }
+    chdir($startdir) or die "Unable to change to dir $startdir:$!\n";
+    return ($self); 
+   }
+
 
 sub FindDeps {
     my $self        = shift;

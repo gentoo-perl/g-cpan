@@ -243,11 +243,21 @@ my $gcpan_run = Gentoo->new(
     'DEBUG'       => $debug,
 );
 
+# Get the main portdir
+my $PORTAGE_DIR = $gcpan_run->getValue("PORTDIR");
+$gcpan_run->{'portage_bases'}{$PORTAGE_DIR} = 1;
+
 # Grab the keywords - we'll need these when we build the ebuild
 my $keywords = $gcpan_run->getValue("ACCEPT_KEYWORDS");
 
-# Get the main portdir
-$gcpan_run->{'portage_bases'}{$gcpan_run->getValue("PORTDIR")} = 1;
+unless ($keywords)
+{
+    $keywords = do {
+        open my $tmp, "<$PORTAGE_DIR/profiles/arch.list"
+            or fatal(print_err($prog,"ERROR READING $PORTAGE_DIR/profiles/arch.list: $!"));
+            join " ", map { chomp; $_ } <$tmp>;
+        }
+}
 
 # Get the overlays
 my $overlay = $gcpan_run->getValue("PORTDIR_OVERLAY") || undef;
@@ -597,13 +607,13 @@ HERE
                             {
                                 next unless (defined $dep && $dep ne '');
                                 my $portage_name = lc($gcpan_run->{'cpan'}{lc($dep)}{'portage_name'});
+                                next unless ($portage_name =~ m{\S});
 
                                 # Last ditch call to scanTree to make sure we
                                 # have info
                                 scanTree($portage_name);
                                 next if (defined($seen_deps{$portage_name}) and $seen_deps{$portage_name} > 0);
                                 $seen_deps{$portage_name} = 1;
-                                print STDERR "$portage_name vs " . $gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'} . "\n";
                                 next if (($portage_name eq "perl")
                                     or (lc($portage_name) eq lc($gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'})));
                                 if (   defined($gcpan_run->{'cpan'}{lc($dep)}{'portage_version'})
