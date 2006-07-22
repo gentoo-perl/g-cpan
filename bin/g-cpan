@@ -672,7 +672,7 @@ HERE
         print_ok($prog, "Ebuild already exists for $ebuild_wanted");
         if ((defined $passed_to_install{$ebuild_wanted}) or (defined $passed_to_install{$original_ebuild}))
         {
-            $really_install{$ebuild_wanted} = 1;
+            $really_install{$gcpan_run->{'ebuilds'}{'portage'}{lc($ebuild_wanted)}{'name'}} = 1;
         }
 
     }
