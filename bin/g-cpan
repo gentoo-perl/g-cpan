@@ -74,15 +74,9 @@ GetOptions(
 
 if ($log)
 {
-    my $log_test = IO::File->new("/var/log/$prog/$prog.err", ">");
-    if (!defined $log_test)
-    {
-        print_err("You don't have permission to perform logging: $!");
-        exit();
-    }
-    else
-    {
-        undef $log_test;
+    open my $log_test, q{>>}, "/var/log/$prog/$prog.err" or
+    fatal(print_err("You don't have permission to perform logging to /var/log/$prog/$prog.err: $!"));
+        close($log_test);
 
         my $log_driver = Log::Agent::Driver::File->make(
             -prefix     => "$prog",
@@ -94,7 +88,6 @@ if ($log)
             }
         );
         logconfig(-driver => $log_driver);
-    }
 }
 else
 {
@@ -161,7 +154,7 @@ $ENV{PERL_EXTUTILS_AUTOINSTALL} = "--skipdeps";
 $ENV{PERL_MM_USE_DEFAULT}       = 1;
 
 # Do we need to generate a config ?
-eval 'use CPAN::Config;';
+eval "use CPAN::Config;";
 my $needs_cpan_stub = $@ ? 1 : 0;
 
 # Test Replacement - ((A&B)or(C&B)) should be the same as ((A or C) and B)
@@ -253,7 +246,7 @@ my $keywords = $gcpan_run->getValue("ACCEPT_KEYWORDS");
 unless ($keywords)
 {
     $keywords = do {
-        open my $tmp, "<$PORTAGE_DIR/profiles/arch.list"
+        open my $tmp, q{<}, "$PORTAGE_DIR/profiles/arch.list"
             or fatal(print_err($prog,"ERROR READING $PORTAGE_DIR/profiles/arch.list: $!"));
             join " ", map { chomp; $_ } <$tmp>;
         }
@@ -465,7 +458,7 @@ sub generatePackageInfo
     else
     {
         print_err($prog, "$ebuild_wanted is not a CPAN module!");
-        return;
+        #MPC hold return;
     }
 
     # Save a copy of the originally requested name for later use
@@ -504,7 +497,10 @@ sub generatePackageInfo
 
         # Generate info - nothing found currently in the tree
         if ($debug) { $gcpan_run->debug; }
-        if (($gcpan_run->{'cpan'}{lc($original_ebuild)}{'name'}) && ($gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'} ne "perl"))
+        print_warn($prog,"Looking for $original_ebuild");
+        if (($gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'}) &&
+            ($gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'} !~
+                m{^perl$}i))
         {
 
             # We have a cpan package that matches the request.
@@ -618,7 +614,12 @@ HERE
                                     or (lc($portage_name) eq lc($gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_name'})));
                                 if (   defined($gcpan_run->{'cpan'}{lc($dep)}{'portage_version'})
                                     && defined($gcpan_run->{'cpan'}{lc($dep)}{'portage_version'})
-                                    && ($gcpan_run->{'cpan'}{lc($dep)}{'portage_version'} ne "0"))
+                                    &&
+                                    ($gcpan_run->{'cpan'}{lc($original_ebuild)}{'depends'}{$dep}
+                                        ne "0")
+                                    &&
+                                    ($gcpan_run->{'ebuilds'}{portage}{$portage_name}{'name'}
+                                    ne "module-build"))
                                 {
                                     print $EBUILD "\t\>\="
                                       . $gcpan_run->{ebuilds}{portage}{$portage_name}{'category'} . "/"
@@ -647,9 +648,11 @@ HERE
                         print_info($prog, "Ebuild generated for $ebuild_wanted");
                         $gcpan_run->generate_digest($ebuild);
                         if (
-                            !$upgrade
-                            or ($upgrade
-                                && defined($passed_to_install{$ebuild_wanted}))
+                            #MPC!$upgrade
+                            #MPCor ($upgrade
+                            #MPC&&
+                                defined($passed_to_install{$ebuild_wanted})
+                                #MPC )
                           )
                         {
                             $really_install{$ebuild_wanted} = 1;
@@ -711,7 +714,7 @@ END
     {
         print_info("$prog", "Cleaning temporary overlay") if $verbose;
         my ($startdir) = &cwd;
-        chdir($ENV{TMPDIR});
+        chdir("$ENV{TMPDIR}/.cpan");
         opendir(CURD, ".");
         my @dirs = readdir(CURD);
         closedir(CURD);
@@ -719,6 +722,7 @@ END
         {
             next if ($dir eq ".");
             next if ($dir eq "..");
+            next if ($dir eq "sources");
             if (-d $dir)
             {
                 rmtree(["$ENV{TMPDIR}/$dir"]);
@@ -873,9 +877,11 @@ The following portage arguments can be passed to g-cpan. Please read the portage
 Pass the "ask" argument to portage. This will cause portage to prompt you to confirm your installation prior to issuing an emerge 
 
 =item B<-b,--buildpkg>
+
 Tells  emerge to build binary packages for all ebuilds processed in addition to actually merging the packages.
 
 =item B<-B,--buildpkgonly>
+
 Creates  binary packages for all ebuilds processed without actually merging the packages.
 
 =item B<-p,--pretend>
@@ -905,9 +911,6 @@ Create ebuilds as needed for the (list of) modules provided, but don't perform t
 # g-cpan -u Mickey-Mouse 
 
 =head1 Todo
-
-Versioned dependency checking - write ebuilds to contain the dep'd version if its greater than 0 in the source.
-
 
 =head1 See Also
 
