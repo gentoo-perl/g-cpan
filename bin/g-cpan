@@ -430,6 +430,12 @@ sub generatePackageInfo
     # Since all we are concerned with is the final name of the package, this
     # should be a safe substitution
     my $ebuild_wanted = shift;
+    if ($ebuild_wanted =~ m{ExtUtils(::|-)MakeMaker}i )
+    {
+        print_info($prog,"Skipping ExtUtils::MakeMaker dependency");
+        next;
+    }
+
 
     #In the event this is an upgrade, go ahead and do the lame s/-/::/
     if ($upgrade) { $ebuild_wanted =~ s{-}{::}gxms }
@@ -513,6 +519,12 @@ sub generatePackageInfo
                 if ($dep eq "perl")
                 {
                     delete $gcpan_run->{'cpan'}{lc($original_ebuild)}{'depends'}{$dep};
+                }
+
+                if ($dep =~ m{ExtUtils(::|-)MakeMaker}i )
+                {
+                    print_info($prog,"Skipping ExtUtils::MakeMaker dependency");
+                    next;
                 }
 
                 # Make sure we have information relevant to each of the deps
