@@ -1,3 +1,35 @@
+28/07/2006
+
+Versioned deps are now working.
+
+22/07/2006
+fixed case sensivity bug (you want to install an uppercase filename, but we
+have it filed in portage lower case) - brought up on irc
+
+18/07/2006
+
+Fixed ACCEPT_KEYWORDS populating (superlag). Experimental Bundle:: Support
+added :)
+
+12/07/2006
+
+Bug 140084 - thanks Moshe!
+
+27/06/2006
+
+* Added logging
+* -u now supports individual packages
+
+06/06/2006
+
+Bug 135783
+
+19/05/2006
+
+Fixed tests; fixed bug where -a wasn't working anymore; fixed bug where g-cpan would skip ebuilds that already existed (mainstream g-cpan will continue to install them)
+
+--version 0.14.0--
+
 05/06/2005 - mcummings
 
 - Bug 95146 (http://bugs.gentoo.org/show_bug.cgi?id=95146) - lists/upgrades failed because of a lack of arguments. Thanks to Moshe Kaminsky for catching the or vs and on this.

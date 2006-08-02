@@ -25,7 +25,14 @@ if (   ( ($needs_cpan_stub) || ( $> > 0 ) )
 	plan skip_all => 'Tests impossible without a configured CPAN::Config';
 }
 else {
-	plan tests => 7;
+    if ( $> > 0 )
+    {
+        plan skip_all => 'Root needed for these tests, sorry';
+    }
+    else
+    {
+        plan tests => 7;
+    }
 }
 
 use strict;

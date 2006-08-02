@@ -7,9 +7,9 @@ use warnings;
 require Exporter;
 
 our @ISA    = qw(Exporter);
-our @EXPORT = qw(getParamFromFile getFileContents getValue );
+our @EXPORT = qw(getParamFromFile getFileContents getValue);
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub new {
     my $self = shift;
@@ -128,9 +128,12 @@ sub getParamFromFile {
 sub getFileContents {
     my $content = "";
 
-    open( FH, "<" . $_[0] ) || die( "Cannot open file " . $_[0] );
-    while (<FH>) { $content .= $_; }
-    close(FH);
+    {
+        local $/ = undef;
+        open( FH, "<" . $_[0] ) || die( "Cannot open file " . $_[0] );
+        $content = <FH>;
+        close(FH);
+    }
     return $content;
 }
 
@@ -164,7 +167,7 @@ sub DESTROY {
 
 __END__
 
-=pod  
+=pod
 
 =head1 NAME
 
@@ -191,7 +194,7 @@ then secondly the make.globals.
 
 Create a new Gentoo Config object.
 
-=item my $var = $obj->($PORTVAR);
+=item my $var = $obj->getValue($PORTVAR);
 
 Get the defined portage variable. Returns a string.
 
@@ -199,7 +202,7 @@ Get the defined portage variable. Returns a string.
 
 =head1 SEE ALSO
 
-See L<make.conf> for an overview of the variables that are availble for
+See L<make.conf> for an overview of the variables that are available for
 extraction from portage.
 
 =cut

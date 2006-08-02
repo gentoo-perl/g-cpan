@@ -379,6 +379,12 @@ sub transformCPAN {
     $modpath = $1 if $filename =~ s/^($re_path)\///;
     $filenamever = $1 if $filename =~ s/-($re_ver$re_suf$re_rev)$//;
 
+    # Alphanumeric version numbers? (http://search.cpan.org/~pip/)
+    if ($filename =~ s/-(\d\.\d\.\d)([A-Za-z0-9]{6})$//) {
+        $filenamever = $1;
+        $filenamever .= ('.'.ord($_)) foreach split(//, $2);
+    }
+
     # remove underscores
     return unless ($filename);
     unless ($filename) { print STDERR "$name yielded $filename\n"; sleep(4); }
