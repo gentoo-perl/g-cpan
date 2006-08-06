@@ -140,8 +140,6 @@ sub getFileContents {
 sub getValue {
     my $self     = shift;
     my $confVal  = shift;
-    my $makeconf = getParamFromFile( getFileContents("/etc/make.conf"),
-        "$confVal", "lastseen" );
     my $filedata =
     getFileContents("/etc/make.globals").getFileContents("/etc/make.conf");
     my $param    = getParamFromFile($filedata,$confVal,"lastseen");
