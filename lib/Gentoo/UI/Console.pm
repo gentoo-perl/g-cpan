@@ -29,15 +29,13 @@ our @ISA = qw(Exporter Gentoo );
 
 our @EXPORT = qw( print_ok print_info print_warn print_err print_out fatal );
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub new {
     my $proto = shift;
     my %args  = @_;
     my $class = ref($proto) || $proto;
-    my $self  = {};
-    bless( $self, $class );
-    return $self;
+    bless {}, $class;
 }
 
 ################
@@ -48,39 +46,37 @@ sub new {
 # maybe i should add a FIXME - Sniper around here.. :)
 # anyway, they expect a string and add a colored star at the beginning and the CR/LF
 # at the end of the line. oh, shiny world ;)
+#
+# dams - bit of factorization
+
+sub print_colored { print ' ' . color(shift) . '* ' . color("reset") . shift() . ': ', @_, "\n" }
+
+# These methods take as args  :
+# - the program name (1 string)
+# - additional args to be printed
+
 sub print_ok {
-    my $prog = shift;
-    print " ", color("bold green"), "* ", color("reset"), "$prog: ", @_, "\n";
+    print_colored('bold green', shift, @_);
     logsay "@_";
-    return;
 }
 
 sub print_info {
-    my $prog = shift;
-    print " ", color("bold cyan"), "* ", color("reset"), "$prog: ", @_, "\n";
+    print_colored('bold cyan', shift, @_);
     logsay "@_";
-    return;
 }
 
 sub print_warn {
-    my $prog = shift;
-    print " ", color("bold yellow"), "* ", color("reset"), "$prog: ", @_, "\n";
+    print_colored('bold yellow', shift, @_);
     logerr "@_";
-    return;
 }
 
 sub print_err {
-    my $prog = shift;
-    print " ", color("bold red"), "* ", color("reset"), "$prog: ", @_, "\n";
+    print_colored('bold red', shift, @_);
     logerr "@_";
-    return;
 }
 
 # For the occasional freeform text
-sub print_out {
-    print @_;
-    return;
-}
+sub print_out { print @_ }
 
 #################################################
 # NAME  : fatal
@@ -90,9 +86,7 @@ sub print_out {
 # IN: 0 scalar pattern sprintf format
 #     x LIST   variables filling blank in pattern
 #################################################
-sub fatal {
-    exit();
-}
+sub fatal { exit }
 
 1;
 
