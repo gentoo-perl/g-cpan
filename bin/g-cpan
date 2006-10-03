@@ -367,13 +367,12 @@ if ($install || $pretend || $buildpkg || $buildpkgonly || $upgrade || $ask) {
         foreach my $ebuild (keys %really_install) {
             $verbose and print_ok($prog, "Calling emerge for $ebuild\n");
             my @flags;
-            push @flags, '--oneshot';
             $pretend > 0 and push @flags, '--pretend';
             $ask > 0 and push @flags, '--ask';
             $buildpkg > 0 and push @flags, '--buildpkg';
             $buildpkgonly > 0 and push @flags, '--buildpkgonly';
 
-            $verbose and print_info($prog, "Calling: emerge --oneshot @flags $ebuild");
+            $verbose and print_info($prog, "Calling: emerge @flags $ebuild");
             $gcpan_run->emerge_ebuild($ebuild, @flags);
 
         }
