@@ -507,10 +507,10 @@ for a portage friendly environment
     use Gentoo::CPAN;
     my $obj = Gentoo::CPAN->new();
     $obj->getCPANInfo("Module::Build");
-    my $version = $obj->{cpan}{lc("Module::Build")}{'version'};
-    my $realname = $obj->{cpan}{lc($module)}{'name'};
-    my $srcuri = $obj->{cpan}{lc($module)}{'src_uri'};
-    my $desc = $obj->{cpan}{lc($module)}{'description'};
+    my $version = $obj->{cpan}->{lc("Module::Build")}->{'version'};
+    my $realname = $obj->{cpan}->{lc($module)}->{'name'};
+    my $srcuri = $obj->{cpan}->{lc($module)}->{'src_uri'};
+    my $desc = $obj->{cpan}->{lc($module)}->{'description'};
 
 =head1 DESCRIPTION
 

@@ -1,4 +1,4 @@
-use 5.008008;
+use 5.008007;
 use ExtUtils::MakeMaker;
 
 my @programs_to_install = qw ( g-cpan );
