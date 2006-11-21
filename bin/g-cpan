@@ -576,10 +576,11 @@ HERE
                             #MPC!$upgrade
                             #MPCor ($upgrade
                             #MPC&&
-                                defined($passed_to_install{$ebuild_wanted})
+                                defined($passed_to_install{$gcpan_run->{'cpan'}->{lc($original_ebuild)}->{'name'}})
                                 #MPC )
                           ) {
-                            $really_install{$ebuild_wanted} = 1;
+			    my $portage_name = $gcpan_run->{'cpan'}->{lc($original_ebuild)}->{'portage_name'};
+                            $really_install{ $portage_name } = 1;
                         }
                         last;
                     } else {
@@ -827,7 +828,7 @@ mcummings <mcummings@gentoo.org> cab <cab@dragou.net> sniper <sniper@mongueurs.n
 
 Please report bugs via http://bugs.gentoo.org/ or https://bugs.gentoo.org/ 
 
-=head1 cvs Header $Header: $ 
+=head1 svn Id $Id$ 
 
 =cut
 
