@@ -5,6 +5,7 @@ package main;
 # Distributed under the terms of the GNU General Public License v2
 #
 
+use lib "../lib";
 # modules to use - these will need to be marked as
 # dependencies, and installable by portage
 use strict;
@@ -46,9 +47,9 @@ Getopt::Long::Configure("bundling");
 
 # Declare options
 # First, the main switches
-my @main_switches = \my ($search, $list, $install, $generate, $ask, $buildpkg, $buildpkgonly);
+my @main_switches = \my ($search, $list, $install, $generate, $buildpkgonly);
 # Then, additional switches
-my @additional_switches = \my ($upgrade, $pretend);
+my @additional_switches = \my ($upgrade, $pretend, $buildpkg, $ask);
 # Then, the normal options
 my ($debug, $verbose, $cpan_reload, $log);
 
@@ -103,6 +104,11 @@ if ( ($install || $ask || $buildpkg || $buildpkgonly || $upgrade) && $> > 0 && !
     print_err($prog, "ERROR - INSUFFICIENT PERMISSIONS TO RUN EMERGE");
     logerr("ERROR - INSUFFICIENT PERMISSIONS TO RUN EMERGE");
     exit();
+}
+
+if (! $install && defined($ask)) 
+{
+	$install = 1
 }
 
 # Array containing the original values passed for installing
@@ -367,10 +373,10 @@ if ($install || $pretend || $buildpkg || $buildpkgonly || $upgrade || $ask) {
         foreach my $ebuild (keys %really_install) {
             $verbose and print_ok($prog, "Calling emerge for $ebuild\n");
             my @flags;
-            $pretend > 0 and push @flags, '--pretend';
-            $ask > 0 and push @flags, '--ask';
-            $buildpkg > 0 and push @flags, '--buildpkg';
-            $buildpkgonly > 0 and push @flags, '--buildpkgonly';
+            if ($pretend && $pretend > 0) {push @flags, '--pretend' }
+            if ($ask && $ask > 0) { push @flags, '--ask' }
+            if ($buildpkg && $buildpkg > 0 ) {push @flags, '--buildpkg' }
+            if ($buildpkgonly && $buildpkgonly > 0 ) { push @flags, '--buildpkgonly' }
 
             $verbose and print_info($prog, "Calling: emerge @flags $ebuild");
             $gcpan_run->emerge_ebuild($ebuild, @flags);
