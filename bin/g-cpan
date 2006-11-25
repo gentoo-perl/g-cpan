@@ -608,6 +608,7 @@ sub scanTree {
     my ($module) = @_;
     $module or return;
 
+	if ($module =~ /pathtools/gimx) { $module = "File-Spec" }
     foreach my $portage_root (keys %{$gcpan_run->{portage_bases}}) {
         $verbose and print_info($prog, "Looking at $portage_root");
         if (-d $portage_root) {

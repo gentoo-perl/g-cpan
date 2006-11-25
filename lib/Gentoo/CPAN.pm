@@ -256,6 +256,7 @@ sub FindDeps {
             if ( $object =~ m{META.yml}i ) {
 
                 # Do YAML parsing if you can
+                use Data::Dumper;
                 my $b_n = dirname($abs_path);
                 $b_n = basename($b_n);
                 my $arr = YAML::LoadFile($abs_path);
@@ -332,13 +333,13 @@ sub FindDeps {
                             foreach my $pa (@list) {
                                 $pa =~ s/\n|\s+|\'//mg;
                                 if ($pa) {
-                                    my ( $module, $vers ) = split( /=>/, $pa );
+                                    my ( $module, $version ) = split( /=>/, $pa );
                                     next if ( $module eq "" );
                                     next if ( $module =~ /Cwd/i );
                                     #next if ( lc($module) eq "perl" );
                                     next unless ($module);
                                     $self->{'cpan'}{ lc($module_name) }
-                                      {'depends'}{$module} = $vers;
+                                      {'depends'}{$module} = $version;
                                 }
                             }
                             last;
