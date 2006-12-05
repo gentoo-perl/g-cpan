@@ -224,12 +224,11 @@ sub generate_digest {
 
 sub emerge_ebuild {
     my $self  = shift;
-    my $pkg   = shift;
-    my @flags = @_;
+    my @call = @_;
 
     # emerge forks and returns, which confuses this process. So
     # we call it the old fashioned way :(
-    system( "emerge", @flags, $pkg );
+    system( "emerge", @call );
 }
 
 sub wanted_dirs {

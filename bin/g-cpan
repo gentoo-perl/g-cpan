@@ -370,18 +370,17 @@ if (   $generate
 if ($install || $pretend || $buildpkg || $buildpkgonly || $upgrade || $ask) {
     if (keys %really_install) {
 
-        foreach my $ebuild (keys %really_install) {
-            $verbose and print_ok($prog, "Calling emerge for $ebuild\n");
+			my @ebuilds = (keys %really_install);
+            $verbose and print_ok($prog, "Calling emerge for @ebuilds\n");
             my @flags;
             if ($pretend && $pretend > 0) {push @flags, '--pretend' }
             if ($ask && $ask > 0) { push @flags, '--ask' }
             if ($buildpkg && $buildpkg > 0 ) {push @flags, '--buildpkg' }
             if ($buildpkgonly && $buildpkgonly > 0 ) { push @flags, '--buildpkgonly' }
 
-            $verbose and print_info($prog, "Calling: emerge @flags $ebuild");
-            $gcpan_run->emerge_ebuild($ebuild, @flags);
+            $verbose and print_info($prog, "Calling: emerge @flags @ebuilds");
+            $gcpan_run->emerge_ebuild(@ebuilds, @flags);
 
-        }
     } else {
         if ($upgrade) {
             print_info($prog, 'Everything was up to date, nothing to do!');
@@ -433,7 +432,7 @@ sub generatePackageInfo {
     $ebuild_wanted =~ s/::/-/gxms;
 
     # Scan portage for the ebuild name
-    $upgrade && defined($passed_to_install{$ebuild_wanted}) or scanTree($ebuild_wanted);
+	$upgrade && defined($passed_to_install{$ebuild_wanted}) or scanTree($ebuild_wanted);
     if ( ! ( $gcpan_run->{ebuilds}{found_ebuild}{lc($ebuild_wanted)}
              || ($upgrade && defined($passed_to_install{$ebuild_wanted})) ) ) {
 
@@ -545,12 +544,21 @@ HERE
                                 defined $dep && $dep ne '' or next;
                                 my $portage_name = lc($gcpan_run->{cpan}{lc($dep)}{portage_name});
                                 $portage_name =~ /\S/ or next;
+								if ($original_ebuild =~ m/filter-simple/mgix)
+								{ print_err($prog, "$portage_name is being passed");}
 
                                 # Last ditch call to scanTree to make sure we
                                 # have info
                                 scanTree($portage_name);
                                 defined($seen_deps{$portage_name}) && $seen_deps{$portage_name} > 0 and next;
                                 $seen_deps{$portage_name} = 1;
+								next unless ( defined
+									($gcpan_run->{ebuilds}{portage}{$portage_name}{category})
+										and defined (
+										$gcpan_run->{ebuilds}{portage}{$portage_name}{name}
+										) && (
+											$gcpan_run->{ebuilds}{portage}{$portage_name}{name}
+										=~ m/\S/));
                                 $portage_name eq 'perl' ||
                                   lc($portage_name) eq lc($gcpan_run->{cpan}{lc($original_ebuild)}{portage_name}) and next;
                                 if ( defined($gcpan_run->{cpan}{lc($dep)}{portage_version}) &&

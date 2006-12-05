@@ -221,8 +221,10 @@ sub UnBundle {
                             $module = (split " ", $_, 2)[0];
                         }
 
-                       $self->{'cpan'}{ lc($module_name) }{'depends'}{$module}
-                       = $ver;
+                        next if ($self->{'cpan'}{ lc($module_name)
+                            }{'depends'}{$module});
+                        next if (lc($module_name) eq lc($module));
+                       $self->{'cpan'}{ lc($module_name) }{'depends'}{$module} = $ver;
                    }
                }
            }
@@ -267,6 +269,7 @@ sub FindDeps {
                             next if ( $module =~ /Cwd/i );
                             #next if ( lc($module) eq "perl" );
                             next unless ($module);
+                            next if (lc($module_name) eq lc($module));
                             $self->{'cpan'}{ lc($module_name) }{'depends'}
                               {$module} = $ar_type->{$module};
                         }
@@ -299,6 +302,7 @@ sub FindDeps {
                             next if ( $module =~ /Cwd/i );
                             #next if ( lc($module) eq "perl" );
                             next unless ($module);
+                            next if (lc($module_name) eq lc($module));
                             my $version = $2;
                             $self->{'cpan'}{ lc($module_name) }{'depends'}
                               {$module} = $version;
@@ -339,6 +343,7 @@ sub FindDeps {
                                             ( $module =~ /Cwd/i ) );
                                     #next if ( lc($module) eq "perl" );
                                     next unless ($module);
+                                    next if (lc($module_name) eq lc($module));
                                     $self->{'cpan'}{ lc($module_name) }
                                       {'depends'}{$module} = $version;
                                 }

@@ -1,3 +1,7 @@
+05/12/2006 - mcummings
+
+Fixed bug 156691, evaluation blocks in Build.PL's causing errors. Code snippet originally suggested by poster, John Miller
+
 03/09/2006 - ian
 
 Fixed bug #143317 - g-cpan: Does not record modules in world
