@@ -332,7 +332,17 @@ sub FindDeps {
                             my @list = split( ',', $p );
                             foreach my $pa (@list) {
                                 $pa =~ s/\n|\s+|\'//mg;
-                                if ($pa) {
+                                if ($pa =~ /=~/) {
+                                    my ($module, $version ) = eval $pa;
+                                    next if ((!defined($module)) or
+                                            ( $module eq "" ) or 
+                                            ( $module =~ /Cwd/i ) );
+                                    #next if ( lc($module) eq "perl" );
+                                    next unless ($module);
+                                    $self->{'cpan'}{ lc($module_name) }
+                                      {'depends'}{$module} = $version;
+                                }
+                                elsif ($pa) {
                                     my ( $module, $version ) = split( /=>/, $pa );
                                     next if ( $module eq "" );
                                     next if ( $module =~ /Cwd/i );
