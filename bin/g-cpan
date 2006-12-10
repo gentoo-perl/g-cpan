@@ -342,12 +342,15 @@ if ($list || $upgrade) {
         my @overlays = split ' ', $overlay;
         foreach my $overlay_dir (@overlays) {
             my $gcpan_dir = File::Spec->catdir($overlay_dir, 'perl-gcpan');
-            $list and print_ok($prog, "OVERLAY: $gcpan_dir");
+			#$list and print_ok($prog, "OVERLAY: $gcpan_dir");
+            print_ok($prog, "OVERLAY: $gcpan_dir");
             if (opendir PDIR, $gcpan_dir) {
                 while (my $file = readdir PDIR) {
                     $file eq '.' || $file eq '..' and next;
                     $list and print_info($prog, "perl-gcpan/$file");
+					$upgrade and print_info($prog, "Adding $file to install list");
                     $upgrade and $passed_to_install{$file} = 1;
+					$debug and print_info($prog,"Passed: $file");
                 }
                 closedir PDIR;
             } else {
@@ -409,6 +412,7 @@ sub generatePackageInfo {
         # Fallback to trying the /-/::/ trick - we avoid this the first time
         # in case the module actually employs a - in its name
         $ebuild_wanted =~ s/-/::/gxms;
+		$verbose and print_info($prog,"Getting CPAN Info for $ebuild_wanted");
         $gcpan_run->getCPANInfo($ebuild_wanted);
     }
 
@@ -416,10 +420,8 @@ sub generatePackageInfo {
     # It's possible to not find something on cpan at this point - we're just
     # trying to pre-seed the portage_name
     if ($gcpan_run->{cpan}{lc($ebuild_wanted)}) {
-        $gcpan_run->{cpan}{lc($ebuild_wanted)}{portage_name} =
-          $gcpan_run->transformCPAN($gcpan_run->{cpan}{lc($ebuild_wanted)}{src_uri}, 'n');
-        $gcpan_run->{cpan}{lc($ebuild_wanted)}{portage_version} =
-          $gcpan_run->transformCPAN($gcpan_run->{cpan}{lc($ebuild_wanted)}{src_uri}, 'v');
+        $gcpan_run->{cpan}{lc($ebuild_wanted)}{portage_name} = $gcpan_run->transformCPAN($gcpan_run->{cpan}{lc($ebuild_wanted)}{src_uri}, 'n');
+        $gcpan_run->{cpan}{lc($ebuild_wanted)}{portage_version} = $gcpan_run->transformCPAN($gcpan_run->{cpan}{lc($ebuild_wanted)}{src_uri}, 'v');
     } else {
         print_err($prog, "$ebuild_wanted is not a CPAN module!");
         #MPC hold return;
@@ -432,7 +434,7 @@ sub generatePackageInfo {
     $ebuild_wanted =~ s/::/-/gxms;
 
     # Scan portage for the ebuild name
-	$upgrade && defined($passed_to_install{$ebuild_wanted}) or scanTree($ebuild_wanted);
+	if ( $upgrade && defined($passed_to_install{$ebuild_wanted}) ) { scanTree($ebuild_wanted) }
     if ( ! ( $gcpan_run->{ebuilds}{found_ebuild}{lc($ebuild_wanted)}
              || ($upgrade && defined($passed_to_install{$ebuild_wanted})) ) ) {
 
@@ -455,7 +457,6 @@ sub generatePackageInfo {
 
         # Generate info - nothing found currently in the tree
         $debug and $gcpan_run->debug;
-        print_warn($prog,"Looking for $original_ebuild");
         if ( $gcpan_run->{cpan}{lc($original_ebuild)}{portage_name} &&
              lc($gcpan_run->{cpan}{lc($original_ebuild)}{portage_name}) ne 'perl') {
 
@@ -588,11 +589,11 @@ HERE
                         print_info($prog, "Ebuild generated for $ebuild_wanted");
                         $gcpan_run->generate_digest($ebuild);
                         if (
-                            #MPC!$upgrade
-                            #MPCor ($upgrade
-                            #MPC&&
+							!$upgrade
+							or ($upgrade
+							&&
                                 defined($passed_to_install{$gcpan_run->{'cpan'}->{lc($original_ebuild)}->{'name'}})
-                                #MPC )
+							)
                           ) {
 			    my $portage_name = $gcpan_run->{'cpan'}->{lc($original_ebuild)}->{'portage_name'};
                             $really_install{ $portage_name } = 1;
