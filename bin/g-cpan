@@ -191,10 +191,10 @@ if (-f "$cat_file") {
         my $data = <$cat_read>;
         undef $cat_read;
         autoflush STDOUT 1;
-        unless (grep "gcpan", $data) {
+        unless ( $data =~ m{gcpan}gmxi ) {
             my $cat_write = IO::File->new($cat_file, '>>');
             if (defined $cat_write) {
-                print $cat_write "perl-gcpan";
+                print $cat_write "perl-gcpan\n";
                 undef $cat_write;
                 autoflush STDOUT 1;
             } else {
