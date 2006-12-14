@@ -484,7 +484,10 @@ sub generatePackageInfo {
 
             # Write ebuild here?
             $debug and $gcpan_run->debug;
-            my @overlays = split ' ', $overlay;
+			my @overlays = [];
+            if ($overlay) { @overlays = split ' ', $overlay }
+			else { push @overlays, "/var/tmp/g-cpan" and 
+				$ENV{PORTDIR_OVERLAY} = "/var/tmp/g-cpan" }
             foreach my $target_dir (@overlays) {
                 if (-d $target_dir) {
                     my $gcpan_dir = File::Spec->catdir($target_dir, 'perl-gcpan');
@@ -600,8 +603,9 @@ HERE
                         }
                         last;
                     } else {
-                        $upgrade and print_info($prog, "$ebuild_wanted already up to date");
-                        last;
+                        $upgrade and print_info($prog, "$ebuild_wanted already up to date") and last;
+			    my $portage_name = $gcpan_run->{'cpan'}->{lc($original_ebuild)}->{'portage_name'};
+                            $really_install{ $portage_name } = 1;
                     }
                 }
             }
@@ -650,6 +654,7 @@ END {
             $dir eq 'sources' and next;
             -d $dir and rmtree(["$ENV{TMPDIR}/$dir"]);
         }
+		if ( -d "$ENV{TMPDIR}/perl-gcpan" ) { rmtree(["$ENV{TMPDIR}/perl-gcpan"]) }
     }
 }
 
