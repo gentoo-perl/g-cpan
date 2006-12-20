@@ -25,6 +25,7 @@ use Gentoo::UI::Console;
 use Log::Agent;
 use Log::Agent::Driver::File;
 use Log::Agent::Driver::Silent;
+use Shell::EnvImporter;
 
 use constant PATH_PKG_VAR => '/var/db/pkg/';
 
@@ -220,12 +221,26 @@ my $gcpan_run = Gentoo->new(
     'DEBUG' => $debug,
 );
 
+#IMPORT VARIABLES
+foreach my $file ( "/etc/make.globals", "/etc/make.conf" ) {
+	my $importer = Shell::EnvImporter->new(
+		file => $file,
+		shell => 'bash',
+		auto_run => 1,
+		auto_import => 1,
+		import_added => 1,
+	);
+	$importer->shellobj->envcmd('set');
+	$importer->run();
+
+}
+
 # Get the main portdir
-my $PORTAGE_DIR = $gcpan_run->getValue('PORTDIR');
+my $PORTAGE_DIR = $ENV{'PORTDIR'};
 $gcpan_run->{portage_bases}{$PORTAGE_DIR} = 1;
 
 # Grab the keywords - we'll need these when we build the ebuild
-my $keywords = $gcpan_run->getValue('ACCEPT_KEYWORDS');
+my $keywords = $ENV{'ACCEPT_KEYWORDS'};
 
 $keywords ||= do {
     open my $tmp, '<', "$PORTAGE_DIR/profiles/arch.list"
@@ -235,10 +250,10 @@ $keywords ||= do {
 
 
 # Get the overlays
-my $overlay = $gcpan_run->getValue('PORTDIR_OVERLAY') || undef;
+my $overlay = $ENV{'PORTDIR_OVERLAY'} || undef;
 
 # Get the DISTDIR - we'd like store the tarballs in here the one time
-$gcpan_run->{sources} = $gcpan_run->getValue('DISTDIR');
+$gcpan_run->{sources} = $ENV{'DISTDIR'};
 
 # Make sure we have write access to the DISTDIR
 if (   $generate

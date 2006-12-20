@@ -9,7 +9,7 @@ use Log::Agent;
 #### Load the other namespaces.
 #### Gentoo.pm is the primary if these aren't accessed directly.
 
-use Gentoo::Config;
+#REMOVE #use Gentoo::Config;
 use Gentoo::Portage;
 use Gentoo::CPAN;
 
@@ -43,7 +43,7 @@ sub _init {
     my ( $self, %args ) = @_;
     return if $self->{_init}{__PACKAGE__}++;
     $self->Gentoo::Portage::_init(%args);
-    $self->Gentoo::Config::_init(%args);
+    #REMOVE #$self->Gentoo::Config::_init(%args);
 }
 
 sub UNIVERSAL::debug {
@@ -75,7 +75,7 @@ sub DESTROY {
     my ($self) = @_;
     return if $self->{DESTROY}{__PACKAGE__}++;
 
-    $self->Gentoo::Config::DESTROY();
+    #REMOVE #$self->Gentoo::Config::DESTROY();
     $self->Gentoo::Portage::DESTROY();
 }
 
