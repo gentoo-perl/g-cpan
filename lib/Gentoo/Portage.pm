@@ -135,7 +135,7 @@ sub getAvailableVersions {
     );
 
     if ($find_ebuild) {
-        return if ( $self->{ebuilds}{'found_ebuild'}{ lc($find_ebuild) } );
+        return if ( defined($self->{ebuilds}{portage}{ lc($find_ebuild) }{'found'} ));
     }
     foreach my $tc ( @{ $self->{portage_categories} } ) {
         next if ( !-d "$portdir/$tc" );
@@ -161,7 +161,7 @@ sub getAvailableVersions {
                     next
                       unless ( lc($find_ebuild) eq lc($tp) );
                 }
-                getAvailableEbuilds( $self, $portdir, $tc . "/" . $find_ebuild );
+                getAvailableEbuilds( $self, $portdir, $tc . "/" . $tp );
 
                 my @arr = @{ $self->{packagelist}};
                 foreach ( @{ $self->{packagelist} } ) {
@@ -219,10 +219,9 @@ sub getAvailableVersions {
                               $tc;
                         }
                         if ($find_ebuild) {
-                            if ( $self->{ebuilds}{'portage'}{ lc($find_ebuild) } )
+                            if ( defined($self->{ebuilds}{'portage'}{ lc($tp) }{'name'}) )
                             {
-                                $self->{ebuilds}{'found_ebuild'}
-                                  { lc($find_ebuild) } = 1;
+                                $self->{ebuilds}{portage}{ lc($tp) }{'found'} = 1;
                                 last;
                             }
                         }

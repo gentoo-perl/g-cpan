@@ -31,7 +31,7 @@ use constant PATH_PKG_VAR => '/var/db/pkg/';
 ##### Establish our tmpdir
 unless ($ENV{TMPDIR}) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
 
-our $VERSION = "0.14.1_rc1";
+our $VERSION = "0.14.1_rc2";
 my $prog = basename($0);
 
 my %dep_list  = ();
@@ -280,7 +280,7 @@ if ($search) {
         my $tree_expr = $expr;
         $tree_expr =~ s/::/-/gxms;
         scanTree(lc($tree_expr));
-        if ($gcpan_run->{ebuilds}{found_ebuild}{lc($tree_expr)}) {
+        if (defined($gcpan_run->{ebuilds}{portage}{lc($tree_expr)}{found})) {
             print_info("Ebuild exists for $expr");
         } else {
             print_info("No ebuild exists, pulling up CPAN listings for $expr");
@@ -403,9 +403,9 @@ sub generatePackageInfo {
     $upgrade and $ebuild_wanted =~ s/-/::/gxms;
 
     # Grab specific info for this module
-	$gcpan_run->{ebuilds}{found_ebuild}{lc($ebuild_wanted)} or 
+	defined($gcpan_run->{ebuilds}{portage}{lc($ebuild_wanted)}{found}) or 
 	  $gcpan_run->getCPANInfo($ebuild_wanted);
-    if ( ! $gcpan_run->{cpan}{lc($ebuild_wanted)} && ! $gcpan_run->{ebuilds}{found_ebuild}{lc($ebuild_wanted)} ) {
+    if ( ! $gcpan_run->{cpan}{lc($ebuild_wanted)} && ! defined($gcpan_run->{ebuilds}{portage}{lc($ebuild_wanted)}{found} )) {
 
         # Fallback to trying the /-/::/ trick - we avoid this the first time
         # in case the module actually employs a - in its name
@@ -433,7 +433,7 @@ sub generatePackageInfo {
     # Scan portage for the ebuild name
 	if (( $upgrade && !defined($passed_to_install{$ebuild_wanted}) )  ||
 		(!$upgrade && defined($passed_to_install{$ebuild_wanted})) ||
-		(!$upgrade && !$gcpan_run->{ebuilds}{found_ebuild}{lc($ebuild_wanted)} )
+		(!$upgrade && !defined($gcpan_run->{ebuilds}{portage}{lc($ebuild_wanted)}{found} ) )
 	) {
 
         # Ebuild wasn't found - scan for the nice version of the module name
@@ -441,7 +441,7 @@ sub generatePackageInfo {
         scanTree($gcpan_run->{cpan}{lc($original_ebuild)}{portage_name});
 
         # We had success in finding this module under a different name
-        if ($gcpan_run->{ebuilds}{found_ebuild}{lc($gcpan_run->{cpan}{lc($original_ebuild)}{portage_name})}) {
+        if (defined($gcpan_run->{ebuilds}{portage}{lc($gcpan_run->{cpan}{lc($original_ebuild)}{portage_name})}{found})) {
             $verbose and print_info('Found ebuild under CPAN name (' . $gcpan_run->{cpan}{lc($original_ebuild)}{portage_name} . ')');
             $ebuild_wanted = $gcpan_run->{cpan}{lc($original_ebuild)}{portage_name};
         }
@@ -451,7 +451,7 @@ sub generatePackageInfo {
 
     # Second round - we've looked for the package in portage two different
     # ways now, time to get serious and create it ourselves
-    if ( ! $gcpan_run->{ebuilds}{found_ebuild}{lc($ebuild_wanted)} ) {
+    if ( ! defined($gcpan_run->{ebuilds}{portage}{lc($ebuild_wanted)}{found} ) ) {
 
         # Generate info - nothing found currently in the tree
         $debug and $gcpan_run->debug;
@@ -591,7 +591,7 @@ HERE
                             autoflush STDOUT 1;
                         }
                         if (-f $gcpan_run->{cpan}{lc($original_ebuild)}{cpan_tarball}) {
-                            $verbose and print_info("Copying $gcpan_run->{cpan}{lc($original_ebuild)}{cpan_tarball} to $gcpan_run->{sources}");
+                            $verbose and print_ok("Copying $gcpan_run->{cpan}{lc($original_ebuild)}{cpan_tarball} to $gcpan_run->{sources}");
                             copy($gcpan_run->{cpan}{lc($original_ebuild)}{cpan_tarball}, $gcpan_run->{sources});
                         }
                         print_info("Ebuild generated for $ebuild_wanted");
@@ -616,7 +616,7 @@ HERE
             }
         }
     } else {
-        print_info("Ebuild already exists for $ebuild_wanted");
+        print_ok("Ebuild already exists for $ebuild_wanted");
         defined $passed_to_install{$ebuild_wanted} || defined $passed_to_install{$original_ebuild} and
           $really_install{$gcpan_run->{'ebuilds'}{'portage'}{lc($ebuild_wanted)}{'name'}} = 1;
     }
@@ -629,12 +629,12 @@ sub scanTree {
 	if ($module =~ /pathtools/gimx) { $module = "File-Spec" }
     foreach my $portage_root (keys %{$gcpan_run->{portage_bases}}) {
         if (-d $portage_root) {
-            $verbose and print_info("Scanning $portage_root for $module");
+            $verbose and print_ok("Scanning $portage_root for $module");
             $gcpan_run->getAvailableVersions($portage_root, $module);
         }
 
         # Pop out of the loop if we've found the module
-        $gcpan_run->{ebuilds}{found_ebuild}{lc($module)} and last;
+        defined($gcpan_run->{ebuilds}{portage}{lc($module)}{found}) and last;
     }
 }
 
@@ -658,7 +658,7 @@ END {
     # we first need to see if it exists, then need to remove only if it has content (the old exists vs. defined)
 
     if (defined($ENV{TMPDIR})) {
-        $verbose and print_info('Cleaning temporary overlay');
+        $verbose and print_ok('Cleaning temporary overlay');
         my ($startdir) = cwd();
         chdir("$ENV{TMPDIR}/.cpan");
         opendir(CURD, '.');
