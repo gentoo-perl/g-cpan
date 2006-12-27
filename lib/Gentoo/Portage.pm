@@ -4,7 +4,7 @@ use 5.008007;
 use strict;
 use warnings;
 use Shell qw(ebuild emerge);
-use Memoize;
+#use Memoize;
 #memoize('getAvailableVersions');
 use Cwd qw(getcwd abs_path cwd);
 use File::Find ();
@@ -60,7 +60,7 @@ sub getAvailableEbuilds {
     my $self        = shift;
     my $portdir     = shift;
     my $catPackage  = shift;
-    my @packagelist = ();
+    @{$self->{packagelist}} = ();
     if ( -e $portdir . "/" . $catPackage ) {
 
         # - get list of ebuilds >
@@ -161,33 +161,35 @@ sub getAvailableVersions {
                     next
                       unless ( lc($find_ebuild) eq lc($tp) );
                 }
-                getAvailableEbuilds( $self, $portdir, $tc . "/" . $tp );
+                getAvailableEbuilds( $self, $portdir, $tc . "/" . $find_ebuild );
+
+                my @arr = @{ $self->{packagelist}};
                 foreach ( @{ $self->{packagelist} } ) {
                     my @tmp_availableVersions = ();
                     push( @tmp_availableVersions, getEbuildVersionSpecial($_) );
 
                     # - get highest version >
                     if ( $#tmp_availableVersions > -1 ) {
-                        $self->{ebuilds}{'portage_lc'}{ lc($tp) } =
+                        $self->{ebuilds}{'portage'}{ lc($tp) }{'version'} =
                           ( sort(@tmp_availableVersions) )
                           [$#tmp_availableVersions];
 
                         # - get rid of -rX >
-                        $self->{ebuilds}{'portage_lc'}{ lc($tp) } =~
+                        $self->{ebuilds}{'portage'}{ lc($tp) }{'version'} =~
                           s/([a-zA-Z0-9\-_\/]+)-r[0-9+]/$1/;
-                        $self->{ebuilds}{'portage_lc'}{ lc($tp) } =~
+                        $self->{ebuilds}{'portage'}{ lc($tp) }{'version'} =~
                           s/([a-zA-Z0-9\-_\/]+)-rc[0-9+]/$1/;
-                        $self->{ebuilds}{'portage_lc'}{ lc($tp) } =~
+                        $self->{ebuilds}{'portage'}{ lc($tp) }{'version'} =~
                           s/([a-zA-Z0-9\-_\/]+)_p[0-9+]/$1/;
-                        $self->{ebuilds}{'portage_lc'}{ lc($tp) } =~
+                        $self->{ebuilds}{'portage'}{ lc($tp) }{'version'} =~
                           s/([a-zA-Z0-9\-_\/]+)_pre[0-9+]/$1/;
 
                         # - get rid of other stuff we don't want >
-                        $self->{ebuilds}{'portage_lc'}{ lc($tp) } =~
+                        $self->{ebuilds}{'portage'}{ lc($tp) }{'version'} =~
                           s/([a-zA-Z0-9\-_\/]+)_alpha[0-9+]?/$1/;
-                        $self->{ebuilds}{'portage_lc'}{ lc($tp) } =~
+                        $self->{ebuilds}{'portage'}{ lc($tp) }{'version'} =~
                           s/([a-zA-Z0-9\-_\/]+)_beta[0-9+]?/$1/;
-                        $self->{ebuilds}{'portage_lc'}{ lc($tp) } =~
+                        $self->{ebuilds}{'portage'}{ lc($tp) }{'version'} =~
                           s/[a-zA-Z]+$//;
 
                         if ( $tc eq "perl-core"
@@ -217,8 +219,7 @@ sub getAvailableVersions {
                               $tc;
                         }
                         if ($find_ebuild) {
-                            if ( $self->{ebuilds}{'portage_lc'}
-                                { lc($find_ebuild) } )
+                            if ( $self->{ebuilds}{'portage'}{ lc($find_ebuild) } )
                             {
                                 $self->{ebuilds}{'found_ebuild'}
                                   { lc($find_ebuild) } = 1;

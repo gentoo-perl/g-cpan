@@ -87,7 +87,7 @@ if ($log) {
             -magic_open => 0,
             -stampfmt   => 'date',
             -channels   => {
-                'error'  => "/var/log/$prog/$prog.err",
+                'error'  =>"/var/log/$prog/$prog.err",
                 'output' => "/var/log/$prog/$prog.log",
             }
         );
@@ -98,10 +98,10 @@ if ($log) {
 }
 
 $log && $debug and
-  print_warn($prog, "*WARNING* - logging debug output can create large logs");
+  print_warn("*WARNING* - logging debug output can create large logs");
 
 if ( ($install || $ask || $buildpkg || $buildpkgonly || $upgrade) && $> > 0 && !$pretend) {
-    print_err($prog, "ERROR - INSUFFICIENT PERMISSIONS TO RUN EMERGE");
+    print_err("INSUFFICIENT PERMISSIONS TO RUN EMERGE");
     logerr("ERROR - INSUFFICIENT PERMISSIONS TO RUN EMERGE");
     exit();
 }
@@ -125,20 +125,20 @@ my %really_install;
 #
 
 if ( (grep { defined $$_ } @main_switches) > 1) {
-    print_err($prog, "You can't combine actions with each other.\n");
+    print_err("You can't combine actions with each other.\n");
     print_out("${white}Please consult ${cyan}$prog ${green}--help${reset} or ${cyan}man $prog${reset} for more information\n\n");
     exit();
 }
 
 if ( ! grep { defined $$_ } @main_switches, @additional_switches ) {
-    print_err($prog, "You haven't told $prog what to do.\n");
+    print_err("You haven't told $prog what to do.\n");
     print_out("${white}Please consult ${cyan}$prog ${green}--help${reset} or ${cyan}man $prog${reset} for more information\n\n");
     exit();
 }
 
 # Output error if no arguments
 if (@ARGV == 0 && !(defined $upgrade || defined $list )) {
-    print_err($prog, "Not even one module name or expression given!\n");
+    print_err("Not even one module name or expression given!\n");
     print_out("${white}Please consult ${cyan}$prog ${green}--help${reset} for more information\n\n");
     exit();
 }
@@ -229,7 +229,7 @@ my $keywords = strip_ends('ACCEPT_KEYWORDS');
 
 $keywords ||= do {
     open my $tmp, '<', "$PORTAGE_DIR/profiles/arch.list"
-      or fatal(print_err($prog,"ERROR READING $PORTAGE_DIR/profiles/arch.list: $!"));
+      or fatal(print_err("ERROR READING $PORTAGE_DIR/profiles/arch.list: $!"));
     join ' ', map { chomp; $_ } <$tmp>;
 };
 
@@ -255,7 +255,7 @@ if (   $generate
         unlink $test_dist_writes;
     } else {
         undef $test_distdir;
-        fatal(print_err($prog, "No write access to DISTDIR: $!"));
+        fatal(print_err("No write access to DISTDIR: $!"));
     }
 }
 
@@ -267,7 +267,7 @@ if ($overlay) {
         $gcpan_run->{portage_bases}{$overlay} = 1;
     }
 } elsif ($generate || $pretend) {
-    print_err($prog, "The option you have chosen isn't supported without a configured overlay.\n");
+    print_err("The option you have chosen isn't supported without a configured overlay.\n");
     exit();
 }
 
@@ -281,14 +281,14 @@ if ($search) {
         $tree_expr =~ s/::/-/gxms;
         scanTree(lc($tree_expr));
         if ($gcpan_run->{ebuilds}{found_ebuild}{lc($tree_expr)}) {
-            print_info($prog, "Ebuild exists for $expr");
+            print_info("Ebuild exists for $expr");
         } else {
-            print_info($prog, "No ebuild exists, pulling up CPAN listings for $expr");
+            print_info("No ebuild exists, pulling up CPAN listings for $expr");
 
             # Assume they gave us module-name instead of module::name
             # which is bad, because CPAN can't convert it ;p
 
-            $verbose and print_ok($prog, "Searching for $expr on CPAN");
+            $verbose and print_info("Searching for $expr on CPAN");
 
 	    my @search_results;
 
@@ -342,17 +342,17 @@ if ($list || $upgrade) {
         my @overlays = split ' ', $overlay;
         foreach my $overlay_dir (@overlays) {
             my $gcpan_dir = File::Spec->catdir($overlay_dir, 'perl-gcpan');
-			#$list and print_ok($prog, "OVERLAY: $gcpan_dir");
-            print_ok($prog, "OVERLAY: $gcpan_dir");
+			#$list and print_info("OVERLAY: $gcpan_dir");
+            print_info("OVERLAY: $gcpan_dir");
             if (opendir PDIR, $gcpan_dir) {
                 while (my $file = readdir PDIR) {
                     $file eq '.' || $file eq '..' and next;
-                    $list and print_info($prog, "perl-gcpan/$file");
+                    $list and print_info("perl-gcpan/$file");
                     $upgrade and $passed_to_install{$file} = 1;
                 }
                 closedir PDIR;
             } else {
-                print_warn($prog, "Couldn't open folder $gcpan_dir: $!");
+                print_warn("Couldn't open folder $gcpan_dir: $!");
             }
         }
     }
@@ -372,21 +372,21 @@ if ($install || $pretend || $buildpkg || $buildpkgonly || $upgrade || $ask) {
     if (keys %really_install) {
 
 			my @ebuilds = (keys %really_install);
-            $verbose and print_ok($prog, "Calling emerge for @ebuilds\n");
+            $verbose and print_info("Calling emerge for @ebuilds\n");
             my @flags;
             if ($pretend && $pretend > 0) {push @flags, '--pretend' }
             if ($ask && $ask > 0) { push @flags, '--ask' }
             if ($buildpkg && $buildpkg > 0 ) {push @flags, '--buildpkg' }
             if ($buildpkgonly && $buildpkgonly > 0 ) { push @flags, '--buildpkgonly' }
 
-            $verbose and print_info($prog, "Calling: emerge @flags @ebuilds");
+            $verbose and print_info("Calling: emerge @flags @ebuilds");
             $gcpan_run->emerge_ebuild(@ebuilds, @flags);
 
     } else {
         if ($upgrade) {
-            print_info($prog, 'Everything was up to date, nothing to do!');
+            print_info('Everything was up to date, nothing to do!');
         } else {
-            print_err($prog, 'Nothing to install!!');
+            print_err('Nothing to install!!');
         }
     }
 }
@@ -397,7 +397,7 @@ sub generatePackageInfo {
     # should be a safe substitution
     my ($ebuild_wanted) = @_;
     $ebuild_wanted =~ /ExtUtils(::|-)MakeMaker/i and
-      print_info($prog, 'Skipping ExtUtils::MakeMaker dependency'), next;
+      print_info('Skipping ExtUtils::MakeMaker dependency'), next;
 
     #In the event this is an upgrade, go ahead and do the lame s/-/::/
     $upgrade and $ebuild_wanted =~ s/-/::/gxms;
@@ -410,7 +410,7 @@ sub generatePackageInfo {
         # Fallback to trying the /-/::/ trick - we avoid this the first time
         # in case the module actually employs a - in its name
         $ebuild_wanted =~ s/-/::/gxms;
-		$verbose and print_info($prog,"Getting CPAN Info for $ebuild_wanted");
+		$verbose and print_info("Getting CPAN Info for $ebuild_wanted");
         $gcpan_run->getCPANInfo($ebuild_wanted);
     }
 
@@ -421,7 +421,7 @@ sub generatePackageInfo {
         $gcpan_run->{cpan}{lc($ebuild_wanted)}{portage_name} = $gcpan_run->transformCPAN($gcpan_run->{cpan}{lc($ebuild_wanted)}{src_uri}, 'n');
         $gcpan_run->{cpan}{lc($ebuild_wanted)}{portage_version} = $gcpan_run->transformCPAN($gcpan_run->{cpan}{lc($ebuild_wanted)}{src_uri}, 'v');
     } else {
-        print_err($prog, "$ebuild_wanted is not a CPAN module!");
+        print_err("$ebuild_wanted is not a CPAN module!");
     }
 
     # Save a copy of the originally requested name for later use
@@ -442,7 +442,7 @@ sub generatePackageInfo {
 
         # We had success in finding this module under a different name
         if ($gcpan_run->{ebuilds}{found_ebuild}{lc($gcpan_run->{cpan}{lc($original_ebuild)}{portage_name})}) {
-            $verbose and print_info($prog, 'Found ebuild under CPAN name (' . $gcpan_run->{cpan}{lc($original_ebuild)}{portage_name} . ')');
+            $verbose and print_info('Found ebuild under CPAN name (' . $gcpan_run->{cpan}{lc($original_ebuild)}{portage_name} . ')');
             $ebuild_wanted = $gcpan_run->{cpan}{lc($original_ebuild)}{portage_name};
         }
     } else {
@@ -466,10 +466,10 @@ sub generatePackageInfo {
                 defined $dep && $dep ne '' or next;
                 $dep eq 'perl' and delete $gcpan_run->{cpan}{lc($original_ebuild)}{depends}{$dep};
 
-                $dep =~ /ExtUtils(::|-)MakeMaker/i and print_info($prog,"Skipping ExtUtils::MakeMaker dependency"), next;
+                $dep =~ /ExtUtils(::|-)MakeMaker/i and print_info("Skipping ExtUtils::MakeMaker dependency"), next;
 
                 # Make sure we have information relevant to each of the deps
-                $verbose and print_info($prog, "Checking on dependency $dep for $original_ebuild");
+                $verbose and print_info("Checking on dependency $dep for $original_ebuild");
                 $passed_to_install{$dep} or generatePackageInfo($dep);
 
                 # Remove dep from list of modules to install later on - no
@@ -490,21 +490,21 @@ sub generatePackageInfo {
                 if (-d $target_dir) {
                     my $gcpan_dir = File::Spec->catdir($target_dir, 'perl-gcpan');
                     if (! -d $gcpan_dir) {
-                        $verbose and print_info($prog, "Create directory '$gcpan_dir'");
+                        $verbose and print_info("Create directory '$gcpan_dir'");
                         mkdir($gcpan_dir, 0755) or
-                          fatal(print_err($prog, "Couldn't create folder $gcpan_dir: $!"));
+                          fatal(print_err("Couldn't create folder $gcpan_dir: $!"));
                     }
                     my $ebuild_dir = File::Spec->catdir($gcpan_dir, $gcpan_run->{cpan}{lc($original_ebuild)}{portage_name});
                     if (! -d $ebuild_dir) {
-                        $verbose and print_info($prog, "Create directory '$ebuild_dir'");
+                        $verbose and print_info("Create directory '$ebuild_dir'");
                         mkdir($ebuild_dir, 0755) or
-                          fatal(print_err($prog, "Couldn't create folder $gcpan_dir: $!"));
+                          fatal(print_err("Couldn't create folder $gcpan_dir: $!"));
                     }
                     my $files_dir = File::Spec->catdir($ebuild_dir, 'files');
                     if (! -d $files_dir) {
-                        $verbose and print_info($prog, "Create directory '$files_dir'");
+                        $verbose and print_info("Create directory '$files_dir'");
                         mkdir($files_dir, 0755) or
-                          fatal(print_err($prog, "Couldn't create folder $gcpan_dir: $!"));
+                          fatal(print_err("Couldn't create folder $gcpan_dir: $!"));
                     }
                     my $ebuild = File::Spec->catdir($ebuild_dir,
                             $gcpan_run->{cpan}{lc($original_ebuild)}{portage_name} . '-'
@@ -514,9 +514,9 @@ sub generatePackageInfo {
                     # Break out if we already have an ebuild (upgrade or
                     # mistake in the code)
                     if ( ! -f $ebuild) {
-                        print_info($prog, 'Generating ebuild for ' . $gcpan_run->{cpan}{lc($original_ebuild)}{name});
+                        print_info('Generating ebuild for ' . $gcpan_run->{cpan}{lc($original_ebuild)}{name});
                         my $EBUILD = IO::File->new($ebuild, '>') or
-                          fatal(print_err($prog, "Couldn't open(write) file $ebuild: $!"));
+                          fatal(print_err("Couldn't open(write) file $ebuild: $!"));
                         print $EBUILD <<"HERE";
 # Copyright 1999-2006 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
@@ -547,7 +547,7 @@ HERE
                                 my $portage_name = lc($gcpan_run->{cpan}{lc($dep)}{portage_name});
                                 $portage_name =~ /\S/ or next;
 								if ($original_ebuild =~ m/filter-simple/mgix)
-								{ print_err($prog, "$portage_name is being passed");}
+								{ print_err("$portage_name is being passed");}
 
                                 # Last ditch call to scanTree to make sure we
                                 # have info
@@ -563,16 +563,23 @@ HERE
 										=~ m/\S/));
                                 $portage_name eq 'perl' ||
                                   lc($portage_name) eq lc($gcpan_run->{cpan}{lc($original_ebuild)}{portage_name}) and next;
+								  my $eb_version = stripdown($gcpan_run->{ebuilds}{portage}{lc($portage_name)}{version});
+								  my $cpan_version = defined($gcpan_run->{cpan}{lc($dep)}{portage_version})? stripdown($gcpan_run->{cpan}{lc($dep)}{portage_version}): "0";
                                 if ( defined($gcpan_run->{cpan}{lc($dep)}{portage_version}) &&
                                      $gcpan_run->{cpan}{lc($original_ebuild)}{depends}{$dep} ne '0' &&
+									 int($eb_version) >= int($cpan_version) &&
 									 $gcpan_run->{cpan}{lc($original_ebuild)}{depends}{$dep} =~ m{\d}gx &&
                                      $gcpan_run->{ebuilds}{portage}{$portage_name}{name} ne "module-build"
                                    ) {
                                     print $EBUILD "\>\="
                                       . $gcpan_run->{ebuilds}{portage}{$portage_name}{category} . '/'
-                                      . $gcpan_run->{ebuilds}{portage}{$portage_name}{name} . '-'
-                                      .
-									  $gcpan_run->{cpan}{lc($original_ebuild)}{depends}{$dep} . "\n\t";
+                                      . $gcpan_run->{ebuilds}{portage}{$portage_name}{name} . '-';
+                                      if (defined($eb_version)) {
+										  print $EBUILD $gcpan_run->{ebuilds}{portage}{lc($portage_name)}{version}
+									  } else {
+										  print $EBUILD $gcpan_run->{cpan}{lc($dep)}{portage_version}
+									  }
+									  print $EBUILD "\n\t";
                                 } else {
                                     print $EBUILD ""
                                       . $gcpan_run->{ebuilds}{portage}{$portage_name}{category} . "/"
@@ -584,10 +591,10 @@ HERE
                             autoflush STDOUT 1;
                         }
                         if (-f $gcpan_run->{cpan}{lc($original_ebuild)}{cpan_tarball}) {
-                            $verbose and print_info($prog, "Copying $gcpan_run->{cpan}{lc($original_ebuild)}{cpan_tarball} to $gcpan_run->{sources}");
+                            $verbose and print_info("Copying $gcpan_run->{cpan}{lc($original_ebuild)}{cpan_tarball} to $gcpan_run->{sources}");
                             copy($gcpan_run->{cpan}{lc($original_ebuild)}{cpan_tarball}, $gcpan_run->{sources});
                         }
-                        print_info($prog, "Ebuild generated for $ebuild_wanted");
+                        print_info("Ebuild generated for $ebuild_wanted");
                         $gcpan_run->generate_digest($ebuild);
                         if (
 							!$upgrade
@@ -601,7 +608,7 @@ HERE
                         }
                         last;
                     } else {
-                        $upgrade and print_info($prog, "$ebuild_wanted already up to date") and last;
+                        $upgrade and print_info("$ebuild_wanted already up to date") and last;
 			    my $portage_name = $gcpan_run->{'cpan'}->{lc($original_ebuild)}->{'portage_name'};
                             $really_install{ $portage_name } = 1;
                     }
@@ -609,7 +616,7 @@ HERE
             }
         }
     } else {
-        print_ok($prog, "Ebuild already exists for $ebuild_wanted");
+        print_info("Ebuild already exists for $ebuild_wanted");
         defined $passed_to_install{$ebuild_wanted} || defined $passed_to_install{$original_ebuild} and
           $really_install{$gcpan_run->{'ebuilds'}{'portage'}{lc($ebuild_wanted)}{'name'}} = 1;
     }
@@ -622,7 +629,7 @@ sub scanTree {
 	if ($module =~ /pathtools/gimx) { $module = "File-Spec" }
     foreach my $portage_root (keys %{$gcpan_run->{portage_bases}}) {
         if (-d $portage_root) {
-            $verbose and print_ok($prog, "Scanning $portage_root for $module");
+            $verbose and print_info("Scanning $portage_root for $module");
             $gcpan_run->getAvailableVersions($portage_root, $module);
         }
 
@@ -636,6 +643,13 @@ sub strip_ends {
 	$ENV{$key} =~ s{\'}{}gmxs;
 	return $ENV{$key};
 }
+
+sub stripdown {
+	my $string = shift;
+	unless ($string =~ m{\d}) { return }
+	$string =~ s{\.|_|-|\D+}{}gmxi;
+	return $string;
+}
 # cab - Takes care of system's sanity
 END {
 
@@ -644,7 +658,7 @@ END {
     # we first need to see if it exists, then need to remove only if it has content (the old exists vs. defined)
 
     if (defined($ENV{TMPDIR})) {
-        $verbose and print_info($prog, 'Cleaning temporary overlay');
+        $verbose and print_info('Cleaning temporary overlay');
         my ($startdir) = cwd();
         chdir("$ENV{TMPDIR}/.cpan");
         opendir(CURD, '.');

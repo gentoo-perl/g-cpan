@@ -49,7 +49,7 @@ sub new {
 #
 # dams - bit of factorization
 
-sub print_colored { print ' ' . color(shift) . '* ' . color("reset") . shift() . ': ', @_, "\n" }
+sub print_colored { print ' ' . color(shift) . '* ' . color("reset") . shift() , "\n" }
 
 # These methods take as args  :
 # - the program name (1 string)
@@ -61,18 +61,18 @@ sub print_ok {
 }
 
 sub print_info {
-    print_colored('bold cyan', shift, @_);
-    logsay "@_";
+    print_colored('bold cyan',  shift, @_);
+    logsay "[INFO] @_";
 }
 
 sub print_warn {
     print_colored('bold yellow', shift, @_);
-    logerr "@_";
+    logerr "[WARNING] @_";
 }
 
 sub print_err {
     print_colored('bold red', shift, @_);
-    logerr "@_";
+    logerr "[ERROR] @_";
 }
 
 # For the occasional freeform text
@@ -102,10 +102,9 @@ Gentoo::UI::Console - Console based display methods
 
     use File::Basename;
     use Gentoo::UI::Console;
-    my $prog_name = basename($0);
-    print_ok($prog_name,"Everything looks good");
-    print_err($prog_name,"Danger, danger Will Robinson!");
-    fatal(print_info($prog_name,"Dieing was never so sweet"));
+    print_ok("Everything looks good");
+    print_err("Danger, danger Will Robinson!");
+    fatal(print_info("Dieing was never so sweet"));
 
 =head1 DESCRIPTION
 
@@ -123,19 +122,19 @@ gracefully.
 
 =over 4
 
-=item print_ok($prog, $message)
+=item print_ok($message)
 
 Print a message with a green indicator.
 
-=item print_info($prog, $message)
+=item print_info($message)
 
 Print a message with a cyan indicator.
 
-=item print_warn($prog, $message)
+=item print_warn($message)
 
 Print a message with a yellow indicator.
 
-=item print_err($prog, $message)
+=item print_err($message)
 
 Print a message with a red indicator
 
