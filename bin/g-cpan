@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 package main;
 
-# Copyright 1999-2005 Gentoo Foundation
+# Copyright 1999-2006 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 #
 
@@ -25,7 +25,6 @@ use Gentoo::UI::Console;
 use Log::Agent;
 use Log::Agent::Driver::File;
 use Log::Agent::Driver::Silent;
-use Shell::EnvImporter;
 
 use constant PATH_PKG_VAR => '/var/db/pkg/';
 
@@ -221,26 +220,12 @@ my $gcpan_run = Gentoo->new(
     'DEBUG' => $debug,
 );
 
-#IMPORT VARIABLES
-foreach my $file ( "/etc/make.globals", "/etc/make.conf" ) {
-	my $importer = Shell::EnvImporter->new(
-		file => $file,
-		shell => 'bash',
-		auto_run => 1,
-		auto_import => 1,
-		import_added => 1,
-	);
-	$importer->shellobj->envcmd('set');
-	$importer->run();
-
-}
-
 # Get the main portdir
-my $PORTAGE_DIR = $ENV{'PORTDIR'};
+my $PORTAGE_DIR = strip_ends('PORTDIR');
 $gcpan_run->{portage_bases}{$PORTAGE_DIR} = 1;
 
 # Grab the keywords - we'll need these when we build the ebuild
-my $keywords = $ENV{'ACCEPT_KEYWORDS'};
+my $keywords = strip_ends('ACCEPT_KEYWORDS');
 
 $keywords ||= do {
     open my $tmp, '<', "$PORTAGE_DIR/profiles/arch.list"
@@ -250,10 +235,10 @@ $keywords ||= do {
 
 
 # Get the overlays
-my $overlay = $ENV{'PORTDIR_OVERLAY'} || undef;
+my $overlay = strip_ends('PORTDIR_OVERLAY') || undef;
 
 # Get the DISTDIR - we'd like store the tarballs in here the one time
-$gcpan_run->{sources} = $ENV{'DISTDIR'};
+$gcpan_run->{sources} = (strip_ends('DISTDIR'));
 
 # Make sure we have write access to the DISTDIR
 if (   $generate
@@ -363,9 +348,7 @@ if ($list || $upgrade) {
                 while (my $file = readdir PDIR) {
                     $file eq '.' || $file eq '..' and next;
                     $list and print_info($prog, "perl-gcpan/$file");
-					$upgrade and print_info($prog, "Adding $file to install list");
                     $upgrade and $passed_to_install{$file} = 1;
-					$debug and print_info($prog,"Passed: $file");
                 }
                 closedir PDIR;
             } else {
@@ -420,8 +403,8 @@ sub generatePackageInfo {
     $upgrade and $ebuild_wanted =~ s/-/::/gxms;
 
     # Grab specific info for this module
-    $gcpan_run->{ebuilds}{found_ebuild}{lc($ebuild_wanted)} or 
-      $gcpan_run->getCPANInfo($ebuild_wanted);
+	$gcpan_run->{ebuilds}{found_ebuild}{lc($ebuild_wanted)} or 
+	  $gcpan_run->getCPANInfo($ebuild_wanted);
     if ( ! $gcpan_run->{cpan}{lc($ebuild_wanted)} && ! $gcpan_run->{ebuilds}{found_ebuild}{lc($ebuild_wanted)} ) {
 
         # Fallback to trying the /-/::/ trick - we avoid this the first time
@@ -439,7 +422,6 @@ sub generatePackageInfo {
         $gcpan_run->{cpan}{lc($ebuild_wanted)}{portage_version} = $gcpan_run->transformCPAN($gcpan_run->{cpan}{lc($ebuild_wanted)}{src_uri}, 'v');
     } else {
         print_err($prog, "$ebuild_wanted is not a CPAN module!");
-        #MPC hold return;
     }
 
     # Save a copy of the originally requested name for later use
@@ -449,12 +431,13 @@ sub generatePackageInfo {
     $ebuild_wanted =~ s/::/-/gxms;
 
     # Scan portage for the ebuild name
-	if ( $upgrade && defined($passed_to_install{$ebuild_wanted}) ) { scanTree($ebuild_wanted) }
-    if ( ! ( $gcpan_run->{ebuilds}{found_ebuild}{lc($ebuild_wanted)}
-             || ($upgrade && defined($passed_to_install{$ebuild_wanted})) ) ) {
+	if (( $upgrade && !defined($passed_to_install{$ebuild_wanted}) )  ||
+		(!$upgrade && defined($passed_to_install{$ebuild_wanted})) ||
+		(!$upgrade && !$gcpan_run->{ebuilds}{found_ebuild}{lc($ebuild_wanted)} )
+	) {
 
         # Ebuild wasn't found - scan for the nice version of the module name
-        lc($gcpan_run->{cpan}{lc($original_ebuild)}{portage_name}) eq 'perl' and next;
+        if (lc($gcpan_run->{cpan}{lc($original_ebuild)}{portage_name}) eq 'perl' ) { return }
         scanTree($gcpan_run->{cpan}{lc($original_ebuild)}{portage_name});
 
         # We had success in finding this module under a different name
@@ -582,6 +565,7 @@ HERE
                                   lc($portage_name) eq lc($gcpan_run->{cpan}{lc($original_ebuild)}{portage_name}) and next;
                                 if ( defined($gcpan_run->{cpan}{lc($dep)}{portage_version}) &&
                                      $gcpan_run->{cpan}{lc($original_ebuild)}{depends}{$dep} ne '0' &&
+									 $gcpan_run->{cpan}{lc($original_ebuild)}{depends}{$dep} =~ m{\d}gx &&
                                      $gcpan_run->{ebuilds}{portage}{$portage_name}{name} ne "module-build"
                                    ) {
                                     print $EBUILD "\>\="
@@ -590,10 +574,9 @@ HERE
                                       .
 									  $gcpan_run->{cpan}{lc($original_ebuild)}{depends}{$dep} . "\n\t";
                                 } else {
-                                    print $EBUILD "\t"
+                                    print $EBUILD ""
                                       . $gcpan_run->{ebuilds}{portage}{$portage_name}{category} . "/"
-                                      .
-									  $gcpan_run->{ebuilds}{portage}{$portage_name}{name} . "\n\t";
+                                      . $gcpan_run->{ebuilds}{portage}{$portage_name}{name} . "\n\t";
                                 }
                             }
                             print $EBUILD "dev-lang/perl\"\n";
@@ -638,7 +621,6 @@ sub scanTree {
 
 	if ($module =~ /pathtools/gimx) { $module = "File-Spec" }
     foreach my $portage_root (keys %{$gcpan_run->{portage_bases}}) {
-        $verbose and print_info($prog, "Looking at $portage_root");
         if (-d $portage_root) {
             $verbose and print_ok($prog, "Scanning $portage_root for $module");
             $gcpan_run->getAvailableVersions($portage_root, $module);
@@ -649,6 +631,11 @@ sub scanTree {
     }
 }
 
+sub strip_ends {
+	my $key = shift;
+	$ENV{$key} =~ s{\'}{}gmxs;
+	return $ENV{$key};
+}
 # cab - Takes care of system's sanity
 END {
 

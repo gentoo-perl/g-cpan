@@ -8,6 +8,8 @@ use Memoize;
 #memoize('getAvailableVersions');
 use Cwd qw(getcwd abs_path cwd);
 use File::Find ();
+use Shell::EnvImporter;
+
 
 # Set the variable $File::Find::dont_use_nlink if you're using AFS,
 # since AFS cheats.
@@ -36,6 +38,21 @@ our @EXPORT =
 our $VERSION = '0.01';
 
 
+#IMPORT VARIABLES
+foreach my $file ( "/etc/make.globals", "/etc/make.conf" ) {
+    if ( -f $file) {
+    	my $importer = Shell::EnvImporter->new(
+    		file => $file,
+    		shell => 'bash',
+    		auto_run => 1,
+    		auto_import => 1,
+    		import_added => 1,
+    	);
+	$importer->shellobj->envcmd('set');
+	$importer->run();
+    }
+
+}
 
 # Description:
 # @listOfEbuilds = getAvailableEbuilds($PORTDIR, category/packagename);
@@ -264,7 +281,6 @@ Gentoo::Portage - perl access to portage information and commands
 
     use Gentoo;
     my $obj = Gentoo->new();
-    my $portdir = $obj->getValue("PORTDIR");
     $obj->getAvailableEbuilds($portdir,'category');
     $obj->getAvailableVersions($portdir);
     
