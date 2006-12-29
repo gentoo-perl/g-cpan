@@ -284,47 +284,49 @@ if ($search) {
             print_info("Ebuild exists for $expr");
         } else {
             print_info("No ebuild exists, pulling up CPAN listings for $expr");
+			my @search_results;
 
             # Assume they gave us module-name instead of module::name
             # which is bad, because CPAN can't convert it ;p
 
             $verbose and print_info("Searching for $expr on CPAN");
 
-	    my @search_results;
 
             # Let's define a CPAN::Frontend to use our printing methods
 	    {
 	        package Gentoo::CPAN::FakeFrontend;
                 my $spin = 0;
-		sub myprint {
-		    my ($self, $text) = @_;
-		    print "\r".('/', '-', '\\', '|')[$spin++%4];
-		    # if there is only one result, the string is different
-		    $text =~ /Module id = (.*)/ and push(@search_results, $1), return;
-		    # in the case of multiple result
-		    if ($text =~ /Module\s+(\S+)/) {
-		        foreach (split(/\n/, $text)) {
-		            $_ =~ /Module\s+(\S+)/ or next;
-			    push @search_results, $1;
-		        }
-		    }
+				my $self = shift;
+				sub myprint {
+		    		my ($self, $text) = @_;
+					my @fake_results;
+					print "\r".('/', '-', '\\', '|')[$spin++%4];
+				    # if there is only one result, the string is different
+					if ( $text =~ m{Module id} )
+					{
+						$text =~ s{Module id = }{\n};
+						$text =~ s{\n\n}{}gmx;
+						push @fake_results, $text;
+						return (@fake_results) ;
+					}
+				}
 		}
-	    }
             
 	    $CPAN::Frontend = "Gentoo::CPAN::FakeFrontend";
             
-            CPAN::Shell->i("/$expr/");
             if (!@search_results) {
                 $expr =~ s/-/::/g;
-                CPAN::Shell->i("/$expr/");
+				my @hold = CPAN::Shell->i("/$expr/");
+				if (grep {/\S/} @hold) { push @search_results, @hold }
             }
 
             # remove the spin
-            print "\r \r";
+			print "\r \r";
+
 
 	    # now, @search_results should contain the matching modules strings, if any
             if (@search_results) {
-	        print_info('g-cpan', @search_results . " results found : @search_results");
+	        print_info( @search_results . " result(s) found :\n@search_results");
 	    } else {
 	        print_warn('no result found.');
 	    }
