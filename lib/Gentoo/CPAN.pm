@@ -12,6 +12,7 @@ use Memoize;
 use Cwd qw(getcwd abs_path cwd);
 use File::Basename;
 use Shell qw(perl);
+use Gentoo::CPAN::FakeFrontend;
 
 memoize('transformCPAN');
 memoize('FindDeps');

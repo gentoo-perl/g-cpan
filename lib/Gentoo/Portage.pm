@@ -53,6 +53,19 @@ foreach my $file ( "/etc/make.globals", "/etc/make.conf" ) {
     }
 
 }
+if ( -f "$ENV{HOME}/.gcpanrc" ) 
+{
+    my $importer = Shell::EnvImporter->new(
+            file => "$ENV{HOME}/.gcpanrc",
+            shell => 'bash',
+            auto_run => 1,
+            auto_import => 1,
+            import_added => 1,
+        );
+        $importer->shellobj->envcmd('set');
+        $importer->run();
+}
+
 
 # Description:
 # @listOfEbuilds = getAvailableEbuilds($PORTDIR, category/packagename);
@@ -135,7 +148,7 @@ sub getAvailableVersions {
     );
 
     if ($find_ebuild) {
-        return if ( defined($self->{ebuilds}{portage}{ lc($find_ebuild) }{'found'} ));
+        return if ( defined($self->{portage}{ lc($find_ebuild) }{'found'} ));
     }
     foreach my $tc ( @{ $self->{portage_categories} } ) {
         next if ( !-d "$portdir/$tc" );
@@ -170,26 +183,26 @@ sub getAvailableVersions {
 
                     # - get highest version >
                     if ( $#tmp_availableVersions > -1 ) {
-                        $self->{ebuilds}{'portage'}{ lc($tp) }{'version'} =
+                        $self->{'portage'}{ lc($tp) }{'version'} =
                           ( sort(@tmp_availableVersions) )
                           [$#tmp_availableVersions];
 
                         # - get rid of -rX >
-                        $self->{ebuilds}{'portage'}{ lc($tp) }{'version'} =~
+                        $self->{'portage'}{ lc($tp) }{'version'} =~
                           s/([a-zA-Z0-9\-_\/]+)-r[0-9+]/$1/;
-                        $self->{ebuilds}{'portage'}{ lc($tp) }{'version'} =~
+                        $self->{'portage'}{ lc($tp) }{'version'} =~
                           s/([a-zA-Z0-9\-_\/]+)-rc[0-9+]/$1/;
-                        $self->{ebuilds}{'portage'}{ lc($tp) }{'version'} =~
+                        $self->{'portage'}{ lc($tp) }{'version'} =~
                           s/([a-zA-Z0-9\-_\/]+)_p[0-9+]/$1/;
-                        $self->{ebuilds}{'portage'}{ lc($tp) }{'version'} =~
+                        $self->{'portage'}{ lc($tp) }{'version'} =~
                           s/([a-zA-Z0-9\-_\/]+)_pre[0-9+]/$1/;
 
                         # - get rid of other stuff we don't want >
-                        $self->{ebuilds}{'portage'}{ lc($tp) }{'version'} =~
+                        $self->{'portage'}{ lc($tp) }{'version'} =~
                           s/([a-zA-Z0-9\-_\/]+)_alpha[0-9+]?/$1/;
-                        $self->{ebuilds}{'portage'}{ lc($tp) }{'version'} =~
+                        $self->{'portage'}{ lc($tp) }{'version'} =~
                           s/([a-zA-Z0-9\-_\/]+)_beta[0-9+]?/$1/;
-                        $self->{ebuilds}{'portage'}{ lc($tp) }{'version'} =~
+                        $self->{'portage'}{ lc($tp) }{'version'} =~
                           s/[a-zA-Z]+$//;
 
                         if ( $tc eq "perl-core"
@@ -202,9 +215,9 @@ sub getAvailableVersions {
                             {
                                 if ( -d $portage_root ) {
                                     if ( -d "$portage_root/virtual/perl-$tp" ) {
-                                        $self->{ebuilds}{'portage'}{ lc($tp) }
+                                        $self->{'portage'}{ lc($tp) }
                                           {'name'} = "perl-$tp";
-                                        $self->{ebuilds}{'portage'}{ lc($tp) }
+                                        $self->{'portage'}{ lc($tp) }
                                           {'category'} = "virtual";
                                         last;
                                     }
@@ -213,15 +226,15 @@ sub getAvailableVersions {
 
                         }
                         else {
-                            $self->{ebuilds}{'portage'}{ lc($tp) }{'name'} =
+                            $self->{'portage'}{ lc($tp) }{'name'} =
                               $tp;
-                            $self->{ebuilds}{'portage'}{ lc($tp) }{'category'} =
+                            $self->{'portage'}{ lc($tp) }{'category'} =
                               $tc;
                         }
                         if ($find_ebuild) {
-                            if ( defined($self->{ebuilds}{'portage'}{ lc($tp) }{'name'}) )
+                            if ( defined($self->{'portage'}{ lc($tp) }{'name'}) )
                             {
-                                $self->{ebuilds}{portage}{ lc($tp) }{'found'} = 1;
+                                $self->{portage}{ lc($tp) }{'found'} = 1;
                                 last;
                             }
                         }

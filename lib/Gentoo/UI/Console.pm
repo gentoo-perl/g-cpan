@@ -27,9 +27,11 @@ require Exporter;
 
 our @ISA = qw(Exporter Gentoo );
 
-our @EXPORT = qw( print_ok print_info print_warn print_err print_out fatal );
+our @EXPORT = qw( print_ok print_info print_warn print_err print_out fatal spinner_start spinner_stop );
 
 our $VERSION = '0.02';
+
+our $spin = 0;
 
 sub new {
     my $proto = shift;
@@ -78,6 +80,7 @@ sub print_err {
 # For the occasional freeform text
 sub print_out { print @_ }
 
+
 #################################################
 # NAME  : fatal
 # AUTHOR: David "Sniper" Rigaudiere
@@ -87,6 +90,13 @@ sub print_out { print @_ }
 #     x LIST   variables filling blank in pattern
 #################################################
 sub fatal { exit }
+ 
+sub spinner_start {
+    print "\r".('/', '-', '\\', '|')[$spin++%4];
+}
+
+sub spinner_stop { print "\r \r" }
+
 
 1;
 
