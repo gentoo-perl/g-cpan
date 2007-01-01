@@ -26,12 +26,14 @@ use Log::Agent::Driver::File;
 use Log::Agent::Driver::Silent;
 
 use constant PATH_PKG_VAR => '/var/db/pkg/';
+our $VERSION = "0.14.1_rc2";
+my $prog = basename($0);
 
 ##### Establish our tmpdir
 unless ($ENV{TMPDIR}) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
 
-our $VERSION = "0.14.1_rc2";
-my $prog = basename($0);
+
+
 
 my %dep_list  = ();
 my @perl_dirs = ("dev-perl", "perl-core", "perl-gcpan", "perl-text", "perl-tools", "perl-xml", "perl-dev", "dev-lang",);
@@ -174,6 +176,24 @@ if ( ($needs_cpan_stub || $> > 0) && ! -f "$ENV{HOME}/.cpan/CPAN/MyConfig.pm") {
 use CPAN;
 $CPAN::Frontend = "Gentoo::CPAN::FakeFrontend";
 
+{ 
+	foreach (qw[build sources]) {
+		if ( -d "$ENV{TMPDIR}/.cpan/$_" ) {
+	my $test_file = $ENV{TMPDIR}."/.cpan/$_/test";
+	my $test_tmp = IO::File->new($test_file, '>');
+	if ( defined($test_tmp) )
+	{
+		undef $test_tmp;
+		unlink($test_file)
+	} else {
+		print_err("No WRITE permissions in $ENV{TMPDIR}/.cpan/$_!!");
+		print_err("Please run $prog as a user with sufficient permissions");
+		print_err("or correct permissions in $ENV{TMPDIR}");
+		exit;
+	}
+}
+}
+}
 ##########
 # main() #
 ##########
@@ -302,7 +322,7 @@ if ($search) {
 
             # Let's define a CPAN::Frontend to use our printing methods
             
-            
+			spinner_start();            
             if (!@search_results) {
                 $expr =~ s/-/::/g;
 				my @hold = CPAN::Shell->i("/$expr/");
@@ -315,7 +335,11 @@ if ($search) {
 
 	    # now, @search_results should contain the matching modules strings, if any
             if (@search_results) {
-	        print_info( @search_results . " result(s) found :\n@search_results");
+	        print_info( "Result(s) found :");
+			foreach (@search_results)
+			{
+				print_out("$_\n");
+			}
 	    } else {
 	        print_warn('no result found.');
 	    }
@@ -669,7 +693,7 @@ END {
             $dir eq '.' and next;
             $dir eq '..' and next;
             $dir eq 'sources' and next;
-            -d $dir and rmtree(["$ENV{TMPDIR}/$dir"]);
+            -d $dir and rmtree(["$ENV{TMPDIR}/.cpan/$dir"]);
         }
 		if ( -d "$ENV{TMPDIR}/perl-gcpan" ) { rmtree(["$ENV{TMPDIR}/perl-gcpan"]) }
     }

@@ -128,7 +128,7 @@ sub unpackModule {
     }
 
     # Grab the tarball and unpack it
-    $pack->get;
+    $pack->get or die "Insufficient permissions!";
     my $tmp_dir = $pack->{build_dir};
 
     # Set our starting point
