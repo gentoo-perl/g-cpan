@@ -26,7 +26,7 @@ use Log::Agent::Driver::File;
 use Log::Agent::Driver::Silent;
 
 use constant PATH_PKG_VAR => '/var/db/pkg/';
-our $VERSION = "0.14.1_rc2";
+our $VERSION = "0.15_rc2";
 my $prog = basename($0);
 
 ##### Establish our tmpdir
@@ -663,7 +663,10 @@ sub scanTree {
 
 sub strip_ends {
 	my $key = shift;
+	$ENV{$key} =~ s{\$}{}gxms;
+	$ENV{$key} =~ s{\\n}{ }gxms;
 	$ENV{$key} =~ s{\'}{}gmxs;
+	$ENV{$key} =~ s{\s+$}{};
 	return $ENV{$key};
 }
 

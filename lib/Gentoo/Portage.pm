@@ -39,7 +39,7 @@ our $VERSION = '0.01';
 
 
 #IMPORT VARIABLES
-foreach my $file ( "/etc/make.globals", "/etc/make.conf" ) {
+foreach my $file ( "/etc/make.globals", "/etc/make.conf", "$ENV{HOME}/.gcpanrc" ) {
     if ( -f $file) {
     	my $importer = Shell::EnvImporter->new(
     		file => $file,
@@ -47,25 +47,14 @@ foreach my $file ( "/etc/make.globals", "/etc/make.conf" ) {
     		auto_run => 1,
     		auto_import => 1,
     		import_added => 1,
+            import_modified => 1,
     	);
 	$importer->shellobj->envcmd('set');
 	$importer->run();
+    $importer->env_import();
     }
 
 }
-if ( -f "$ENV{HOME}/.gcpanrc" ) 
-{
-    my $importer = Shell::EnvImporter->new(
-            file => "$ENV{HOME}/.gcpanrc",
-            shell => 'bash',
-            auto_run => 1,
-            auto_import => 1,
-            import_added => 1,
-        );
-        $importer->shellobj->envcmd('set');
-        $importer->run();
-}
-
 
 # Description:
 # @listOfEbuilds = getAvailableEbuilds($PORTDIR, category/packagename);
