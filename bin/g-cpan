@@ -663,6 +663,7 @@ sub scanTree {
 
 sub strip_ends {
 	my $key = shift;
+	$ENV{$key} =~ s{\\'}{}gxms;
 	$ENV{$key} =~ s{\$}{}gxms;
 	$ENV{$key} =~ s{\\n}{ }gxms;
 	$ENV{$key} =~ s{\'}{}gmxs;
