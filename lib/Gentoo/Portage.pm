@@ -165,7 +165,6 @@ sub getAvailableVersions {
                 }
                 getAvailableEbuilds( $self, $portdir, $tc . "/" . $tp );
 
-                my @arr = @{ $self->{packagelist}};
                 foreach ( @{ $self->{packagelist} } ) {
                     my @tmp_availableVersions = ();
                     push( @tmp_availableVersions, getEbuildVersionSpecial($_) );
@@ -175,6 +174,22 @@ sub getAvailableVersions {
                         $self->{'portage'}{ lc($tp) }{'version'} =
                           ( sort(@tmp_availableVersions) )
                           [$#tmp_availableVersions];
+
+                        my $e_file= "$portdir/$tc/$tp/$_";
+                        # Grab some info for display
+                        my $e_import = Shell::EnvImporter->new(
+                            file => $e_file,
+                            shell => 'bash',
+                            auto_run => 1,
+                            auto_import => 1,
+                        );
+                        $e_import->shellobj->envcmd('set');
+                        $e_import->run();
+                        $e_import->env_import();
+                        $self->{'portage'}{lc($tp)}{'DESCRIPTION'} = $ENV{DESCRIPTION};
+                        $self->{'portage'}{lc($tp)}{'HOMEPAGE'} = $ENV{HOMEPAGE};
+                        $e_import->restore_env;
+
 
                         # - get rid of -rX >
                         $self->{'portage'}{ lc($tp) }{'version'} =~

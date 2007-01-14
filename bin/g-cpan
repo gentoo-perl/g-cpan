@@ -309,7 +309,11 @@ if ($search) {
         $tree_expr =~ s/::/-/gxms;
         scanTree(lc($tree_expr));
         if (defined($gcpan_run->{portage}{lc($tree_expr)}{found})) {
-            print_info("Ebuild exists for $expr");
+			print_info("$gcpan_run->{portage}{lc($tree_expr)}{category}/$gcpan_run->{portage}{lc($tree_expr)}{name}");
+			my $tdesc=strip_ends($gcpan_run->{portage}{lc($tree_expr)}{DESCRIPTION});
+			my $thp=strip_ends($gcpan_run->{portage}{lc($tree_expr)}{HOMEPAGE});
+			print_info("DESCRIPTION: $tdesc");
+			print_info("HOMEPAGE: $thp");
         } else {
             print_info("No ebuild exists, pulling up CPAN listings for $expr");
 			my @search_results;
@@ -663,12 +667,22 @@ sub scanTree {
 
 sub strip_ends {
 	my $key = shift;
+	if (defined($ENV{$key})){
 	$ENV{$key} =~ s{\\'}{}gxms;
 	$ENV{$key} =~ s{\$}{}gxms;
 	$ENV{$key} =~ s{\\n}{ }gxms;
 	$ENV{$key} =~ s{\'}{}gmxs;
 	$ENV{$key} =~ s{\s+$}{};
 	return $ENV{$key};
+} else {
+	$key =~ s{\\'}{}gxms;
+	$key =~ s{\$}{}gxms;
+	$key =~ s{\\n}{ }gxms;
+	$key =~ s{\'}{}gmxs;
+	$key =~ s{\s+$}{};
+
+	return $key;
+}
 }
 
 sub stripdown {
