@@ -33,7 +33,7 @@ require Exporter;
 our @ISA = qw(Exporter Gentoo);
 
 our @EXPORT =
-  qw( getAvailableEbuilds getAvailableVersions generate_digest emerge_ebuild );
+  qw( getAvailableEbuilds getAvailableVersions generate_digest emerge_ebuild import_fields );
 
 our $VERSION = '0.01';
 
@@ -49,7 +49,7 @@ foreach my $file ( "/etc/make.globals", "/etc/make.conf", "$ENV{HOME}/.gcpanrc" 
     		import_added => 1,
             import_modified => 1,
     	);
-	$importer->shellobj->envcmd('set');
+    $importer->shellobj->envcmd('set');
 	$importer->run();
     $importer->env_import();
     }

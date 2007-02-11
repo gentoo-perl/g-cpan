@@ -1,3 +1,6 @@
+  11 Feb 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  New changelog format
+
 05/12/2006 - mcummings
 
 Fixed bug 156691, evaluation blocks in Build.PL's causing errors. Code snippet originally suggested by poster, John Miller
@@ -24,6 +27,11 @@ added :)
 Bug 140084 - thanks Moshe!
 
 27/06/2006
+
+  11 Feb 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  Bug 158163 - Added a check before generating a module from CPAN to verify
+  that the module in question didn't come packaged with perl; Also worked a
+  little more on the version munging checker;
 
 * Added logging
 * -u now supports individual packages

@@ -18,6 +18,7 @@ use YAML;
 use YAML::Node;
 use Carp;
 use IO::File;
+use DirHandle;
 # Module load & configure
 use Getopt::Long;
 Getopt::Long::Configure("bundling");
@@ -248,6 +249,7 @@ $gcpan_run->{portage_bases}{$PORTAGE_DIR} = 1;
 # Grab the keywords - we'll need these when we build the ebuild
 my $keywords = strip_ends('ACCEPT_KEYWORDS');
 
+
 $keywords ||= do {
     open my $tmp, '<', "$PORTAGE_DIR/profiles/arch.list"
       or fatal(print_err("ERROR READING $PORTAGE_DIR/profiles/arch.list: $!"));
@@ -423,8 +425,35 @@ sub generatePackageInfo {
 
     # Grab specific info for this module
 	spinner_start();
-	defined($gcpan_run->{portage}{lc($ebuild_wanted)}{found}) or 
-	  $gcpan_run->getCPANInfo($ebuild_wanted);
+	unless (defined($gcpan_run->{portage}{lc($ebuild_wanted)}{found}))
+	{
+		#MPC - left here; see fileBelongs in mgtool for clues on getting the ebuild and version that this came from
+		unless (defined($upgrade) or defined($passed_to_install{$ebuild_wanted})) {
+			# First, check to see if this came with the core perl install
+			my $pkgdbdir = "/var/db/pkg/dev-lang/";
+			my $s_perl = new DirHandle($pkgdbdir);
+			my $eb = $ebuild_wanted;
+			$eb =~ s{::}{/}gxs;
+			while (defined(my $read = $s_perl->read)) {
+				if ( (-d $pkgdbdir."/".$read) and ($read =~ m{^perl})) {
+					open(FH,"<$pkgdbdir/$read/CONTENTS") || die("Cannot open $read\'s CONTENTS");
+					my @data = <FH>;
+					close(FH);
+					foreach (@data)
+					{
+						my $thisfile = (split(/ /,$_))[1];
+						if ($thisfile =~ m{$eb})
+						{
+							return;
+						}
+					}
+					last;
+				}
+			}
+			# If we're still here, then we didn't come with perl
+			$gcpan_run->getCPANInfo($ebuild_wanted);
+			}
+  	}
 	spinner_stop();
     if ( ! $gcpan_run->{cpan}{lc($ebuild_wanted)} && ! defined($gcpan_run->{portage}{lc($ebuild_wanted)}{found} )) {
 
@@ -590,8 +619,9 @@ HERE
 										=~ m/\S/));
                                 $portage_name eq 'perl' ||
                                   lc($portage_name) eq lc($gcpan_run->{cpan}{lc($original_ebuild)}{portage_name}) and next;
-								  my $eb_version = stripdown($gcpan_run->{portage}{lc($portage_name)}{version});
-								  my $cpan_version = defined($gcpan_run->{cpan}{lc($dep)}{portage_version})? stripdown($gcpan_run->{cpan}{lc($dep)}{portage_version}): "0";
+								  my ($eb_version,$cpan_version) = stripdown($gcpan_run->{portage}{lc($portage_name)}{version},$gcpan_run->{cpan}{lc($dep)}{portage_version});
+								  #my $eb_version = stripdown($gcpan_run->{portage}{lc($portage_name)}{version});
+								  #my $cpan_version = defined($gcpan_run->{cpan}{lc($dep)}{portage_version})? stripdown($gcpan_run->{cpan}{lc($dep)}{portage_version}): "0";
                                 if ( defined($gcpan_run->{cpan}{lc($dep)}{portage_version}) &&
                                      $gcpan_run->{cpan}{lc($original_ebuild)}{depends}{$dep} ne '0' &&
 									 int($eb_version) >= int($cpan_version) &&
@@ -668,28 +698,99 @@ sub scanTree {
 sub strip_ends {
 	my $key = shift;
 	if (defined($ENV{$key})){
-	$ENV{$key} =~ s{\\'}{}gxms;
-	$ENV{$key} =~ s{\$}{}gxms;
 	$ENV{$key} =~ s{\\n}{ }gxms;
-	$ENV{$key} =~ s{\'}{}gmxs;
-	$ENV{$key} =~ s{\s+$}{};
+	$ENV{$key} =~ s{\\|\'|\\'|\$|\s*$}{}gmxs;
+	#$ENV{$key} =~ s{\'|^\\|\$|\s*\\.\s*|\\\n$}{}gmxs;
 	return $ENV{$key};
 } else {
-	$key =~ s{\\'}{}gxms;
-	$key =~ s{\$}{}gxms;
 	$key =~ s{\\n}{ }gxms;
-	$key =~ s{\'}{}gmxs;
-	$key =~ s{\s+$}{};
+	#$key =~ s{\'|^\\|\$|\s*\\.\s*|\\\n$}{}gmxs;
+	$key =~ s{(\'|\\|\\'|\$|\s*$)}{}gmxs;
 
 	return $key;
 }
 }
 
+#sub stripdown {
+#	my $string = shift;
+#	unless ($string =~ m{\d}) { return }
+#	$string =~ s{\.|_|-|\D+}{}gmxi;
+#	return $string;
+#}
+
 sub stripdown {
-	my $string = shift;
-	unless ($string =~ m{\d}) { return }
-	$string =~ s{\.|_|-|\D+}{}gmxi;
-	return $string;
+	my ($eb,$mod) = @_;
+	$eb =~ s{_|-|\D+}{}gmxi;
+	$mod =~ s{_|-|\D+}{}gmxi;
+	
+	if ($eb =~ m{^\.} ) { $eb = "00$eb" }
+	if ($mod =~ m{^\.} ) { $mod = "00$mod" }
+	my $e_in = "";
+	my $m_in = "";
+
+	my (@eb_ver) = split( /\./, $eb);
+	my (@mod_ver) = split( /\./, $mod);
+
+	my $num_e = @eb_ver;
+	my $num_m = @mod_ver;
+
+	if ($num_e == $num_m) {
+		for (my $x = 0; $x<= ($num_e -1 ); $x++) {
+			if ( length($eb_ver[$x]) > length($mod_ver[$x] ) ) {
+					while (length($eb_ver[$x]) > length ( $mod_ver[$x] )) {
+						$mod_ver[$x] = "$mod_ver[$x]0";
+					}
+				}
+			if ( length($mod_ver[$x] ) > length ($eb_ver[$x]) ) {
+				while (length($mod_ver[$x]) > length($eb_ver[$x])) {
+						$eb_ver[$x] = "$eb_ver[$x]0";
+					}
+				}
+				$e_in .= "$eb_ver[$x]";
+				$m_in .= "$mod_ver[$x]";
+			}
+		}
+	elsif ( $num_e > $num_m ) {
+		for (my $x = 0; $x<= ($num_e - 1) ; $x++ ) {
+			unless ( $mod_ver[$x] ) {
+				$mod_ver[$x] = "00";
+			}
+			if ( length($eb_ver[$x]) > length($mod_ver[$x] ) ) {
+					while (length($eb_ver[$x]) > length ( $mod_ver[$x] )) {
+						$mod_ver[$x] = "$mod_ver[$x]0";
+					}
+				}
+			if ( length($mod_ver[$x] ) > length ($eb_ver[$x]) ) {
+				while (length($mod_ver[$x]) > length($eb_ver[$x])) {
+						$eb_ver[$x] = "$eb_ver[$x]0";
+					}
+				}
+				$e_in .= "$eb_ver[$x]";
+				$m_in .= "$mod_ver[$x]";
+			}
+		}
+	elsif ( $num_e < $num_m ) {
+		for (my $x = 0; $x<= ($num_m - 1) ; $x++ ) {
+			unless ( $eb_ver[$x] ) {
+				$eb_ver[$x] = "00";
+			}
+			if ( length($eb_ver[$x]) > length($mod_ver[$x] ) ) {
+					while (length($eb_ver[$x]) > length ( $mod_ver[$x] )) {
+						$mod_ver[$x] = "$mod_ver[$x]0";
+					}
+				}
+			if ( length($mod_ver[$x] ) > length ($eb_ver[$x]) ) {
+				while (length($mod_ver[$x]) > length($eb_ver[$x])) {
+						$eb_ver[$x] = "$eb_ver[$x]0";
+					}
+				}
+				$e_in .= "$eb_ver[$x]";
+				$m_in .= "$mod_ver[$x]";
+			}
+		}
+		$e_in =~ s{\.$}{};
+		$m_in =~ s{\.$}{};
+		return ($eb,$mod);
 }
 
 
