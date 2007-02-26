@@ -3,7 +3,7 @@ package Gentoo::Portage;
 use 5.008007;
 use strict;
 use warnings;
-use Shell qw(ebuild emerge);
+#use Shell qw(ebuild emerge);
 #use Memoize;
 #memoize('getAvailableVersions');
 use Cwd qw(getcwd abs_path cwd);
@@ -255,7 +255,7 @@ sub generate_digest {
 
     # Full path to the ebuild file in question
     my $ebuild = shift;
-    ebuild( $ebuild, "digest" );
+    system( "ebuild", $ebuild, "digest" );
 }
 
 sub emerge_ebuild {

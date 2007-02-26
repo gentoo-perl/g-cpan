@@ -28,6 +28,9 @@ Bug 140084 - thanks Moshe!
 
 27/06/2006
 
+  26 Feb 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  Bug 167776, thanks Nicolas. Silly bug on portage_bases.
+
   11 Feb 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
   Bug 158163 - Added a check before generating a module from CPAN to verify
   that the module in question didn't come packaged with perl; Also worked a

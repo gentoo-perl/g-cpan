@@ -105,6 +105,7 @@ sub getCPANInfo {
 sub unpackModule {
     my $self        = shift;
     my $module_name = shift;
+    unless (defined($module_name)) { return }
     if ( $module_name !~ m|::| ) {
         $module_name =~ s{-}{::}xmsg;
     }    # Assume they gave us module-name instead of module::name
