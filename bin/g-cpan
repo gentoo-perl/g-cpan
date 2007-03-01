@@ -271,6 +271,7 @@ $gcpan_run->{portage_bases}{$PORTAGE_DIR} = 1;
 # Grab the keywords - we'll need these when we build the ebuild
 my $keywords = strip_ends('ACCEPT_KEYWORDS');
 
+if ($keywords =~ m{ACCEPT_KEYWORDS}) { $keywords="" }
 $keywords ||= do
 {
     open my $tmp, '<', "$PORTAGE_DIR/profiles/arch.list"

@@ -28,6 +28,10 @@ Bug 140084 - thanks Moshe!
 
 27/06/2006
 
+  01 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  Bug 166718. A temporary solution for this ACCEPT_KEYWORDS bug, will provide
+  a cleaner when we refactor.
+
   26 Feb 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
   Bug 167776, thanks Nicolas. Silly bug on portage_bases.
 
