@@ -29,6 +29,9 @@ Bug 140084 - thanks Moshe!
 27/06/2006
 
   02 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  More cleaning up of env vars. I think I have this licked now.
+
+  02 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
   Final tweaks for bug 142005 - now noting gracefully when our search has
   revealed a core perl module
 

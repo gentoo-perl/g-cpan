@@ -9,7 +9,7 @@ require Exporter;
 
 our @ISA = qw(Exporter Gentoo::CPAN );
 
-our @EXPORT = qw( myprint mywarn );
+our @EXPORT = qw( myprint mywarn mydie );
 
 our $VERSION = "0.02";
 
@@ -37,5 +37,12 @@ sub myprint {
 sub mywarn {
     return;
 }
+
+sub mydie {
+    my ($self,$what) = @_;
+    print STDOUT "$what";
+    die "\n";
+}
+
 1;
 

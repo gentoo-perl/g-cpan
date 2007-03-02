@@ -265,12 +265,11 @@ my $gcpan_run = Gentoo->new(
 );
 
 # Get the main portdir
-my $PORTAGE_DIR = strip_ends('PORTDIR');
+my $PORTAGE_DIR = $gcpan_run->getEnv('PORTDIR');
 $gcpan_run->{portage_bases}{$PORTAGE_DIR} = 1;
 
 # Grab the keywords - we'll need these when we build the ebuild
-my $keywords = strip_ends('ACCEPT_KEYWORDS');
-
+my $keywords = $gcpan_run->getEnv('ACCEPT_KEYWORDS');
 if ($keywords =~ m{ACCEPT_KEYWORDS}) { $keywords="" }
 $keywords ||= do
 {
@@ -279,11 +278,11 @@ $keywords ||= do
     join ' ', map { chomp; $_ } <$tmp>;
 };
 
+$ENV{ACCEPT_KEYWORDS} = $keywords;
 # Get the overlays
-my $overlay = strip_ends('PORTDIR_OVERLAY') || undef;
-
+my $overlay = $gcpan_run->getEnv('PORTDIR_OVERLAY') || undef;
 # Get the DISTDIR - we'd like store the tarballs in here the one time
-$gcpan_run->{sources} = (strip_ends('DISTDIR'));
+$gcpan_run->{sources} = ($gcpan_run->getEnv('DISTDIR'));
 
 # Make sure we have write access to the DISTDIR
 if (   $generate

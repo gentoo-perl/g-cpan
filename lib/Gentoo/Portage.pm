@@ -33,29 +33,56 @@ require Exporter;
 our @ISA = qw(Exporter Gentoo);
 
 our @EXPORT =
-  qw( getAvailableEbuilds getAvailableVersions generate_digest emerge_ebuild import_fields );
+  qw( getEnv getAvailableEbuilds getAvailableVersions generate_digest emerge_ebuild import_fields );
 
 our $VERSION = '0.01';
 
 
+sub getEnv {
 #IMPORT VARIABLES
-foreach my $file ( "/etc/make.globals", "/etc/make.conf", "$ENV{HOME}/.gcpanrc" ) {
+    my $self = shift;
+    my $envvar = shift;
+    my $filter = sub {
+        my ($var, $value, $change ) = @_;
+        return($var =~ /^$envvar$/ );
+    };
+
+foreach my $file ( "$ENV{HOME}/.gcpanrc", "/etc/make.conf", "/etc/make.globals" ) {
     if ( -f $file) {
     	my $importer = Shell::EnvImporter->new(
     		file => $file,
     		shell => 'bash',
-    		auto_run => 1,
-    		auto_import => 1,
-    		import_added => 1,
-            import_modified => 1,
+            import_filter => $filter,
     	);
     $importer->shellobj->envcmd('set');
-	$importer->run();
-    $importer->env_import();
+    $importer->run();
+    if (defined($ENV{$envvar}) && ($ENV{$envvar} =~ m{\W*}))
+    { 
+        my $tm = strip_env($ENV{$envvar}); 
+        $importer->restore_env; 
+        return $tm;
     }
 
 }
+  }
+}
 
+sub strip_env {
+    my $key = shift;
+    if (defined($ENV{$key})) {
+        $ENV{$key} =~ s{\\n}{ }gxms;
+        $ENV{$key} =~ s{\\|\'|\\'|\$|\s*$}{}gmxs;
+        $key =~ s{\s+}{ }gmxs;
+        return $ENV{$key};
+    }
+    else
+    {
+        $key =~ s{\\n}{ }gxms;
+        $key =~ s{(\'|\\|\\'|\$|\s*$)}{}gmxs;
+        $key =~ s{\s+}{ }gmxs;
+        return $key;
+    }
+}
 # Description:
 # @listOfEbuilds = getAvailableEbuilds($PORTDIR, category/packagename);
 sub getAvailableEbuilds {
@@ -186,8 +213,8 @@ sub getAvailableVersions {
                         $e_import->shellobj->envcmd('set');
                         $e_import->run();
                         $e_import->env_import();
-                        $self->{'portage'}{lc($tp)}{'DESCRIPTION'} = $ENV{DESCRIPTION};
-                        $self->{'portage'}{lc($tp)}{'HOMEPAGE'} = $ENV{HOMEPAGE};
+                        $self->{'portage'}{lc($tp)}{'DESCRIPTION'} = strip_env($ENV{DESCRIPTION});
+                        $self->{'portage'}{lc($tp)}{'HOMEPAGE'} = strip_env($ENV{HOMEPAGE});
                         $e_import->restore_env;
 
 
@@ -261,7 +288,6 @@ sub generate_digest {
 sub emerge_ebuild {
     my $self  = shift;
     my @call = @_;
-
     # emerge forks and returns, which confuses this process. So
     # we call it the old fashioned way :(
     system( "emerge", @call );
