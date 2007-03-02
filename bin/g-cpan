@@ -491,9 +491,6 @@ sub generatePackageInfo
     unless (defined($gcpan_run->{portage}{lc($ebuild_wanted)}{found}))
     {
 
-        unless (defined($upgrade) or defined($passed_to_install{$ebuild_wanted}))
-        {
-
             # First, check to see if this came with the core perl install
             my $pkgdbdir = "/var/db/pkg/dev-lang/";
             my $s_perl   = new DirHandle($pkgdbdir);
@@ -509,11 +506,19 @@ sub generatePackageInfo
                     foreach (@data)
                     {
                         my $thisfile = (split(/ /, $_))[1];
-                        return if ($thisfile =~ m{$eb}x);
+						$thisfile =~ s{\.([A-Za-z]{1,3})$}{};
+                        if ($thisfile =~ m{$eb}x)
+						{
+							print_info("$ebuild_wanted is part of the core perl install");
+							return;
+						}
                     }
                     last;
                 }
             }
+
+        unless (defined($upgrade) or defined($passed_to_install{$ebuild_wanted}))
+        {
 
             # If we're still here, then we didn't come with perl
             $gcpan_run->getCPANInfo($ebuild_wanted);

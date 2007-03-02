@@ -405,7 +405,6 @@ sub transformCPAN {
 
     # remove underscores
     return unless ($filename);
-    unless ($filename) { print STDERR "$name yielded $filename\n"; sleep(4); }
     $filename =~ tr/A-Za-z0-9\./-/c;
     $filename =~ s/\.pm//;             # e.g. CGI.pm
 
