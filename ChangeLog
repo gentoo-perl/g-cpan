@@ -28,6 +28,9 @@ Bug 140084 - thanks Moshe!
 
 27/06/2006
 
+  03 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  Officially removing Config.pm; prepping for snapshot for portage.
+
   02 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
   More cleaning up of env vars. I think I have this licked now.
 

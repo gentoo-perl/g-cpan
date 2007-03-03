@@ -670,7 +670,7 @@ inherit perl-module
 S=\${WORKDIR}/$gcpan_run->{'cpan'}{lc($original_ebuild)}{'portage_sdir'}
 
 DESCRIPTION="$gcpan_run->{'cpan'}{lc($original_ebuild)}{'description'}"
-HOMEPAGE="http://search.cpan.org/search?query=\${PN}"
+HOMEPAGE="http://search.cpan.org/search?query=$gcpan_run->{cpan}{lc($original_ebuild)}{portage_name}\&mode=dist"
 SRC_URI="mirror://cpan/authors/id/$gcpan_run->{'cpan'}{lc($original_ebuild)}{'src_uri'}"
 
 
