@@ -1,277 +1,319 @@
-  11 Feb 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
-  New changelog format
+# ChangeLog for g-cpan
+# Copyright 2002-2007 Gentoo Foundation; Distributed under the GPL v2
+# $Header: $
 
-05/12/2006 - mcummings
+*g-cpan-0.15_rc2 (03 Mar 2007)
 
-Fixed bug 156691, evaluation blocks in Build.PL's causing errors. Code snippet originally suggested by poster, John Miller
-
-03/09/2006 - ian
-
-Fixed bug #143317 - g-cpan: Does not record modules in world
-
-28/07/2006
-
-Versioned deps are now working.
-
-22/07/2006
-fixed case sensivity bug (you want to install an uppercase filename, but we
-have it filed in portage lower case) - brought up on irc
-
-18/07/2006
-
-Fixed ACCEPT_KEYWORDS populating (superlag). Experimental Bundle:: Support
-added :)
-
-12/07/2006
-
-Bug 140084 - thanks Moshe!
-
-27/06/2006
-
-  03 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  03 Mar 2007; Michael Cummings <mcummings@gentoo.org>:
   Officially removing Config.pm; prepping for snapshot for portage.
 
-  02 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  02 Mar 2007; Michael Cummings <mcummings@gentoo.org>:
   More cleaning up of env vars. I think I have this licked now.
 
-  02 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
-  Final tweaks for bug 142005 - now noting gracefully when our search has
+  02 Mar 2007; Michael Cummings <mcummings@gentoo.org>:
+  Final tweaks for bug 142005; now noting gracefully when our search has
   revealed a core perl module
 
-  01 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  01 Mar 2007; Michael Cummings <mcummings@gentoo.org>:
   Bug 166718. A temporary solution for this ACCEPT_KEYWORDS bug, will provide
   a cleaner when we refactor.
 
-  26 Feb 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  26 Feb 2007; Michael Cummings <mcummings@gentoo.org>:
   Bug 167776, thanks Nicolas. Silly bug on portage_bases.
 
-  11 Feb 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+*g-cpan-0.15_rc2 (11 Feb 2007)
+
+  11 Feb 2007; Michael Cummings <mcummings@gentoo.org>:
   Bug 158163 - Added a check before generating a module from CPAN to verify
   that the module in question didn't come packaged with perl; Also worked a
-  little more on the version munging checker;
+  little more on the version munging checker
 
-* Added logging
-* -u now supports individual packages
+  11 Feb 2007; Michael Cummings <mcummings@gentoo.org>:
+  New changelog format
 
-06/06/2006
+  14 Jan 2007; Michael Cummings <mcummings@gentoo.org>:
+  Touched up the search results if an ebuild exists. Wanted more info than just "Yeah, we got something."
 
-Bug 135783
+  05 Jan 2007; Michael Cummings <mcummings@gentoo.org>:
+  Bug 160137, strip_ends cleanup on env imports.
 
-19/05/2006
+*g-cpan-0.15_rc1 (03 Jan 2007)
 
-Fixed tests; fixed bug where -a wasn't working anymore; fixed bug where g-cpan would skip ebuilds that already existed (mainstream g-cpan will continue to install them)
+  03 Jan 2007; Michael Cummings <mcummings@gentoo.org>:
+  Version bump with bug fixes 157298, 158755, 157141, 99569, 104172, 147000,
+  155245
 
---version 0.14.0--
+  01 Jan 2007; Michael Cummings <mcummings@gentoo.org>:
+  More cleaning up of the search interface. Also corrected a minor minor minor bug in the tmpdir cleanup section.
 
-05/06/2005 - mcummings
+  31 Dec 2006; Michael Cummings <mcummings@gentoo.org>:
+  Beginning support for the config file, ~/.gcpanrc. Currently you can just override the make.conf settings. More ideas stirring though :)
 
-- Bug 95146 (http://bugs.gentoo.org/show_bug.cgi?id=95146) - lists/upgrades failed because of a lack of arguments. Thanks to Moshe Kaminsky for catching the or vs and on this.
+  29 Dec 2006; Michael Cummings <mcummings@gentoo.org>:
+  Fixed problems with the searching not working. Still needs some maintenance, but searching is again functional. Also added back the long display for cpan results - if you're searching to see if something is on cpan, you might want more than just the module name exists ;)
 
-02/06/2005 - mcummings
+  27 Dec 2006; Michael Cummings <mcummings@gentoo.org>:
+  Updated Makefile.PL with Shell::EnvImporter
 
-- Bug 94850 (http://bugs.gentoo.org/show_bug.cgi?id=94850) brought to light the interesting scenario of having PORTDIR_OVERLAY="${PORTDIR_OVERLAY} /some/path" in your make.conf - the result is that when we split on space, we get a null string as an overlay dir, which works since as root you can write to /perl-gcpan. 
+  27 Dec 2006; Michael Cummings <mcummings@gentoo.org>:
+  Fixed (recent/temporary) bug with lowercased ebuilds not being found;Cleaned up the hash a bit more
 
-01/06/2005 - mcummings
+  27 Dec 2006; Michael Cummings <mcummings@gentoo.org>:
+  experimental version munging now works. Basically another work around for
+  the arbitrary way authors version their modules (sometimes inconsistently
+  between releases) and how the versions are written in portage. Also update
+  the Gentoo::UI::Console output to streamline it a little for STDOUT.
 
-- Bumped version to 0.13.01 - basically, this is a maintenance update. The version bump was mandated because we needed to change the tarball name so that people would get the new version in their distfiles (otherwise portage thinks they already have a copy of g-cpan-0.13 and ignores that there's a newer version "upstream"). This will ensure folks get the changes made on 30/05/2005.
-- Moved the color flags one more time per bug 94759 (http://bugs.gentoo.org/show_bug.cgi?id=94759) - usage was called before the colors it uses were being defined.
+  27 Dec 2006; Michael Cummings <mcummings@gentoo.org>:
+  Importing recent work. These changes include a few aesthetic changes to how the ebuilds are written, as well as further work on integrating Shell::EnvImporter into g-cpan.
 
-30/05/2005 - mcummings
+  19 Dec 2006; Michael Cummings <mcummings@gentoo.org>:
+  I've begun phasing out Gentoo::Config in favor of simply using Shell::EnvImporter to pull in all of make.* file variables without the extra hoops we try to jump through to properly interpolate the shell variables. This way we use the same old hack I used on my out-of-date scripts and treat the make files like bash profiles and simply source them.
 
-- Commented out the rmdir of .cpan/build - this was causing weird random (harmless) error messages. Reviewing the code, we don't actually use this dir ourselves, but point to it for CPAN's build area. Since the default config for CPAN cleans this up itself, lets leave it at that for now.
-- Corrected dev-perl/File-Spec to perl-core/File-Spec following the perl-core migration last week. Releasing this as -r1 in portage since its a minor change, not a major update.
+  14 Dec 2006; Michael Cummings <mcummings@gentoo.org>:
+  Bug 152610, g-cpan wasn't installing anything if PORTDIR_OVERLAY was undefined
 
-20/05/2005 - mcummings
+  10 Dec 2006; Michael Cummings <mcummings@gentoo.org>:
+  Bug 152604 - the grep on line 194 wasn't working as expected. Modified to a simple matching regex and now it writes correctly.
 
-- Moved color block so I could invoke it outside the usage function
-- Added options to the "don't combine" block. Cleaned up text since the block was getting too long to handle/read
-- Added catch for when no options were passed :)
-- Modified check and output for arguments without a module pass
-- Reorganized the checking of PORTDIR_OVERLAY and tmp_dir creation.
-	- Check to make sure we aren't attempting a non-emerge and creating a temp dir
-	- Add tmp_dir to overlay list earlier
-	- set ENV{TMPDIR} explicitly if there are no overlays
-	- Bundle the creation of tmp_dir into the block of "if there are no overlays"
-- Invoke clean up no matter what -if we are far enough to reach it, we ran something that needs it
-- Modified clean up to only remove the tmpdir if it is from our ENV{TMPDIR} - that way we don't wipe overlays by accident
-- Updated copyright info for generated ebuild :) Also added a line to indicate that the ebuild was generated by g-cpan and which version
-- Added output for existing ebuilds found. This helps in the event of invoking g-cpan for an ebuild that already exists. Without this, we return to the prompt without knowing why g-cpan didn't do anything
-- Removed die from call to emerge. Seems the way portage runs it returns an exit code that perl is interpeting as a die
-- Removed $MAKECONF - we have a constant for this.
-- Added verbose message for overlays during discovery phase
-- Inform user which overlay dir is being used
-- Corrected cat'ing of /var/db/pkg dirs to pdirs
-- Tweaked and tested invocations. g-cpan returns proper messages now under the following conditions:
-	* User with overlays attempts to emerge and can't
-	* No overlays defined and user attempts generate
-	* Confirmed multiple overlays work - g-cpan will select the first overlay that it has write access to
-	* Emerging without any overlays
-	* I think that's all that can be tested :)
+*g-cpan-0.14.1_rc1 (10 Dec 2006)
 
+  05 Dec 2006; Michael Cummings <mcummings@gentoo.org>:
+  Worked on bug 156230,  infinite loop with Bundle::CPAN. The problem was that there is a reference to Bundle::CPAN in Bundle::CPAN that was causing us to keep building for it. g-cpan -pu now works correctly with the user's sample overlay.
 
-17/05/2005 - mcummings
+  05 Dec 2006; Michael Cummings <mcummings@gentoo.org>:
+  Bug 156691, dealing with Build.PL's containing evaluation blocks in the dependency list.
 
-- Changed searching to use i() instead of m() (catch more flies with i than m ;) )
-- Modified fatal exist to use cab-colors
-- Added generate to create ebuilds for when you don't have perms to emerge
+  25 Nov 2006; Michael Cummings <mcummings@gentoo.org>:
+  Fixed version writing in ebuilds - now matches declared version dependency, not latest found in portage. Bug 99569
 
-16/05/2005 - mcummings
+  25 Nov 2006; Michael Cummings <mcummings@gentoo.org>:
+  Fixes to lines 376-379 - after dams' changes, these had no value so were causing warnings for attempting > on an undef'd var (prior we were defaulting to 0); 
 
-- Checks for write privs in overlays and choosing the correct overlay based on that
-- cleaned up the multiple cleanup blocks
-- Updated the man pages. Left out cab's and sniper's email in case they didn't want them published (so fill it in if you do :) )
+  03 Oct 2006; ian <ian@gentoo.org>:
+  Fixed bug #143317 - g-cpan: Does not record modules in world
 
-15/05/2005 - mcummings
+  28 Jul 2006; Michael Cummings <mcummings@gentoo.org>:
+  Versioned deps are now working.
 
-- Added check to make sure @ebuild_list had contents before trying to run emerge - less chance of emerge just junking out on us.
-- Added "or die" to system call - at least its a start at handling an error return from the call to portage
+  22 Jul 2006; Michael Cummings <mcummings@gentoo.org>:
+  fixed case sensivity bug (you want to install an uppercase filename, but we
+  have it filed in portage lower case) - brought up on irc
 
-15/05/2005 - cab in wonderland
+  18 Jul 2006; Michael Cummings <mcummings@gentoo.org>:
+  Fixed ACCEPT_KEYWORDS populating (superlag). Experimental Bundle:: Support
+  added :)
 
-- Lots of colours everywhere !
-- new subs for text formatting
-- replaced all simple print() call by print_x() ones
+  12 Jul 2006; Michael Cummings <mcummings@gentoo.org>:
+  Bug 140084 - thanks Moshe!
 
-15/05/2005 - mcummings
+  27 Jun 2006; Michael Cummings <mcummings@gentoo.org>:
+  - Added logging
+  - -u now supports individual packages
 
-- Removed sub that was no longer being invoked (had cleaned up the code for this last week)
+  06 Jun 2006; Michael Cummings <mcummings@gentoo.org>:
+  Bug 135783
 
-15/05/2005 - cab, second pass !
+  19 May 2006; Michael Cummings <mcummings@gentoo.org>:
+  Fixed tests; fixed bug where -a wasn't working anymore; fixed bug where g-cpan would skip ebuilds that already existed (mainstream g-cpan will continue to install them)
 
-- Played with CPAN stuff so that it comes AFTER options parsing (see rev 25 for FIXME)
-- Moved some 'use Module' strings
+  12 May 2006; Michael Cummings <mcummings@gentoo.org>:
+  Fixed bug 156691, evaluation blocks in Build.PL's causing errors. Code snippet originally suggested by poster, John Miller
 
-15/05/2005 - Wonderful colored world, by cab ;)
+*g-cpan-0.14.0 (02 Aug 2006)
+  05 Jun 2005; Michael Cummings <mcummings@gentoo.org>:
+  - Bug 95146 (http://bugs.gentoo.org/show_bug.cgi?id=95146) - lists/upgrades failed because of a lack of arguments. Thanks to Moshe Kaminsky for catching the or vs and on this.
 
-- corrected indentation and typos in exit_usage()
-- colorized exit_usage (feel like portage)
-- rearranged code (categorizing sub - easier to find what we're looking for)
-- added some comments here and there (again ;p)
+  02 Jun 2005; Michael Cummings <mcummings@gentoo.org>:
+  - Bug 94850 (http://bugs.gentoo.org/show_bug.cgi?id=94850) brought to light the interesting scenario of having PORTDIR_OVERLAY="${PORTDIR_OVERLAY} /some/path" in your make.conf - the result is that when we split on space, we get a null string as an overlay dir, which works since as root you can write to /perl-gcpan. 
 
-11/05/2005 - mcummings makes weird changes
+  01 Jun 2005; Michael Cummings <mcummings@gentoo.org>:
+  - Bumped version to 0.13.01 - basically, this is a maintenance update. The version bump was mandated because we needed to change the tarball name so that people would get the new version in their distfiles (otherwise portage thinks they already have a copy of g-cpan-0.13 and ignores that there's a newer version "upstream"). This will ensure folks get the changes made on 30 May 2005.
+  - Moved the color flags one more time per bug 94759 (http://bugs.gentoo.org/show_bug.cgi?id=94759) - usage was called before the colors it uses were being defined.
 
-- cleaned up calls to merge, added -p,-a,-n,-u flags to respective portions
-- Removed the "for (@ARGV) to the call for emerge*module subs - all this was doing was forcing us to call emerge multiple times; the actual subs weren't using @ARGV, but using @ebuild_list, which was already populated elsewhere with all of the modules we wanted plus their generated deps.
-- moved list function so that it was called *after* we define the list of dirs to check
-- added basename so program name was pretty (beu)
-- To explain my changes for that dir read -noticed when traversing for multiple files that the directory list checked was decreasing in size each pass until it was only checking one directory chain in the end. Pushing it all into a single array that's built temporarily, while ugly, seems to work. This was all due to a bug in modules like Bundle-W3C-Validator (go ahead and try with the old code). Sorry for the kludges, thanks snip for the regex help
+  30 May 2005; Michael Cummings <mcummings@gentoo.org>:
+  - Commented out the rmdir of .cpan/build - this was causing weird random (harmless) error messages. Reviewing the code, we don't actually use this dir ourselves, but point to it for CPAN's build area. Since the default config for CPAN cleans this up itself, lets leave it at that for now.
+  - Corrected dev-perl/File-Spec to perl-core/File-Spec following the perl-core migration last week. Releasing this as -r1 in portage since its a minor change, not a major update.
 
-10/05/2005 - cab strikes g-cpan again.. :)
+  20 May 2005; Michael Cummings <mcummings@gentoo.org>:
+  - Moved color block so I could invoke it outside the usage function
+  - Added options to the "don't combine" block. Cleaned up text since the block was getting too long to handle/read
+  - Added catch for when no options were passed :)
+  - Modified check and output for arguments without a module pass
+  - Reorganized the checking of PORTDIR_OVERLAY and tmp_dir creation.
+  - Check to make sure we aren't attempting a non-emerge and creating a temp dir
+  - Add tmp_dir to overlay list earlier
+  - set ENV{TMPDIR} explicitly if there are no overlays
+  - Bundle the creation of tmp_dir into the block of "if there are no overlays"
+  - Invoke clean up no matter what -if we are far enough to reach it, we ran something that needs it
+  - Modified clean up to only remove the tmpdir if it is from our ENV{TMPDIR} - that way we don't wipe overlays by accident
+  - Updated copyright info for generated ebuild :) Also added a line to indicate that the ebuild was generated by g-cpan and which version
+  - Added output for existing ebuilds found. This helps in the event of invoking g-cpan for an ebuild that already exists. Without this, we return to the prompt without knowing why g-cpan didn't do anything
+  - Removed die from call to emerge. Seems the way portage runs it returns an exit code that perl is interpeting as a die
+  - Removed $MAKECONF - we have a constant for this.
+  - Added verbose message for overlays during discovery phase
+  - Inform user which overlay dir is being used
+  - Corrected cat'ing of /var/db/pkg dirs to pdirs
+  - Tweaked and tested invocations. g-cpan returns proper messages now under the following conditions:
+  - User with overlays attempts to emerge and can't
+  - No overlays defined and user attempts generate
+  - Confirmed multiple overlays work - g-cpan will select the first overlay that it has write access to
+  - Emerging without any overlays
+  - I think that's all that can be tested :)
 
-- added comments here and there..
-- modified the cpan-config-needed if() test
-- modified switches interpretations
-- added -l,--list switch (nothing behind for now)
-- added a new sub : clean_the_mess, that should take care of system's sanity
-- changed my $arches
-- subbed the MD5 sum calculation
-- updated exit_usage()
+  17 May 2005; Michael Cummings <mcummings@gentoo.org>:
+  - Changed searching to use i() instead of m() (catch more flies with i than m ;) )
+  - Modified fatal exist to use cab-colors
+  - Added generate to create ebuilds for when you don't have perms to emerge
 
-07/05/2005 -  cab first strike !
+  16 May 2005; Michael Cummings <mcummings@gentoo.org>:
+  - Checks for write privs in overlays and choosing the correct overlay based on that
+  - cleaned up the multiple cleanup blocks
+  - Updated the man pages. Left out cab's and sniper's email in case they didn't want them published (so fill it in if you do :) )
 
-- Added search capabilities (same as m // command in CPAN Shell
+  15 May 2005; Michael Cummings <mcummings@gentoo.org>:
+  - Added check to make sure @ebuild_list had contents before trying to run emerge - less chance of emerge just junking out on us.
+  - Added "or die" to system call - at least its a start at handling an error return from the call to portage
+
+  15 May 2005; Michael Cummings <mcummings@gentoo.org>: cab in wonderland
+  - Lots of colours everywhere !
+  - new subs for text formatting
+  - replaced all simple print() call by print_x() ones
+
+  15 May 2005; Michael Cummings <mcummings@gentoo.org>:
+  - Removed sub that was no longer being invoked (had cleaned up the code for this last week)
+
+  15 May 2005; Michael Cummings <mcummings@gentoo.org>:
+  cab, second pass !
+  - Played with CPAN stuff so that it comes AFTER options parsing (see rev 25 for FIXME)
+  - Moved some 'use Module' strings
+
+  15 May 2005; Michael Cummings <mcummings@gentoo.org>:
+  Wonderful colored world, by cab ;)
+  - corrected indentation and typos in exit_usage()
+  - colorized exit_usage (feel like portage)
+  - rearranged code (categorizing sub - easier to find what we're looking for)
+  - added some comments here and there (again ;p)
+
+  11 May 2005; Michael Cummings <mcummings@gentoo.org>:
+  mcummings makes weird changes
+  - cleaned up calls to merge, added -p,-a,-n,-u flags to respective portions
+  - Removed the "for (@ARGV) to the call for emerge*module subs - all this was doing was forcing us to call emerge multiple times; the actual subs weren't using @ARGV, but using @ebuild_list, which was already populated elsewhere with all of the modules we wanted plus their generated deps.
+  - moved list function so that it was called *after* we define the list of dirs to check
+  - added basename so program name was pretty (beu)
+  - To explain my changes for that dir read -noticed when traversing for multiple files that the directory list checked was decreasing in size each pass until it was only checking one directory chain in the end. Pushing it all into a single array that's built temporarily, while ugly, seems to work. This was all due to a bug in modules like Bundle-W3C-Validator (go ahead and try with the old code). Sorry for the kludges, thanks snip for the regex help
+
+  10 May 2005; Michael Cummings <mcummings@gentoo.org>:
+  cab strikes g-cpan again.. :)
+  - added comments here and there..
+  - modified the cpan-config-needed if() test
+  - modified switches interpretations
+  - added -l,--list switch (nothing behind for now)
+  - added a new sub : clean_the_mess, that should take care of system's sanity
+  - changed my $arches
+  - subbed the MD5 sum calculation
+  - updated exit_usage()
+
+  07 May 2005; Michael Cummings <mcummings@gentoo.org>:
+  cab first strike !
+  - Added search capabilities (same as m // command in CPAN Shell
   Use -s or --search switch to get it.
-
-- Now Using Getopt::Long to handle switches, options, and so on..
-
-- get_globals totally rewritten : now uses open/parse/close on make.conf,
+  - Now Using Getopt::Long to handle switches, options, and so on..
+  - get_globals totally rewritten : now uses open/parse/close on make.conf,
   instead of 3 times qx() : performance boost guaranteed. Sets up default before 
   overwriting them if needed and can replace variables like ${PORTDIR} if ever
   they are used in make.conf : quality improvement guaranteed. :p
   thx to Sniper (sniper@mongueurs.net) for the s// regexp !
-
-- Added a bit more explicative Usage message.. in fact a whole sub. 
+  - Added a bit more explicative Usage message.. in fact a whole sub. 
   Available with -h or --help switch but will also appear if user
   requires impossible or wrong things (plus a detailed error message
   on what when wrong).
-
-- Installing a module now requires the -i or --install switch, to differentiate
+  - Installing a module now requires the -i or --install switch, to differentiate
   from searching. Can be modified to become default 'no option' behaviour,
   but i'm not fan : searching as default would be far less dangerous. :)
+  - Reorganised code, adding some comments, removing some useless others.
+  - Had fun !
 
-- Reorganised code, adding some comments, removing some useless others.
+  30 Apr 2005; Michael Cummings <mcummings@gentoo.org>:
+  Moving g-cpan into its own package space withing app-portage for better managability.
+  Also, this breaks the tie to g-cpan fixes being reliant on the next release of portage.
 
-- Had fun !
+  29 Jan 2005; Michael Cummings <mcummings@gentoo.org>:
+  andrew-g@oxhut.co.uk: 
+  Improved filename/version matching to close bugs 64403 74149 69464 23951.  
+  Improved default help message.  Added -v verbose flag.
 
---------------------------------------
-Old Changelog 
--------------
+  16 Nov 2004; Michael Cummings <mcummings@gentoo.org>:
+  pete@peteleonard.com:
+  Fixed handling of CPAN modules that end in '.pm' (e.g. CGI.pm)
+  Closes bug 64403.
 
-#Copyright 1999-2004 Gentoo Foundation
-#Distributed under the terms of the GNU General Public License v2
-#$Header: /var/cvsroot/gentoo/users/mcummings/g-cpan/g-cpan-0.12/Changes,v 1.1 2005/04/30 21:44:15 mcummings Exp $
+  29 Oct 2004; Michael Cummings <mcummings@gentoo.org>:
+  rac@gentoo.org:
+  attempt to recognize lowercased packages in dev-perl in portage_dir
 
-History: 
+  23 May 2003; Michael Cummings <mcummings@gentoo.org>:
+  jrray@gentoo.org: 
+  Skip modules the CPAN thinks are included with perl (closes bug 14679).
 
-04/30/05: mcummings@gentoo.org
-	Moving g-cpan into its own package space withing app-portage for better managability.
-	Also, this breaks the tie to g-cpan fixes being reliant on the next release of portage.
+  Used the CPAN module to discover the real location of Makefile.PL to set
+  the ${S} variable in the ebuild, sometimes the location isn't the same as
+  ${P}.
+  
+  Don't assume the filename of the tarball will be ${P}.tar.gz, use the
+  real filename out of CPAN.
+  
+  Some modules' filenames have underscores in unfortunate places.  Change
+  all of them to hyphens to avoid that mess.
 
-01/29/05: andrew-g@oxhut.co.uk: 
-	Improved filename/version matching to close bugs 64403 74149 69464 23951.  
-	Improved default help message.  Added -v verbose flag.
+  23 Feb 2003; Michael Cummings <mcummings@gentoo.org>:
+  alain@gentoo.org: 
+  removed portage direct-access code, and switched to using the
+  portageq utility which hides the portage APIs.
 
-11/16/04: pete@peteleonard.com:
-	Fixed handling of CPAN modules that end in '.pm' (e.g. CGI.pm)
-	Closes bug 64403.
+  08 Jan 2003; Michael Cummings <mcummings@gentoo.org>:
+  jrray@gentoo.org: 
+  remove dependency on Digest::MD5
 
-10/29/04: rac@gentoo.org:
-	attempt to recognize lowercased packages in dev-perl in portage_dir
+  07 Jan 2003; Michael Cummings <mcummings@gentoo.org>:
+  jrray@gentoo.org: getting the way subroutines are fed variables
+  sorted out (they're in @_)
+  Clean out module_check, unnecessary temp variables are evil.
+  It isn't okay to skip a module if module_check succeeds when
+  that module is listed as a dependency for a module we're trying
+  to install, the subsequent emerge can fail if the ebuild doesn't
+  exist.  So only skip a module if it is a first order module from
+  the command line but not if it is being considered to meet a
+  dependency.
+  Use the portage python module to learn some configuration values
+  instead of trying to parse make.conf.
+  Need to use system and not exec when calling out to emerge, exec
+  ends our process!
 
-05/23/03: jrray@gentoo.org: 
-	Skip modules the CPAN thinks are included with perl (closes bug 14679).
+  09 Dec 2002; Michael Cummings <mcummings@gentoo.org>:
+  baz@bluefuton.com: some further amends:
+  standardised code, declared external vars early, 
+  amended layout and sub styles for consistency and brevity,
+  also removed a 'spare' function :-)
 
-	Used the CPAN module to discover the real location of Makefile.PL to set
-	the ${S} variable in the ebuild, sometimes the location isn't the same as
-	${P}.
-	
-	Don't assume the filename of the tarball will be ${P}.tar.gz, use the
-	real filename out of CPAN.
-	
-	Some modules' filenames have underscores in unfortunate places.  Change
-	all of them to hyphens to avoid that mess.
+  07 Dec 2002; Michael Cummings <mcummings@gentoo.org>:
+  Reviewed baz's comments (thanks!). Moved the make.conf check to an external
+  sub so that we could grab other important functions. Added Digest::MD5 so that we could
+  check the checksum more cleanly instead of making a system call.
+  Thanks to stocke2 for pointing me in the direction of File::Path -
+  and helping me debug silly michael coding with rmtree
 
-02/23/03: alain@gentoo.org: 
-	removed portage direct-access code, and switched to using the
-	portageq utility which hides the portage APIs.
+  07 Dec 2002; Michael Cummings <mcummings@gentoo.org>:
+  baz@bluefuton.com: 
+  comments added, basically a very picky code review.
 
-01/08/03: jrray@gentoo.org: 
-	remove dependency on Digest::MD5
+  06 Dec 2002; Michael Cummings <mcummings@gentoo.org>:
+  Added emerge functionality. Now emerges modules on the 
+  fly
 
-01/07/03: jrray@gentoo.org: getting the way subroutines are fed variables
-	sorted out (they're in @_)
-	Clean out module_check, unnecessary temp variables are evil.
-	It isn't okay to skip a module if module_check succeeds when
-	that module is listed as a dependency for a module we're trying
-	to install, the subsequent emerge can fail if the ebuild doesn't
-	exist.  So only skip a module if it is a first order module from
-	the command line but not if it is being considered to meet a
-	dependency.
-	Use the portage python module to learn some configuration values
-	instead of trying to parse make.conf.
-	Need to use system and not exec when calling out to emerge, exec
-	ends our process!
+  03 Dec 2002; Michael Cummings <mcummings@gentoo.org>:
+  Added checks for /var/db/pkg and manually installed 
+  modules
 
-12/09/02: baz@bluefuton.com: some further amends:
-	standardised code, declared external vars early, 
-	amended layout and sub styles for consistency and brevity,
-	also removed a 'spare' function :-)
-
-12/07/02: mcummings: Reviewed baz's comments (thanks!). Moved the make.conf check to an external
-	 sub so that we could grab other important functions. Added Digest::MD5 so that we could
-	 check the checksum more cleanly instead of making a system call.
-	 Thanks to stocke2 for pointing me in the direction of File::Path -
-	 and helping me debug silly michael coding with rmtree
-
-12/07/02: baz@bluefuton.com: 
-	comments added, basically a very picky code review.
-
-12/06/02: mcummings; 
-	Added emerge functionality. Now emerges modules on the 
-	fly
-
-12/03/02: mcummings; 
-	Added checks for /var/db/pkg and manually installed 
-	modules
-
-11/07/02: jrray : Initial upload to bug 3450
+  07 Nov 2002; Michael Cummings <mcummings@gentoo.org>:
+  jrray : Initial upload to bug 3450
