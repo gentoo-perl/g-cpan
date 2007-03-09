@@ -321,7 +321,7 @@ if ($overlay)
     {
         if (-d $overlay) { $gcpan_run->{portage_bases}{$overlay} = 1 }
     }
-    unless (keys %{$gcpan_run->{portage_bases}} >= 1)
+    unless (keys %{$gcpan_run->{portage_bases}} > 1)
     {
         fatal(print_err("DEFINED OVERLAYS DON'T EXIST!"));
     }
