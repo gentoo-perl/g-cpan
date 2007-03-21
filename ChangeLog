@@ -2,11 +2,15 @@
 # Copyright 2002-2007 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+  21 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  Added message for buildpkg users to update /etc/portage/packages, thanks
+  fuzzyray :)
+
   09 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
   Reverting change from bug 167776, niko and talked it over - was right the
   first time. actual fix was elsewhere when i fixed the env imports.
 
-*g-cpan-0.15_rc2 (03 Mar 2007)
+*g-cpan-0.15_rc3 (03 Mar 2007)
 
   03 Mar 2007; Michael Cummings <mcummings@gentoo.org>:
   Officially removing Config.pm; prepping for snapshot for portage.
