@@ -455,6 +455,7 @@ if (($install || $pretend || $buildpkg || $buildpkgonly || $upgrade || $ask)
         if ($ask          && $ask > 0)          { push @flags, '--ask' }
         if ($buildpkg     && $buildpkg > 0)     { push @flags, '--buildpkg' }
         if ($buildpkgonly && $buildpkgonly > 0) { push @flags, '--buildpkgonly' }
+		if ($upgrade && $upgrade > 0) { push @flags, '--update' }
 
         $verbose and print_info("Calling: emerge @flags @ebuilds");
         $gcpan_run->emerge_ebuild(@ebuilds, @flags);
