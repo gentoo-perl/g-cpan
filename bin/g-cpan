@@ -35,7 +35,7 @@ my $prog = basename($0);
 unless ($ENV{TMPDIR}) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
 
 my %dep_list = ();
-my @perl_dirs = ("dev-perl", "perl-core", "perl-gcpan", "perl-text", "perl-tools", "perl-xml", "perl-dev", "dev-lang",);
+my @perl_dirs = ("perl-gcpan", "dev-perl", "perl-core", "perl-text", "perl-tools", "perl-xml", "perl-dev", "dev-lang",);
 
 ###############################
 # Command line interpretation #
@@ -507,7 +507,7 @@ sub generatePackageInfo
                     {
                         my $thisfile = (split(/ /, $_))[1];
 						$thisfile =~ s{\.([A-Za-z]{1,3})$}{};
-                        if ($thisfile =~ m{$eb}x)
+                        if (($thisfile =~ m{$eb}x) && !defined($passed_to_install{$eb}))
 						{
 							print_info("$ebuild_wanted is part of the core perl install");
 							return;

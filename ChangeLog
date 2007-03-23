@@ -3,6 +3,12 @@
 # $Header: $
 
   23 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  Fixed potential bug with checking to see if the module was installed with
+  dev-lang/perl - only checking now if it isn't part of the actual request, ie
+  g-cpan -i CPAN will work again (dep checking still the same, but now
+  perl-gcpan is checked first just to be safe)
+
+  23 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
   Fixed CPAN.pm line 260 - overzealous reading of meta*yml files
 
   23 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
