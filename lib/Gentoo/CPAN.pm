@@ -257,10 +257,9 @@ sub FindDeps {
         next if ( $object eq ".." );
         if ( -f $object ) {
             my $abs_path = abs_path($object);
-            if ( $object =~ m{META.yml}i ) {
+            if ( $object =~ m{META\.yml} ) {
 
                 # Do YAML parsing if you can
-                use Data::Dumper;
                 my $b_n = dirname($abs_path);
                 $b_n = basename($b_n);
                 my $arr = YAML::LoadFile($abs_path);

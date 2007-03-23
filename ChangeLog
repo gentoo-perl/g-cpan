@@ -3,6 +3,9 @@
 # $Header: $
 
   23 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  Fixed CPAN.pm line 260 - overzealous reading of meta*yml files
+
+  23 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
   Fix for bug 171686 - thats right, allow -u but failed to call --update in flags
 
   21 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
