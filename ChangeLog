@@ -2,6 +2,10 @@
 # Copyright 2002-2007 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+  24 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  Fixed spinner annoyanc (newlines); added check to make sure yaml file is
+  valid before attempting to parse it for deps; bug 170137 addressed
+
   23 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
   Fixed potential bug with checking to see if the module was installed with
   dev-lang/perl - only checking now if it isn't part of the actual request, ie

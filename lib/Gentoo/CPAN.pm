@@ -257,12 +257,16 @@ sub FindDeps {
         next if ( $object eq ".." );
         if ( -f $object ) {
             my $abs_path = abs_path($object);
-            if ( $object =~ m{META\.yml} ) {
+            if ( $object eq "META\.yml" ) {
 
                 # Do YAML parsing if you can
                 my $b_n = dirname($abs_path);
                 $b_n = basename($b_n);
-                my $arr = YAML::LoadFile($abs_path);
+                open(YAML,"$abs_path");
+                my @yaml = <YAML>;
+                close(YAML);
+                if ( check_yaml(@yaml) ) {
+                my $arr = YAML::Load(@yaml);
                 foreach my $type qw(requires build_requires recommends) {
                     if ( my $ar_type = $arr->{$type} ) {
                         foreach my $module ( keys %{$ar_type} ) {
@@ -276,6 +280,7 @@ sub FindDeps {
                         }
                     }
                 }
+            }
             }
             if ( $object =~ m/^Makefile$/ ) {
 
@@ -324,7 +329,7 @@ sub FindDeps {
                 my (%p) = ();
                 my $fh;
 
-                foreach my $type qw(requires recommends build_requires) {
+                foreach my $type qw(requires build_requires) {
                     if ( $fh = FileHandle->new("<$makefile\0") ) {
                         local ($/) = "";
                         while (<$fh>) {
@@ -378,6 +383,11 @@ sub FindDeps {
 
 }
 
+sub check_yaml {
+    my @yaml = @_;
+    return 1 if YAML::Load(@yaml);
+    return 0;
+}
 sub transformCPAN {
     my $self = shift;
     my $name = shift;

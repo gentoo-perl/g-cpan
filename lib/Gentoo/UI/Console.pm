@@ -95,7 +95,7 @@ sub spinner_start {
     print "\r".('/', '-', '\\', '|')[$spin++%4];
 }
 
-sub spinner_stop { print "\r \r" }
+sub spinner_stop { print "\r\r" }
 
 
 1;

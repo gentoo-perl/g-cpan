@@ -15,7 +15,7 @@ our $VERSION = "0.02";
 
 sub myprint {
 	my ($self, $text) = @_;
-    spinner_start();
+    #spinner_start();
 	my @fake_results;
 	# if there is only one result, the string is different
     chomp($text);

@@ -439,7 +439,9 @@ if (   $generate
     || $ask
     || $upgrade)
 {
-    generatePackageInfo($_) foreach (keys %passed_to_install);
+	if (keys (%passed_to_install)) {
+		generatePackageInfo($_) foreach (keys %passed_to_install);
+	}
 }
 
 if (($install || $pretend || $buildpkg || $buildpkgonly || $upgrade || $ask)
@@ -509,10 +511,12 @@ sub generatePackageInfo
 						$thisfile =~ s{\.([A-Za-z]{1,3})$}{};
                         if (($thisfile =~ m{$eb}x) && !defined($passed_to_install{$eb}))
 						{
+    						spinner_stop();
 							print_info("$ebuild_wanted is part of the core perl install");
 							return;
 						}
                     }
+    				spinner_stop();
                     last;
                 }
             }
