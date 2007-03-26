@@ -442,6 +442,47 @@ sub transformCPAN {
     }
 }
 
+##### - added here #####
+#
+#
+########################
+
+*CPAN::myprint = sub {
+	my ($self, $text) = @_;
+    #spinner_start();
+	my @fake_results;
+	# if there is only one result, the string is different
+    chomp($text);
+	if ( $text =~ m{Module } )
+	{
+	$text =~ s{Module id = }{\n};
+        if ($text =~ m{\n})  { 
+            $text =~ s{\d+ items found}{};
+            @fake_results = split (/\n/, $text);
+            return(@fake_results);
+        
+        }
+		$text =~ s{\n\n}{}gmx;
+		push @fake_results, $text;
+		return (@fake_results) ;
+	}
+};
+
+*CPAN::mywarn = sub {
+    return;
+};
+
+*CPAN::mydie = sub {
+    my ($self,$what) = @_;
+    print STDOUT "$what";
+    die "\n";
+};
+
+
+########################
+#
+#
+##### - ended here #####
 sub makeCPANstub {
     my $self          = shift;
     my $cpan_cfg_dir  = File::Spec->catfile( $ENV{HOME}, CPAN_CFG_DIR );

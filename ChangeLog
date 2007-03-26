@@ -2,6 +2,15 @@
 # Copyright 2002-2007 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+  26 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  rc5; contains fix for different versions of CPAN.pm being loaded, thanks to
+  Jmax- for noticing this. Will clean up and post to gentoo shortly.
+
+*g-cpan-0.15_rc5 (26 Mar 2007)
+
+  26 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  Posting rc4 to help users test out bugs, beginning rc5
+
   24 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
   Fixed spinner annoyanc (newlines); added check to make sure yaml file is
   valid before attempting to parse it for deps; bug 170137 addressed
@@ -26,7 +35,7 @@
   Reverting change from bug 167776, niko and talked it over - was right the
   first time. actual fix was elsewhere when i fixed the env imports.
 
-*g-cpan-0.15_rc3 (03 Mar 2007)
+*g-cpan-0.15_rc4 (03 Mar 2007)
 
   03 Mar 2007; Michael Cummings <mcummings@gentoo.org>:
   Officially removing Config.pm; prepping for snapshot for portage.
@@ -45,7 +54,7 @@
   26 Feb 2007; Michael Cummings <mcummings@gentoo.org>:
   Bug 167776, thanks Nicolas. Silly bug on portage_bases.
 
-*g-cpan-0.15_rc2 (11 Feb 2007)
+*g-cpan-0.15_rc3 (11 Feb 2007)
 
   11 Feb 2007; Michael Cummings <mcummings@gentoo.org>:
   Bug 158163 - Added a check before generating a module from CPAN to verify
@@ -61,7 +70,7 @@
   05 Jan 2007; Michael Cummings <mcummings@gentoo.org>:
   Bug 160137, strip_ends cleanup on env imports.
 
-*g-cpan-0.15_rc1 (03 Jan 2007)
+*g-cpan-0.15_rc2 (11 Feb 2007)
 
   03 Jan 2007; Michael Cummings <mcummings@gentoo.org>:
   Version bump with bug fixes 157298, 158755, 157141, 99569, 104172, 147000,
@@ -90,6 +99,8 @@
 
   27 Dec 2006; Michael Cummings <mcummings@gentoo.org>:
   Importing recent work. These changes include a few aesthetic changes to how the ebuilds are written, as well as further work on integrating Shell::EnvImporter into g-cpan.
+
+*g-cpan-0.15_rc1 (03 Jan 2007)
 
   19 Dec 2006; Michael Cummings <mcummings@gentoo.org>:
   I've begun phasing out Gentoo::Config in favor of simply using Shell::EnvImporter to pull in all of make.* file variables without the extra hoops we try to jump through to properly interpolate the shell variables. This way we use the same old hack I used on my out-of-date scripts and treat the make files like bash profiles and simply source them.

@@ -28,7 +28,7 @@ use Log::Agent;
 use Log::Agent::Driver::File;
 use Log::Agent::Driver::Silent;
 
-our $VERSION = "0.15_rc3";
+our $VERSION = "0.15_rc5";
 my $prog = basename($0);
 
 ##### Establish our tmpdir
@@ -75,7 +75,6 @@ GetOptions(
     'help|h'         => sub { exit_usage(); }
 ) or exit_usage();
 
-use lib "../lib";
 use Gentoo;
 use Gentoo::UI::Console;
 
@@ -182,7 +181,7 @@ else
 }
 
 use CPAN;
-$CPAN::Frontend = "Gentoo::CPAN::FakeFrontend";
+#$CPAN::Frontend = "Gentoo::CPAN::FakeFrontend";
 
 {
     foreach (qw[build sources])
@@ -623,7 +622,7 @@ sub generatePackageInfo
 
             # Write ebuild here?
             $debug and $gcpan_run->debug;
-            my @overlays = [];
+            my @overlays;
             if ($overlay) { @overlays = split ' ', $overlay }
             else
             {
