@@ -738,13 +738,13 @@ HERE
                                 }
                             }
                             print $EBUILD "dev-lang/perl\"\n";
-							if (defined($buildpkg) or defined($buildpkgonly)) {
-								print $EBUILD "\npkg_postinst() {\n";
-								print $EBUILD "elog \"If you redistribute this package, please remember to\"\n";
-								print $EBUILD "elog \"update /etc/portage/categories with an entry for perl-gpcan\"\n";
+                            if (defined($buildpkg) or defined($buildpkgonly)) {
+                                print $EBUILD "\npkg_postinst() {\n";
+                                print $EBUILD "elog \"If you redistribute this package, please remember to\"\n";
+                                print $EBUILD "elog \"update /etc/portage/categories with an entry for perl-gpcan\"\n";
 
-								print $EBUILD "}\n";
-								}
+                                print $EBUILD "}\n";
+                            }
                             undef $EBUILD;
                             autoflush STDOUT 1;
                         }
