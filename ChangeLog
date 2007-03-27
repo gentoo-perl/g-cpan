@@ -2,6 +2,9 @@
 # Copyright 2002-2007 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+  27 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  Just cleaning up from the CPAN.pm fixes
+
   26 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
   rc5; contains fix for different versions of CPAN.pm being loaded, thanks to
   Jmax- for noticing this. Will clean up and post to gentoo shortly.

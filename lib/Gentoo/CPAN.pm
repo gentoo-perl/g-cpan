@@ -12,7 +12,6 @@ use Memoize;
 use Cwd qw(getcwd abs_path cwd);
 use File::Basename;
 use Shell qw(perl);
-use Gentoo::CPAN::FakeFrontend;
 
 memoize('transformCPAN');
 memoize('FindDeps');
@@ -61,6 +60,47 @@ sub new {
     bless( $self, $class );
     return $self;
 }
+
+##### - CPAN OVERRIDE - #####
+#
+#############################
+
+*CPAN::myprint = sub {
+	my ($self, $text) = @_;
+    #spinner_start();
+	my @fake_results;
+	# if there is only one result, the string is different
+    chomp($text);
+	if ( $text =~ m{Module } )
+	{
+	$text =~ s{Module id = }{\n};
+        if ($text =~ m{\n})  { 
+            $text =~ s{\d+ items found}{};
+            @fake_results = split (/\n/, $text);
+            return(@fake_results);
+        
+        }
+		$text =~ s{\n\n}{}gmx;
+		push @fake_results, $text;
+		return (@fake_results) ;
+	}
+};
+
+*CPAN::mywarn = sub {
+    return;
+};
+
+*CPAN::mydie = sub {
+    my ($self,$what) = @_;
+    print STDOUT "$what";
+    die "\n";
+};
+
+
+########################
+#
+########################
+
 
 sub getCPANInfo {
     my $self        = shift;
@@ -442,47 +482,6 @@ sub transformCPAN {
     }
 }
 
-##### - added here #####
-#
-#
-########################
-
-*CPAN::myprint = sub {
-	my ($self, $text) = @_;
-    #spinner_start();
-	my @fake_results;
-	# if there is only one result, the string is different
-    chomp($text);
-	if ( $text =~ m{Module } )
-	{
-	$text =~ s{Module id = }{\n};
-        if ($text =~ m{\n})  { 
-            $text =~ s{\d+ items found}{};
-            @fake_results = split (/\n/, $text);
-            return(@fake_results);
-        
-        }
-		$text =~ s{\n\n}{}gmx;
-		push @fake_results, $text;
-		return (@fake_results) ;
-	}
-};
-
-*CPAN::mywarn = sub {
-    return;
-};
-
-*CPAN::mydie = sub {
-    my ($self,$what) = @_;
-    print STDOUT "$what";
-    die "\n";
-};
-
-
-########################
-#
-#
-##### - ended here #####
 sub makeCPANstub {
     my $self          = shift;
     my $cpan_cfg_dir  = File::Spec->catfile( $ENV{HOME}, CPAN_CFG_DIR );
@@ -539,7 +538,12 @@ sub makeCPANstub {
   'make' => q[$make_prog],
   'make_arg' => q[],
   'make_install_arg' => q[],
+  'make_install_make_command' => q[/usr/bin/make],
   'makepl_arg' => q[],
+  'mbuild_arg' => q[],
+  'mbuild_install_arg' => q[],
+  'mbuild_install_build_command' => q[./Build],
+  'mbuildpl_arg' => q[],
   'ncftpget' => q[$ncftpget_prog],
   'no_proxy' => q[],
   'pager' => q[$less_prog],

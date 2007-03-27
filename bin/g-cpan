@@ -181,7 +181,6 @@ else
 }
 
 use CPAN;
-#$CPAN::Frontend = "Gentoo::CPAN::FakeFrontend";
 
 {
     foreach (qw[build sources])
