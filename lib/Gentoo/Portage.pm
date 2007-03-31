@@ -33,7 +33,7 @@ require Exporter;
 our @ISA = qw(Exporter Gentoo);
 
 our @EXPORT =
-  qw( getEnv getAvailableEbuilds getAvailableVersions generate_digest emerge_ebuild import_fields );
+  qw( getEnv getAltName getAvailableEbuilds getAvailableVersions generate_digest emerge_ebuild import_fields );
 
 our $VERSION = '0.01';
 
@@ -148,10 +148,75 @@ s/^([a-zA-Z0-9\-_\/\+]*)-([0-9\.]+[a-zA-Z]?)([\-r|\-rc|_alpha|_beta|_pre|_p]?)/$
     return $ebuildVersion;
 }
 
+sub getBestVersion {
+    my $self = shift;
+    my ( $find_ebuild, $portdir, $tc, $tp ) = @_;
+     getAvailableEbuilds( $self, $portdir, $tc . "/" . $tp );
+
+                foreach ( @{ $self->{packagelist} } ) {
+                    my @tmp_availableVersions = ();
+                    push( @tmp_availableVersions, getEbuildVersionSpecial($_) );
+
+                    # - get highest version >
+                    if ( $#tmp_availableVersions > -1 ) {
+                        $self->{'portage'}{ lc($find_ebuild) }{'version'} =
+                          ( sort(@tmp_availableVersions) )
+                          [$#tmp_availableVersions];
+
+                        read_ebuild($self,$find_ebuild,$portdir,$tc,$tp,$_);
+                        # - get rid of -rX >
+                        $self->{'portage'}{ lc($find_ebuild) }{'version'} =~
+                          s/([a-zA-Z0-9\-_\/]+)-r[0-9+]/$1/;
+                        $self->{'portage'}{ lc($find_ebuild) }{'version'} =~
+                          s/([a-zA-Z0-9\-_\/]+)-rc[0-9+]/$1/;
+                        $self->{'portage'}{ lc($find_ebuild) }{'version'} =~
+                          s/([a-zA-Z0-9\-_\/]+)_p[0-9+]/$1/;
+                        $self->{'portage'}{ lc($find_ebuild) }{'version'} =~
+                          s/([a-zA-Z0-9\-_\/]+)_pre[0-9+]/$1/;
+
+                        # - get rid of other stuff we don't want >
+                        $self->{'portage'}{ lc($find_ebuild) }{'version'} =~
+                          s/([a-zA-Z0-9\-_\/]+)_alpha[0-9+]?/$1/;
+                        $self->{'portage'}{ lc($find_ebuild) }{'version'} =~
+                          s/([a-zA-Z0-9\-_\/]+)_beta[0-9+]?/$1/;
+                        $self->{'portage'}{ lc($find_ebuild) }{'version'} =~
+                          s/[a-zA-Z]+$//;
+
+                        if ( $tc eq "perl-core"
+                            and ( keys %{ $self->{'portage_bases'} } ) )
+                        {
+
+          # We have a perl-core module - can we satisfy it with a virtual/perl-?
+                            foreach my $portage_root (
+                                keys %{ $self->{'portage_bases'} } )
+                            {
+                                if ( -d $portage_root ) {
+                                    if ( -d "$portage_root/virtual/perl-$tp" ) {
+                                        $self->{'portage'}{ lc($find_ebuild) }
+                                          {'name'} = "perl-$tp";
+                                        $self->{'portage'}{ lc($find_ebuild) }
+                                          {'category'} = "virtual";
+                                        last;
+                                    }
+                                }
+                            }
+
+                        }
+                        else {
+                            $self->{'portage'}{ lc($find_ebuild) }{'name'} =
+                              $tp;
+                            $self->{'portage'}{ lc($find_ebuild) }{'category'} =
+                              $tc;
+                        }
+
+                    }
+                }
+            }
 sub getAvailableVersions {
     my $self        = shift;
     my $portdir     = shift;
     my $find_ebuild = shift;
+    return if ($find_ebuild =~ m{::} );
     my %excludeDirs = (
         "."         => 1,
         ".."        => 1,
@@ -166,6 +231,17 @@ sub getAvailableVersions {
     if ($find_ebuild) {
         return if ( defined($self->{portage}{ lc($find_ebuild) }{'found'} ));
     }
+    while (<DATA>) {
+        my ($cat,$eb,$cpan_file) = split(/\s+|\t+/, $_);
+        if ( $cpan_file =~ m{^$find_ebuild$}i ) {
+            getBestVersion($self,$find_ebuild,$portdir,$cat,$eb);
+            $self->{portage}{ lc($find_ebuild) }{'found'} = 1;
+           return;
+        }
+    }
+
+    unless(defined($self->{'portage'}{lc($find_ebuild)}{'name'})) {
+    
     foreach my $tc ( @{ $self->{portage_categories} } ) {
         next if ( !-d "$portdir/$tc" );
         @store_found_dirs = [];
@@ -185,95 +261,23 @@ sub getAvailableVersions {
             $tp =~ s{^\./}{}xms;
 
             # - not excluded and $_ is a dir?
-            if ( !$excludeDirs{$tp} && -d $portdir . "/" . $tc . "/" . $tp ) {
+            if ( !$excludeDirs{$tp} && -d $portdir . "/" . $tc . "/" . $tp ) { #STARTS HERE
                 if ($find_ebuild) {
                     next
                       unless ( lc($find_ebuild) eq lc($tp) );
                 }
-                getAvailableEbuilds( $self, $portdir, $tc . "/" . $tp );
-
-                foreach ( @{ $self->{packagelist} } ) {
-                    my @tmp_availableVersions = ();
-                    push( @tmp_availableVersions, getEbuildVersionSpecial($_) );
-
-                    # - get highest version >
-                    if ( $#tmp_availableVersions > -1 ) {
-                        $self->{'portage'}{ lc($tp) }{'version'} =
-                          ( sort(@tmp_availableVersions) )
-                          [$#tmp_availableVersions];
-
-                        my $e_file= "$portdir/$tc/$tp/$_";
-                        # Grab some info for display
-                        my $e_import = Shell::EnvImporter->new(
-                            file => $e_file,
-                            shell => 'bash',
-                            auto_run => 1,
-                            auto_import => 1,
-                        );
-                        $e_import->shellobj->envcmd('set');
-                        $e_import->run();
-                        $e_import->env_import();
-                        $self->{'portage'}{lc($tp)}{'DESCRIPTION'} = strip_env($ENV{DESCRIPTION});
-                        $self->{'portage'}{lc($tp)}{'HOMEPAGE'} = strip_env($ENV{HOMEPAGE});
-                        $e_import->restore_env;
-
-
-                        # - get rid of -rX >
-                        $self->{'portage'}{ lc($tp) }{'version'} =~
-                          s/([a-zA-Z0-9\-_\/]+)-r[0-9+]/$1/;
-                        $self->{'portage'}{ lc($tp) }{'version'} =~
-                          s/([a-zA-Z0-9\-_\/]+)-rc[0-9+]/$1/;
-                        $self->{'portage'}{ lc($tp) }{'version'} =~
-                          s/([a-zA-Z0-9\-_\/]+)_p[0-9+]/$1/;
-                        $self->{'portage'}{ lc($tp) }{'version'} =~
-                          s/([a-zA-Z0-9\-_\/]+)_pre[0-9+]/$1/;
-
-                        # - get rid of other stuff we don't want >
-                        $self->{'portage'}{ lc($tp) }{'version'} =~
-                          s/([a-zA-Z0-9\-_\/]+)_alpha[0-9+]?/$1/;
-                        $self->{'portage'}{ lc($tp) }{'version'} =~
-                          s/([a-zA-Z0-9\-_\/]+)_beta[0-9+]?/$1/;
-                        $self->{'portage'}{ lc($tp) }{'version'} =~
-                          s/[a-zA-Z]+$//;
-
-                        if ( $tc eq "perl-core"
-                            and ( keys %{ $self->{'portage_bases'} } ) )
-                        {
-
-          # We have a perl-core module - can we satisfy it with a virtual/perl-?
-                            foreach my $portage_root (
-                                keys %{ $self->{'portage_bases'} } )
-                            {
-                                if ( -d $portage_root ) {
-                                    if ( -d "$portage_root/virtual/perl-$tp" ) {
-                                        $self->{'portage'}{ lc($tp) }
-                                          {'name'} = "perl-$tp";
-                                        $self->{'portage'}{ lc($tp) }
-                                          {'category'} = "virtual";
-                                        last;
-                                    }
-                                }
-                            }
-
-                        }
-                        else {
-                            $self->{'portage'}{ lc($tp) }{'name'} =
-                              $tp;
-                            $self->{'portage'}{ lc($tp) }{'category'} =
-                              $tc;
-                        }
-                        if ($find_ebuild) {
-                            if ( defined($self->{'portage'}{ lc($tp) }{'name'}) )
-                            {
-                                $self->{portage}{ lc($tp) }{'found'} = 1;
-                                last;
-                            }
-                        }
-                    }
-                }
-            }
+                getBestVersion($self,$find_ebuild,$portdir,$tc,$tp);
+            } #Ends here
         }
     }
+}
+                            if ($find_ebuild) {
+                            if ( defined($self->{'portage'}{ lc($find_ebuild) }{'name'}) )
+                            {
+                                $self->{portage}{ lc($find_ebuild) }{'found'} = 1;
+                                return;
+                            }
+                        }
     return ($self);
 }
 
@@ -284,6 +288,26 @@ sub generate_digest {
     my $ebuild = shift;
     system( "ebuild", $ebuild, "digest" );
 }
+
+sub read_ebuild {
+    my $self = shift;
+    my ($find_ebuild,$portdir,$tc,$tp,$file) = @_;
+    my $e_file = "$portdir/$tc/$tp/$file";
+     # Grab some info for display
+                        my $e_import = Shell::EnvImporter->new(
+                            file => $e_file,
+                            shell => 'bash',
+                            auto_run => 1,
+                            auto_import => 1,
+                        );
+                        $e_import->shellobj->envcmd('set');
+                        $e_import->run();
+                        $e_import->env_import();
+                        $self->{'portage'}{lc($find_ebuild)}{'DESCRIPTION'} = strip_env($ENV{DESCRIPTION});
+                        $self->{'portage'}{lc($find_ebuild)}{'HOMEPAGE'} = strip_env($ENV{HOMEPAGE});
+                        $e_import->restore_env;
+
+                    }
 
 sub emerge_ebuild {
     my $self  = shift;
@@ -363,3 +387,39 @@ Given the name of a package and any optional flags, emerge the package with
 portage.
 
 =cut
+
+
+
+__DATA__
+dev-perl    XML-Sablot		XML-Sablotron
+dev-perl    CPAN-Mini-Phalanx	CPAN-Mini-Phalanx100
+perl-core   PodParser		Pod-Parser
+dev-perl    Boulder			Stone
+dev-perl    crypt-des-ede3		Crypt-DES_EDE3
+dev-perl    DateManip		Date-Manip
+dev-perl    DelimMatch		Text-DelimMatch
+perl-core   File-Spec		PathTools
+dev-perl    gimp-perl		Gimp
+dev-perl    glib-perl		Glib
+dev-perl    gnome2-perl		Gnome2
+dev-perl    gnome2-vfs-perl		Gnome2-VFS
+dev-perl    gtk2-perl		Gtk2
+dev-perl    ImageInfo		Image-Info
+dev-perl    ImageSize		Image-Size
+dev-perl    Locale-gettext		gettext
+dev-perl    Net-SSLeay		Net_SSLeay
+dev-perl    OLE-StorageLite		OLE-Storage_Lite
+dev-perl    PDF-Create      perl-pdf
+dev-perl    perl-tk			Tk
+dev-perl    perltidy		Perl-Tidy
+dev-perl    RPM			Perl-RPM
+dev-perl    sdl-perl		SDL_perl
+dev-perl    SGMLSpm			SGMLSpmii
+dev-perl    Term-ANSIColor		ANSIColor
+perl-core   CGI			CGI.pm
+dev-perl    Net-SSLeay		Net_SSLeay.pm
+perl-core   digest-base		Digest
+dev-perl    gtk2-fu			Gtk2Fu
+dev-perl    Test-Builder-Tester	Test-Simple
+dev-perl    wxperl			Wx
+media-gfx   imagemagick        PerlMagick

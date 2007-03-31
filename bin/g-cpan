@@ -573,7 +573,7 @@ sub generatePackageInfo
         # We had success in finding this module under a different name
         if (defined($gcpan_run->{portage}{lc($gcpan_run->{cpan}{lc($original_ebuild)}{portage_name})}{found}))
         {
-            $verbose and print_info('Found ebuild under CPAN name (' . $gcpan_run->{cpan}{lc($original_ebuild)}{portage_name} . ')');
+            $verbose and print_info('Found ebuild for CPAN name ' . $gcpan_run->{cpan}{lc($original_ebuild)}{portage_name});
             $ebuild_wanted = $gcpan_run->{cpan}{lc($original_ebuild)}{portage_name};
         }
     }
@@ -777,7 +777,7 @@ HERE
     }
     else
     {
-        print_ok("Ebuild already exists for $ebuild_wanted");
+        print_ok("Ebuild already exists for $ebuild_wanted (".$gcpan_run->{'portage'}{lc($ebuild_wanted)}{'category'}."/".$gcpan_run->{'portage'}{lc($ebuild_wanted)}{'name'}.")");
         if ( defined $passed_to_install{$ebuild_wanted} || defined $passed_to_install{$original_ebuild} )
 		{ $really_install{$gcpan_run->{portage}{lc($ebuild_wanted)}{'name'}} = 1 }
     }

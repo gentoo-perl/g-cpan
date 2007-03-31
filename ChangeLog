@@ -2,6 +2,10 @@
 # Copyright 2002-2007 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+  31 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
+  Fixes for bug 168647, 161732 - added simple lookup table for those few CPAN
+  modules that don't match ebuild names
+
   27 Mar 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
   Just cleaning up from the CPAN.pm fixes
 
