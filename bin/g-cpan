@@ -366,29 +366,30 @@ if ($search)
             if (!@search_results)
             {
                 $expr =~ s{-}{::}gx;
-                my @hold = CPAN::Shell->i("/$expr/");
-                if (grep { /\S/ } @hold)
-                {
-                    push @search_results, @hold;
-                }
+				my @hold = CPAN::Shell->i("/$expr/");
+				#if (grep { /\S{2,}/ } @hold)
+				#{
+				#   push @search_results, @hold;
+				#}
             }
 
             # remove the spin
             spinner_stop();
 
+			# UPDATE - this block doesn't work; the call to CPAN::Shell above doesn't return anything
             # now, @search_results should contain the matching modules strings, if any
-            if (@search_results)
-            {
-                print_info("Result(s) found :");
-                foreach (@search_results)
-                {
-                    print_out("$_\n");
-                }
-            }
-            else
-            {
-                print_warn('no result found.');
-            }
+			#if (@search_results)
+			#{
+				#print_info("Result(s) found :");
+				#foreach (@search_results)
+				#{
+					#print_out("$_\n");
+					#}
+				#}
+			#else
+			#{
+				#print_warn('no result found.');
+				#}
 
         }
     }
