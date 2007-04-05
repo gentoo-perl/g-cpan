@@ -235,7 +235,9 @@ sub getAvailableVersions {
         my ($cat,$eb,$cpan_file) = split(/\s+|\t+/, $_);
         if ( $cpan_file =~ m{^$find_ebuild$}i ) {
             getBestVersion($self,$find_ebuild,$portdir,$cat,$eb);
-            $self->{portage}{ lc($find_ebuild) }{'found'} = 1;
+            $self->{portage}{ lc($find_ebuild) }{'found'}	 = 1;
+            $self->{portage}{ lc($find_ebuild) }{'category'} = $cat;
+            $self->{portage}{ lc($find_ebuild) }{'name'}	 = $eb;
            return;
         }
     }
