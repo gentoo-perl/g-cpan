@@ -13,8 +13,8 @@ package Ebuild;
 #      COMPANY:  Gentoo
 #      VERSION:  1.0
 #      CREATED:  04/28/07 07:43:51 EDT
-# LAST REVISED:  $LastChangedDate$
-#     REVISION:  $Rev$
+# LAST REVISED:  $Date: $
+#     REVISION:  $Revision: $
 #===============================================================================
 
 use strict;
