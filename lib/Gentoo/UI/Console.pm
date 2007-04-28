@@ -27,11 +27,16 @@ require Exporter;
 
 our @ISA = qw(Exporter Gentoo );
 
-our @EXPORT = qw( print_ok print_info print_warn print_err print_out fatal spinner_start spinner_stop );
+our @EXPORT = qw( print_ok print_info print_warn print_err print_out fatal spinner_start spinner_stop $green $white $cyan $reset);
 
 our $VERSION = '0.02';
 
 our $spin = 0;
+
+our $green = color("bold green");
+our $white = color("bold white");
+our $cyan  = color("bold cyan");
+our $reset = color("reset");
 
 sub new {
     my $proto = shift;
