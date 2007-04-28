@@ -17,6 +17,7 @@ WriteMakefile(
                         'Log::Agent'       => 0,
                         'Memoize'          => 0,
                         'IO::File'         => 0,
+						'Pod::Usage'	   => 0,
 						'Shell::EnvImporter' => 0,
 						'Term::ANSIColor'  => 0,
                         'Test::More'       => 0,

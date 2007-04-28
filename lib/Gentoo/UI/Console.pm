@@ -6,23 +6,6 @@ use warnings;
 use Term::ANSIColor;
 use Log::Agent;
 
-#
-#===============================================================================
-#
-#         FILE:  Console.pm
-#
-#  DESCRIPTION:  Console related functions
-#
-#        FILES:  ---
-#         BUGS:  ---
-#        NOTES:  ---
-#       AUTHOR:  Michael Cummings (), <mcummings@gentoo.org>
-#      COMPANY:  Gentoo
-#      VERSION:  1.0
-#      CREATED:  05/10/06 12:11:37 EDT
-#     REVISION:  ---
-#===============================================================================
-
 require Exporter;
 
 our @ISA = qw(Exporter Gentoo );
