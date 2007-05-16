@@ -3,13 +3,13 @@ package Gentoo::Portage;
 use 5.008007;
 use strict;
 use warnings;
+
 #use Shell qw(ebuild emerge);
 #use Memoize;
 #memoize('getAvailableVersions');
 use Cwd qw(getcwd abs_path cwd);
 use File::Find ();
 use Shell::EnvImporter;
-
 
 # Set the variable $File::Find::dont_use_nlink if you're using AFS,
 # since AFS cheats.
@@ -32,47 +32,85 @@ require Exporter;
 
 our @ISA = qw(Exporter Gentoo);
 
-our @EXPORT =
-  qw( generatePackageInfo getEnv getAltName getAvailableEbuilds getAvailableVersions generate_digest emerge_ebuild import_fields scanTree );
+our @EXPORT = qw( generatePackageInfo getEnv getAltName getAvailableEbuilds getAvailableVersions generate_digest emerge_ebuild import_fields scanTree );
 
 our $VERSION = '0.05';
 
+sub getEnv
+{
 
-sub getEnv {
-#IMPORT VARIABLES
-    my $self = shift;
+    #IMPORT VARIABLES
+    my $self   = shift;
     my $envvar = shift;
     my $filter = sub {
-        my ($var, $value, $change ) = @_;
-        return($var =~ /^$envvar$/ );
+        my ($var, $value, $change) = @_;
+        return ($var =~ /^$envvar$/);
     };
 
-foreach my $file ( "$ENV{HOME}/.gcpanrc", "/etc/make.conf", "/etc/make.globals" ) {
-    if ( -f $file) {
-    	my $importer = Shell::EnvImporter->new(
-    		file => $file,
-    		shell => 'bash',
-            import_filter => $filter,
-    	);
-    $importer->shellobj->envcmd('set');
-    $importer->run();
-    if (defined($ENV{$envvar}) && ($ENV{$envvar} =~ m{\W*}))
-    { 
-        my $tm = strip_env($ENV{$envvar}); 
-        $importer->restore_env; 
-        return $tm;
+    foreach my $file ("$ENV{HOME}/.gcpanrc", "/etc/make.conf", "/etc/make.globals")
+    {
+        if (-f $file)
+        {
+            my $importer = Shell::EnvImporter->new(
+                file          => $file,
+                shell         => 'bash',
+                import_filter => $filter,
+            );
+            $importer->shellobj->envcmd('set');
+            $importer->run();
+            if (defined($ENV{$envvar}) && ($ENV{$envvar} =~ m{\W*}))
+            {
+                my $tm = strip_env($ENV{$envvar});
+                $importer->restore_env;
+                return $tm;
+            }
+
+        }
     }
-
-}
-  }
 }
 
-sub strip_env {
+sub checkpath
+{
+    my $self       = shift;
+    my $components = shift;
+    my $path;
+    if (ref($components) eq "ARRAY" || ref($components) eq "LIST")
+    {
+        for (@$components) { $path .= "/$_" }
+    }
+    elsif (!ref($components))
+    {
+        $path = $components;
+    }
+    else
+    {
+        return {"E" => "Failed to pass an ARRAY, LIST, or SCALAR for a path"}
+    }
+    if (-d $path)
+    {
+        if (!-w $path)
+        {
+            return {
+                "PATH" => $path,
+                "W"    => "Path not writeable",
+            };
+        }
+        else
+        {
+            return {"PATH" => $path,};
+        }
+    }
+    return;
+}
+
+sub strip_env
+{
     my $key = shift;
-    if (defined($ENV{$key})) {
+    if (defined($ENV{$key}))
+    {
         $ENV{$key} =~ s{\\n}{ }gxms;
         $ENV{$key} =~ s{\\|\'|\\'|\$|\s*$}{}gmxs;
-        $key =~ s{\s+}{ }gmxs;
+        $key       =~ s{\s+}{ }gmxs;
         return $ENV{$key};
     }
     else
@@ -88,6 +126,7 @@ sub generatePackageInfo
 {
 
     my $self = shift;
+
     # Since all we are concerned with is the final name of the package, this
     # should be a safe substitution
     my ($ebuild_wanted) = @_;
@@ -95,40 +134,40 @@ sub generatePackageInfo
       and print_info('Skipping ExtUtils::MakeMaker dependency'), next;
 
     #In the event this is an upgrade, go ahead and do the lame s/-/::/
-    $upgrade and $ebuild_wanted =~ s/-/::/gxms;
+    $self->{upgrade} and $ebuild_wanted =~ s/-/::/gxms;
 
     # Grab specific info for this module
     spinner_start();
-    if (! defined $self->{portage}{lc($ebuild_wanted)}{found})
+    if (!defined $self->{portage}{lc($ebuild_wanted)}{found})
     {
 
-            # First, check to see if this came with the core perl install
-            my $pkgdbdir = '/var/db/pkg/dev-lang/';
-            my $s_perl   = new DirHandle($pkgdbdir);
-            my $eb       = $ebuild_wanted;
-            $eb =~ s{::}{/}gmxs;
-            while ( my $read = $s_perl->read)
+        # First, check to see if this came with the core perl install
+        my $pkgdbdir = '/var/db/pkg/dev-lang/';
+        my $s_perl   = new DirHandle($pkgdbdir);
+        my $eb       = $ebuild_wanted;
+        $eb =~ s{::}{/}gmxs;
+        while (my $read = $s_perl->read)
+        {
+            if ((-d qq{$pkgdbdir/$read}) and ($read =~ m{^perl}xm))
             {
-                if ((-d qq{$pkgdbdir/$read} ) and ($read =~ m{^perl}xm))
+                open FH, '<', qq{$pkgdbdir/$read/CONTENTS} || die('Cannot open $read\'s CONTENTS');
+                my @data = <FH>;
+                close(FH);
+                foreach (@data)
                 {
-                    open FH, '<', qq{$pkgdbdir/$read/CONTENTS} || die('Cannot open $read\'s CONTENTS');
-                    my @data = <FH>;
-                    close(FH);
-                    foreach (@data)
+                    my $thisfile = (split(/ /, $_))[1];
+                    $thisfile =~ s{\.([A-Za-z]{1,3})$}{};
+                    if (($thisfile =~ m{$eb}x) && !defined $self->{$passed_to_install{$eb}})
                     {
-                        my $thisfile = (split(/ /, $_))[1];
-						$thisfile =~ s{\.([A-Za-z]{1,3})$}{};
-                        if (($thisfile =~ m{$eb}x) && !defined $passed_to_install{$eb})
-						{
-    						spinner_stop();
-							print_info("$ebuild_wanted is part of the core perl install");
-							return;
-						}
+                        spinner_stop();
+                        print_info("$ebuild_wanted is part of the core perl install");
+                        return;
                     }
-    				spinner_stop();
-                    last;
                 }
+                spinner_stop();
+                last;
             }
+        }
 
         unless (defined $upgrade or defined $passed_to_install{$ebuild_wanted})
         {
@@ -175,7 +214,8 @@ sub generatePackageInfo
     if (   ($upgrade && !defined $passed_to_install{$ebuild_wanted})
         || (!$upgrade && defined $passed_to_install{$ebuild_wanted})
         || (!$upgrade && !defined $self->{portage}{lc($ebuild_wanted)}{found}))
-	{
+    {
+
         # Ebuild wasn't found - scan for the nice version of the module name
         if (lc($self->{cpan}{lc($original_ebuild)}{portage_name}) eq 'perl') { return }
         scanTree($self->{cpan}{lc($original_ebuild)}{portage_name});
@@ -212,7 +252,8 @@ sub generatePackageInfo
             foreach my $dep (keys %{$self->{cpan}{lc($original_ebuild)}{depends}})
             {
                 defined $dep && $dep ne q{} or next;
-				#next if (defined $dep && $dep ne '');
+
+                #next if (defined $dep && $dep ne '');
                 $dep eq 'perl' and delete $self->{cpan}{lc($original_ebuild)}{depends}{$dep};
 
                 $dep =~ m{ExtUtils(::|-)MakeMaker}imx and print_info('Skipping ExtUtils::MakeMaker dependency'), next;
@@ -231,158 +272,164 @@ sub generatePackageInfo
 
             # Write ebuild here?
             $debug and $self->debug;
-#            my @overlays;
-#            if ($overlay) { @overlays = split q{ }, $overlay }
-#            else
-#            {
-#                push @overlays, '/var/tmp/g-cpan'
-#                  and $ENV{PORTDIR_OVERLAY} = '/var/tmp/g-cpan';
-#            }
-#            foreach my $target_dir (@overlays)
-#            {
-#                if (-d $target_dir)
-#                {
-#                    my $gcpan_dir = File::Spec->catdir($target_dir, 'perl-gcpan');
-#                    if (!-d $gcpan_dir)
-#                    {
-#                        $verbose and print_info("Create directory '$gcpan_dir'");
-#                        mkdir $gcpan_dir, 0755
-#                          or fatal(print_err("Couldn't create folder $gcpan_dir: $!"));
-#                    }
-#                    my $ebuild_dir = File::Spec->catdir($gcpan_dir, $self->{cpan}{lc($original_ebuild)}{portage_name});
-#                    if (!-d $ebuild_dir)
-#                    {
-#                        $verbose and print_info("Create directory '$ebuild_dir'");
-#                        mkdir $ebuild_dir, 0755
-#                          or fatal(print_err("Couldn't create folder $gcpan_dir: $!"));
-#                    }
-#                    my $files_dir = File::Spec->catdir($ebuild_dir, 'files');
-#                    if (!-d $files_dir)
-#                    {
-#                        $verbose and print_info("Create directory '$files_dir'");
-#                        mkdir $files_dir, 0755
-#                          or fatal(print_err("Couldn't create folder $gcpan_dir: $!"));
-#                    }
-#                    my $ebuild = File::Spec->catdir($ebuild_dir,
-#                        $self->{cpan}{lc($original_ebuild)}{portage_name} . '-' . $self->{cpan}{lc($original_ebuild)}{portage_version} . '.ebuild');
-#
-#                    # Break out if we already have an ebuild (upgrade or
-#                    # mistake in the code)
-#                    if (!-f $ebuild)
-#                    {
-#                        print_info('Generating ebuild for ' . $self->{cpan}{lc($original_ebuild)}{name});
-#                        my $EBUILD = IO::File->new($ebuild, '>')
-#                          or fatal(print_err("Couldn't open(write) file $ebuild: $!"));
-#                        print {$EBUILD} <<"HERE";
+
+           #            my @overlays;
+           #            if ($overlay) { @overlays = split q{ }, $overlay }
+           #            else
+           #            {
+           #                push @overlays, '/var/tmp/g-cpan'
+           #                  and $ENV{PORTDIR_OVERLAY} = '/var/tmp/g-cpan';
+           #            }
+           #            foreach my $target_dir (@overlays)
+           #            {
+           #                if (-d $target_dir)
+           #                {
+           #                    my $gcpan_dir = File::Spec->catdir($target_dir, 'perl-gcpan');
+           #                    if (!-d $gcpan_dir)
+           #                    {
+           #                        $verbose and print_info("Create directory '$gcpan_dir'");
+           #                        mkdir $gcpan_dir, 0755
+           #                          or fatal(print_err("Couldn't create folder $gcpan_dir: $!"));
+           #                    }
+           #                    my $ebuild_dir = File::Spec->catdir($gcpan_dir, $self->{cpan}{lc($original_ebuild)}{portage_name});
+           #                    if (!-d $ebuild_dir)
+           #                    {
+           #                        $verbose and print_info("Create directory '$ebuild_dir'");
+           #                        mkdir $ebuild_dir, 0755
+           #                          or fatal(print_err("Couldn't create folder $gcpan_dir: $!"));
+           #                    }
+           #                    my $files_dir = File::Spec->catdir($ebuild_dir, 'files');
+           #                    if (!-d $files_dir)
+           #                    {
+           #                        $verbose and print_info("Create directory '$files_dir'");
+           #                        mkdir $files_dir, 0755
+           #                          or fatal(print_err("Couldn't create folder $gcpan_dir: $!"));
+           #                    }
+           #                    my $ebuild = File::Spec->catdir($ebuild_dir,
+           #                        $self->{cpan}{lc($original_ebuild)}{portage_name} . '-' . $self->{cpan}{lc($original_ebuild)}{portage_version} . '.ebuild');
+           #
+           #                    # Break out if we already have an ebuild (upgrade or
+           #                    # mistake in the code)
+           #                    if (!-f $ebuild)
+           #                    {
+           #                        print_info('Generating ebuild for ' . $self->{cpan}{lc($original_ebuild)}{name});
+           #                        my $EBUILD = IO::File->new($ebuild, '>')
+           #                          or fatal(print_err("Couldn't open(write) file $ebuild: $!"));
+           #                        print {$EBUILD} <<"HERE";
 ## Copyright 1999-2006 Gentoo Foundation
 ## Distributed under the terms of the GNU General Public License v2
 ## This ebuild generated by $prog $VERSION
-#
-#inherit perl-module
-#
-#S=\${WORKDIR}/$self->{'cpan'}{lc($original_ebuild)}{'portage_sdir'}
-#
-#DESCRIPTION="$self->{'cpan'}{lc($original_ebuild)}{'description'}"
-#HOMEPAGE="http://search.cpan.org/search?query=$self->{cpan}{lc($original_ebuild)}{portage_name}\&mode=dist"
-#SRC_URI="mirror://cpan/authors/id/$self->{'cpan'}{lc($original_ebuild)}{'src_uri'}"
-#
-#
-#IUSE=""
-#
-#SLOT="0"
-#LICENSE="|| ( Artistic GPL-2 )"
-#KEYWORDS="$keywords"
-#
-#HERE
-#
-#                        if (my @deps = keys %{$self->{cpan}{lc($original_ebuild)}{depends}})
-#                        {
-#                            print {$EBUILD} 'DEPEND=\"';
-#                            my %seen_deps;
-#                            foreach my $dep (@deps)
-#                            {
-#                                defined $dep && $dep ne q{} or next;
-#                                my $portage_name = lc($self->{cpan}{lc($dep)}{portage_name});
-#                                $portage_name =~ m{\S}mx or next;
-#
-#                                # Last ditch call to scanTree to make sure we
-#                                # have info
-#                                scanTree($portage_name);
-#                                next if ( defined $seen_deps{$portage_name} && $seen_deps{$portage_name} > 0 );
-#                                $seen_deps{$portage_name} = 1;
-#                                next
-#                                  unless (defined $self->{portage}{$portage_name}{category}
-#                                    && defined $self->{portage}{$portage_name}{name}) && ($self->{portage}{$portage_name}{name} =~ m/\S/);
-#                                $portage_name eq 'perl' || lc($portage_name) eq lc($self->{cpan}{lc($original_ebuild)}{portage_name})
-#                                  and next;
-#                                my ($eb_version, $cpan_version) =
-#                                  stripdown($self->{portage}{lc($portage_name)}{version}, $self->{cpan}{lc($dep)}{portage_version});
-#                                if (   defined $self->{cpan}{lc($dep)}{portage_version}
-#                                    && $self->{cpan}{lc($original_ebuild)}{depends}{$dep} ne '0'
-#                                    && int($eb_version) >= int($cpan_version)
-#                                    && $self->{cpan}{lc($original_ebuild)}{depends}{$dep} =~ m{\d}gx
-#                                    && $self->{portage}{$portage_name}{name} ne qq{module-build})
-#                                {
-#                                    print {$EBUILD} qq{>=$self->{portage}{$portage_name}{category}/$self->{portage}{$portage_name}{name}-};
-#                                    if (defined $eb_version)
-#                                    {
-#                                        print {$EBUILD} $self->{portage}{lc($portage_name)}{version};
-#                                    }
-#                                    else
-#                                    {
-#                                        print {$EBUILD} $self->{cpan}{lc($dep)}{portage_version};
-#                                    }
-#                                    print {$EBUILD} "\n\t";
-#                                }
-#                                else
-#                                {
-#                                    print {$EBUILD} qq{$self->{portage}{$portage_name}{category}/$self->{portage}{$portage_name}{name}\n\t};
-#                                }
-#                            }
-#                            print {$EBUILD} qq{dev-lang/perl\n};
-#                            if (defined $buildpkg or defined $buildpkgonly) {
-#                                print {$EBUILD} qq{\npkg_postinst() \{\n};
-#                                print {$EBUILD} qq{elog "If you redistribute this package, please remember to"\n};
-#                                print {$EBUILD} qq{elog "update /etc/portage/categories with an entry for perl-gpcan"\n};
-#
-#                                print {$EBUILD} qq{\}\n};
-#                            }
-#                            undef $EBUILD;
-#                            autoflush STDOUT 1;
-#                        }
-#                        if (-f $self->{cpan}{lc($original_ebuild)}{cpan_tarball})
-#                        {
-#                            $verbose and print_ok("Copying $self->{cpan}{lc($original_ebuild)}{cpan_tarball} to $self->{sources}");
-#                            copy($self->{cpan}{lc($original_ebuild)}{cpan_tarball}, $self->{sources});
-#                        }
-#                        print_info("Ebuild generated for $ebuild_wanted");
-#                        $self->generate_digest($ebuild);
-#                        if (
-#                            !$upgrade
-#                            || ($upgrade
-#                                && defined $passed_to_install{$self->{'cpan'}->{lc($original_ebuild)}->{'name'}})
-#                          )
-#                        {
-#                            my $portage_name = $self->{'cpan'}->{lc($original_ebuild)}->{'portage_name'};
-#                            $really_install{$portage_name} = 1;
-#                        }
-#                        last;
-#                    }
-#                    else
-#                    {
-#                        $upgrade and print_info("$ebuild_wanted already up to date") and last;
-#                        my $portage_name = $self->{'cpan'}->{lc($original_ebuild)}->{'portage_name'};
-#                        $really_install{$portage_name} = 1;
-#                    }
-#                }
-#            }
+            #
+            #inherit perl-module
+            #
+            #S=\${WORKDIR}/$self->{'cpan'}{lc($original_ebuild)}{'portage_sdir'}
+            #
+            #DESCRIPTION="$self->{'cpan'}{lc($original_ebuild)}{'description'}"
+            #HOMEPAGE="http://search.cpan.org/search?query=$self->{cpan}{lc($original_ebuild)}{portage_name}\&mode=dist"
+            #SRC_URI="mirror://cpan/authors/id/$self->{'cpan'}{lc($original_ebuild)}{'src_uri'}"
+            #
+            #
+            #IUSE=""
+            #
+            #SLOT="0"
+            #LICENSE="|| ( Artistic GPL-2 )"
+            #KEYWORDS="$keywords"
+            #
+            #HERE
+            #
+            #                        if (my @deps = keys %{$self->{cpan}{lc($original_ebuild)}{depends}})
+            #                        {
+            #                            print {$EBUILD} 'DEPEND=\"';
+            #                            my %seen_deps;
+            #                            foreach my $dep (@deps)
+            #                            {
+            #                                defined $dep && $dep ne q{} or next;
+            #                                my $portage_name = lc($self->{cpan}{lc($dep)}{portage_name});
+            #                                $portage_name =~ m{\S}mx or next;
+            #
+            #                                # Last ditch call to scanTree to make sure we
+            #                                # have info
+            #                                scanTree($portage_name);
+            #                                next if ( defined $seen_deps{$portage_name} && $seen_deps{$portage_name} > 0 );
+            #                                $seen_deps{$portage_name} = 1;
+            #                                next
+            #                                  unless (defined $self->{portage}{$portage_name}{category}
+            #                                    && defined $self->{portage}{$portage_name}{name}) && ($self->{portage}{$portage_name}{name} =~ m/\S/);
+            #                                $portage_name eq 'perl' || lc($portage_name) eq lc($self->{cpan}{lc($original_ebuild)}{portage_name})
+            #                                  and next;
+            #                                my ($eb_version, $cpan_version) =
+            #                                  stripdown($self->{portage}{lc($portage_name)}{version}, $self->{cpan}{lc($dep)}{portage_version});
+            #                                if (   defined $self->{cpan}{lc($dep)}{portage_version}
+            #                                    && $self->{cpan}{lc($original_ebuild)}{depends}{$dep} ne '0'
+            #                                    && int($eb_version) >= int($cpan_version)
+            #                                    && $self->{cpan}{lc($original_ebuild)}{depends}{$dep} =~ m{\d}gx
+            #                                    && $self->{portage}{$portage_name}{name} ne qq{module-build})
+            #                                {
+            #                                    print {$EBUILD} qq{>=$self->{portage}{$portage_name}{category}/$self->{portage}{$portage_name}{name}-};
+            #                                    if (defined $eb_version)
+            #                                    {
+            #                                        print {$EBUILD} $self->{portage}{lc($portage_name)}{version};
+            #                                    }
+            #                                    else
+            #                                    {
+            #                                        print {$EBUILD} $self->{cpan}{lc($dep)}{portage_version};
+            #                                    }
+            #                                    print {$EBUILD} "\n\t";
+            #                                }
+            #                                else
+            #                                {
+            #                                    print {$EBUILD} qq{$self->{portage}{$portage_name}{category}/$self->{portage}{$portage_name}{name}\n\t};
+            #                                }
+            #                            }
+            #                            print {$EBUILD} qq{dev-lang/perl\n};
+            #                            if (defined $buildpkg or defined $buildpkgonly) {
+            #                                print {$EBUILD} qq{\npkg_postinst() \{\n};
+            #                                print {$EBUILD} qq{elog "If you redistribute this package, please remember to"\n};
+            #                                print {$EBUILD} qq{elog "update /etc/portage/categories with an entry for perl-gpcan"\n};
+            #
+            #                                print {$EBUILD} qq{\}\n};
+            #                            }
+            #                            undef $EBUILD;
+            #                            autoflush STDOUT 1;
+            #                        }
+            #                        if (-f $self->{cpan}{lc($original_ebuild)}{cpan_tarball})
+            #                        {
+            #                            $verbose and print_ok("Copying $self->{cpan}{lc($original_ebuild)}{cpan_tarball} to $self->{sources}");
+            #                            copy($self->{cpan}{lc($original_ebuild)}{cpan_tarball}, $self->{sources});
+            #                        }
+            #                        print_info("Ebuild generated for $ebuild_wanted");
+            #                        $self->generate_digest($ebuild);
+            #                        if (
+            #                            !$upgrade
+            #                            || ($upgrade
+            #                                && defined $passed_to_install{$self->{'cpan'}->{lc($original_ebuild)}->{'name'}})
+            #                          )
+            #                        {
+            #                            my $portage_name = $self->{'cpan'}->{lc($original_ebuild)}->{'portage_name'};
+            #                            $really_install{$portage_name} = 1;
+            #                        }
+            #                        last;
+            #                    }
+            #                    else
+            #                    {
+            #                        $upgrade and print_info("$ebuild_wanted already up to date") and last;
+            #                        my $portage_name = $self->{'cpan'}->{lc($original_ebuild)}->{'portage_name'};
+            #                        $really_install{$portage_name} = 1;
+            #                    }
+            #                }
+            #            }
         }
     }
     else
     {
-        print_ok("Ebuild already exists for $ebuild_wanted (".$self->{'portage'}{lc($ebuild_wanted)}{'category'}."/".$self->{'portage'}{lc($ebuild_wanted)}{'name'}.")");
-        if ( defined $passed_to_install{$ebuild_wanted} || defined $passed_to_install{$original_ebuild} )
-		{ $really_install{$self->{portage}{lc($ebuild_wanted)}{'name'}} = 1 }
+        print_ok("Ebuild already exists for $ebuild_wanted ("
+              . $self->{'portage'}{lc($ebuild_wanted)}{'category'} . "/"
+              . $self->{'portage'}{lc($ebuild_wanted)}{'name'}
+              . ")");
+        if (defined $passed_to_install{$ebuild_wanted} || defined $passed_to_install{$original_ebuild})
+        {
+            $really_install{$self->{portage}{lc($ebuild_wanted)}{'name'}} = 1;
+        }
     }
     return;
 }
@@ -405,35 +452,36 @@ sub stripdown
     my $num_m = @mod_ver;
     my $counter;
 
-    if ($num_e > $num_m) { $counter = $num_e }
-    else { $counter = $num_m };
+    if   ($num_e > $num_m) { $counter = $num_e }
+    else                   { $counter = $num_m }
     $counter--;
 
-    for (0..$counter) {
-        if ( ! $mod_ver[$_] )
+    for (0 .. $counter)
+    {
+        if (!$mod_ver[$_])
         {
             $mod_ver[$_] = qq{00};
         }
-        if ( ! $eb_ver[$_] )
+        if (!$eb_ver[$_])
         {
             $eb_ver[$_] = qq{00};
         }
-           if (length($eb_ver[$_]) > length($mod_ver[$_]))
+        if (length($eb_ver[$_]) > length($mod_ver[$_]))
+        {
+            while (length($eb_ver[$_]) > length($mod_ver[$_]))
             {
-                while (length($eb_ver[$_]) > length($mod_ver[$_]))
-                {
-                    $mod_ver[$_] .= qq{0};
-                }
+                $mod_ver[$_] .= qq{0};
             }
-            if (length($mod_ver[$_]) > length($eb_ver[$_]))
+        }
+        if (length($mod_ver[$_]) > length($eb_ver[$_]))
+        {
+            while (length($mod_ver[$_]) > length($eb_ver[$_]))
             {
-                while (length($mod_ver[$_]) > length($eb_ver[$_]))
-                {
-                    $eb_ver[$_] .= qq{0};
-                }
+                $eb_ver[$_] .= qq{0};
             }
-            $e_in .= "$eb_ver[$_]";
-            $m_in .= "$mod_ver[$_]";
+        }
+        $e_in .= "$eb_ver[$_]";
+        $m_in .= "$mod_ver[$_]";
 
     }
 
@@ -460,56 +508,68 @@ sub scanTree
         # Pop out of the loop if we've found the module
         defined $self->{portage}{lc($module)}{found} and last;
     }
-	return;
+    return;
 }
 
 # Description:
 # @listOfEbuilds = getAvailableEbuilds($PORTDIR, category/packagename);
-sub getAvailableEbuilds {
-    my $self        = shift;
-    my $portdir     = shift;
-    my $catPackage  = shift;
+sub getAvailableEbuilds
+{
+    my $self       = shift;
+    my $portdir    = shift;
+    my $catPackage = shift;
     @{$self->{packagelist}} = ();
-    if ( -e $portdir . "/" . $catPackage ) {
+    if (-e $portdir . "/" . $catPackage)
+    {
 
         # - get list of ebuilds >
         my $startdir = &cwd;
-        chdir( $portdir . "/" . $catPackage );
+        chdir($portdir . "/" . $catPackage);
         @store_found_ebuilds = [];
-        File::Find::find( { wanted => \&wanted_ebuilds }, "." );
+        File::Find::find({wanted => \&wanted_ebuilds}, ".");
         chdir($startdir);
-        foreach (@store_found_ebuilds) {
+        foreach (@store_found_ebuilds)
+        {
             $_ =~ s{^\./}{}xms;
-            if ( $_ =~ m/(.+)\.ebuild$/ ) {
-                next if ( $_ eq "skel.ebuild" );
-                push( @{ $self->{packagelist} }, $_ );
+            if ($_ =~ m/(.+)\.ebuild$/)
+            {
+                next if ($_ eq "skel.ebuild");
+                push(@{$self->{packagelist}}, $_);
             }
-            else {
-                if ( -d $portdir . "/" . $catPackage . "/" . $_ ) {
+            else
+            {
+                if (-d $portdir . "/" . $catPackage . "/" . $_)
+                {
                     $_ =~ s{^\./}{}xms;
                     my $startdir = &cwd;
-                    chdir( $portdir . "/" . $catPackage . "/" . $_ );
+                    chdir($portdir . "/" . $catPackage . "/" . $_);
                     @store_found_ebuilds = [];
-                    File::Find::find( { wanted => \&wanted_ebuilds }, "." );
+                    File::Find::find({wanted => \&wanted_ebuilds}, ".");
                     chdir($startdir);
-                    foreach (@store_found_ebuilds) {
-                        if ( $_ =~ m/(.+)\.ebuild$/ ) {
-                            next if ( $_ eq "skel.ebuild" );
-                            push( @{ $self->{packagelist} }, $_ );
+                    foreach (@store_found_ebuilds)
+                    {
+
+                        if ($_ =~ m/(.+)\.ebuild$/)
+                        {
+                            next if ($_ eq "skel.ebuild");
+                            push(@{$self->{packagelist}}, $_);
                         }
                     }
                 }
             }
         }
     }
-    else {
-        if ( -d $portdir ) {
-            if ( $self->{debug} ) {
-                warn(
-                    "\n" . $portdir . "/" . $catPackage . " DOESN'T EXIST\n" );
+    else
+    {
+        if (-d $portdir)
+        {
+            if ($self->{debug})
+            {
+                warn("\n" . $portdir . "/" . $catPackage . " DOESN'T EXIST\n");
             }
         }
-        else {
+        else
+        {
             die("\nPORTDIR hasn't been defined!\n\n");
         }
     }
@@ -519,84 +579,79 @@ sub getAvailableEbuilds {
 # Description:
 # Returns version of an ebuild. (Without -rX string etc.)
 # $version = getEbuildVersionSpecial("foo-1.23-r1.ebuild");
-sub getEbuildVersionSpecial {
+sub getEbuildVersionSpecial
+{
     my $ebuildVersion = shift;
-    $ebuildVersion = substr( $ebuildVersion, 0, length($ebuildVersion) - 7 );
-    $ebuildVersion =~
-s/^([a-zA-Z0-9\-_\/\+]*)-([0-9\.]+[a-zA-Z]?)([\-r|\-rc|_alpha|_beta|_pre|_p]?)/$2$3/;
+    $ebuildVersion = substr($ebuildVersion, 0, length($ebuildVersion) - 7);
+    $ebuildVersion =~ s/^([a-zA-Z0-9\-_\/\+]*)-([0-9\.]+[a-zA-Z]?)([\-r|\-rc|_alpha|_beta|_pre|_p]?)/$2$3/;
 
     return $ebuildVersion;
 }
 
-sub getBestVersion {
+sub getBestVersion
+{
     my $self = shift;
-    my ( $find_ebuild, $portdir, $tc, $tp ) = @_;
-     getAvailableEbuilds( $self, $portdir, $tc . "/" . $tp );
+    my ($find_ebuild, $portdir, $tc, $tp) = @_;
+    getAvailableEbuilds($self, $portdir, $tc . "/" . $tp);
 
-                foreach ( @{ $self->{packagelist} } ) {
-                    my @tmp_availableVersions = ();
-                    push( @tmp_availableVersions, getEbuildVersionSpecial($_) );
+    foreach (@{$self->{packagelist}})
+    {
+        my @tmp_availableVersions = ();
+        push(@tmp_availableVersions, getEbuildVersionSpecial($_));
 
-                    # - get highest version >
-                    if ( $#tmp_availableVersions > -1 ) {
-                        $self->{'portage'}{ lc($find_ebuild) }{'version'} =
-                          ( sort(@tmp_availableVersions) )
-                          [$#tmp_availableVersions];
+        # - get highest version >
+        if ($#tmp_availableVersions > -1)
+        {
+            $self->{'portage'}{lc($find_ebuild)}{'version'} = (sort(@tmp_availableVersions))[$#tmp_availableVersions];
 
-                        read_ebuild($self,$find_ebuild,$portdir,$tc,$tp,$_);
-                        # - get rid of -rX >
-                        $self->{'portage'}{ lc($find_ebuild) }{'version'} =~
-                          s/([a-zA-Z0-9\-_\/]+)-r[0-9+]/$1/;
-                        $self->{'portage'}{ lc($find_ebuild) }{'version'} =~
-                          s/([a-zA-Z0-9\-_\/]+)-rc[0-9+]/$1/;
-                        $self->{'portage'}{ lc($find_ebuild) }{'version'} =~
-                          s/([a-zA-Z0-9\-_\/]+)_p[0-9+]/$1/;
-                        $self->{'portage'}{ lc($find_ebuild) }{'version'} =~
-                          s/([a-zA-Z0-9\-_\/]+)_pre[0-9+]/$1/;
+            read_ebuild($self, $find_ebuild, $portdir, $tc, $tp, $_);
 
-                        # - get rid of other stuff we don't want >
-                        $self->{'portage'}{ lc($find_ebuild) }{'version'} =~
-                          s/([a-zA-Z0-9\-_\/]+)_alpha[0-9+]?/$1/;
-                        $self->{'portage'}{ lc($find_ebuild) }{'version'} =~
-                          s/([a-zA-Z0-9\-_\/]+)_beta[0-9+]?/$1/;
-                        $self->{'portage'}{ lc($find_ebuild) }{'version'} =~
-                          s/[a-zA-Z]+$//;
+            # - get rid of -rX >
+            $self->{'portage'}{lc($find_ebuild)}{'version'} =~ s/([a-zA-Z0-9\-_\/]+)-r[0-9+]/$1/;
+            $self->{'portage'}{lc($find_ebuild)}{'version'} =~ s/([a-zA-Z0-9\-_\/]+)-rc[0-9+]/$1/;
+            $self->{'portage'}{lc($find_ebuild)}{'version'} =~ s/([a-zA-Z0-9\-_\/]+)_p[0-9+]/$1/;
+            $self->{'portage'}{lc($find_ebuild)}{'version'} =~ s/([a-zA-Z0-9\-_\/]+)_pre[0-9+]/$1/;
 
-                        if ( $tc eq "perl-core"
-                            and ( keys %{ $self->{'portage_bases'} } ) )
+            # - get rid of other stuff we don't want >
+            $self->{'portage'}{lc($find_ebuild)}{'version'} =~ s/([a-zA-Z0-9\-_\/]+)_alpha[0-9+]?/$1/;
+            $self->{'portage'}{lc($find_ebuild)}{'version'} =~ s/([a-zA-Z0-9\-_\/]+)_beta[0-9+]?/$1/;
+            $self->{'portage'}{lc($find_ebuild)}{'version'} =~ s/[a-zA-Z]+$//;
+
+            if ($tc eq "perl-core"
+                and (keys %{$self->{'portage_bases'}}))
+            {
+
+                # We have a perl-core module - can we satisfy it with a virtual/perl-?
+                foreach my $portage_root (keys %{$self->{'portage_bases'}})
+                {
+                    if (-d $portage_root)
+                    {
+                        if (-d "$portage_root/virtual/perl-$tp")
                         {
-
-          # We have a perl-core module - can we satisfy it with a virtual/perl-?
-                            foreach my $portage_root (
-                                keys %{ $self->{'portage_bases'} } )
-                            {
-                                if ( -d $portage_root ) {
-                                    if ( -d "$portage_root/virtual/perl-$tp" ) {
-                                        $self->{'portage'}{ lc($find_ebuild) }
-                                          {'name'} = "perl-$tp";
-                                        $self->{'portage'}{ lc($find_ebuild) }
-                                          {'category'} = "virtual";
-                                        last;
-                                    }
-                                }
-                            }
-
+                            $self->{'portage'}{lc($find_ebuild)}{'name'}     = "perl-$tp";
+                            $self->{'portage'}{lc($find_ebuild)}{'category'} = "virtual";
+                            last;
                         }
-                        else {
-                            $self->{'portage'}{ lc($find_ebuild) }{'name'} =
-                              $tp;
-                            $self->{'portage'}{ lc($find_ebuild) }{'category'} =
-                              $tc;
-                        }
-
                     }
                 }
+
             }
-sub getAvailableVersions {
+            else
+            {
+                $self->{'portage'}{lc($find_ebuild)}{'name'}     = $tp;
+                $self->{'portage'}{lc($find_ebuild)}{'category'} = $tc;
+            }
+
+        }
+    }
+}
+
+sub getAvailableVersions
+{
     my $self        = shift;
     my $portdir     = shift;
     my $find_ebuild = shift;
-    return if ($find_ebuild =~ m{::} );
+    return if ($find_ebuild =~ m{::});
     my %excludeDirs = (
         "."         => 1,
         ".."        => 1,
@@ -608,112 +663,108 @@ sub getAvailableVersions {
         "profiles"  => 1
     );
 
-    if ($find_ebuild) {
-        return if ( defined($self->{portage}{ lc($find_ebuild) }{'found'} ));
+    if ($find_ebuild)
+    {
+        return if (defined($self->{portage}{lc($find_ebuild)}{'found'}));
     }
-    while (<DATA>) {
-        my ($cat,$eb,$cpan_file) = split(/\s+|\t+/, $_);
-        if ( $cpan_file =~ m{^$find_ebuild$}i ) {
-            getBestVersion($self,$find_ebuild,$portdir,$cat,$eb);
-            $self->{portage}{ lc($find_ebuild) }{'found'}	 = 1;
-            $self->{portage}{ lc($find_ebuild) }{'category'} = $cat;
-            $self->{portage}{ lc($find_ebuild) }{'name'}	 = $eb;
-           return;
+    while (<DATA>)
+    {
+        my ($cat, $eb, $cpan_file) = split(/\s+|\t+/, $_);
+        if ($cpan_file =~ m{^$find_ebuild$}i)
+        {
+            getBestVersion($self, $find_ebuild, $portdir, $cat, $eb);
+            $self->{portage}{lc($find_ebuild)}{'found'}    = 1;
+            $self->{portage}{lc($find_ebuild)}{'category'} = $cat;
+            $self->{portage}{lc($find_ebuild)}{'name'}     = $eb;
+            return;
         }
     }
 
-    unless(defined($self->{'portage'}{lc($find_ebuild)}{'name'})) {
-    
-    foreach my $tc ( @{ $self->{portage_categories} } ) {
-        next if ( !-d "$portdir/$tc" );
-        @store_found_dirs = [];
+    unless (defined($self->{'portage'}{lc($find_ebuild)}{'name'}))
+    {
 
-        # Where we started
-        my $startdir = &cwd;
+        foreach my $tc (@{$self->{portage_categories}})
+        {
+            next if (!-d "$portdir/$tc");
+            @store_found_dirs = [];
 
-        # chdir to our target dir
-        chdir( $portdir . "/" . $tc );
+            # Where we started
+            my $startdir = &cwd;
 
-        # Traverse desired filesystems
-        File::Find::find( { wanted => \&wanted_dirs }, "." );
+            # chdir to our target dir
+            chdir($portdir . "/" . $tc);
 
-        # Return to where we started
-        chdir($startdir);
-        foreach my $tp ( sort @store_found_dirs ) {
-            $tp =~ s{^\./}{}xms;
+            # Traverse desired filesystems
+            File::Find::find({wanted => \&wanted_dirs}, ".");
 
-            # - not excluded and $_ is a dir?
-            if ( !$excludeDirs{$tp} && -d $portdir . "/" . $tc . "/" . $tp ) { #STARTS HERE
-                if ($find_ebuild) {
-                    next
-                      unless ( lc($find_ebuild) eq lc($tp) );
-                }
-                getBestVersion($self,$find_ebuild,$portdir,$tc,$tp);
-            } #Ends here
+            # Return to where we started
+            chdir($startdir);
+            foreach my $tp (sort @store_found_dirs)
+            {
+                $tp =~ s{^\./}{}xms;
+
+                # - not excluded and $_ is a dir?
+                if (!$excludeDirs{$tp} && -d $portdir . "/" . $tc . "/" . $tp)
+                {    #STARTS HERE
+                    if ($find_ebuild)
+                    {
+                        next
+                          unless (lc($find_ebuild) eq lc($tp));
+                    }
+                    getBestVersion($self, $find_ebuild, $portdir, $tc, $tp);
+                }    #Ends here
+            }
         }
     }
-}
-                            if ($find_ebuild) {
-                            if ( defined($self->{'portage'}{ lc($find_ebuild) }{'name'}) )
-                            {
-                                $self->{portage}{ lc($find_ebuild) }{'found'} = 1;
-                                return;
-                            }
-                        }
+    if ($find_ebuild)
+    {
+        if (defined($self->{'portage'}{lc($find_ebuild)}{'name'}))
+        {
+            $self->{portage}{lc($find_ebuild)}{'found'} = 1;
+            return;
+        }
+    }
     return ($self);
 }
 
-sub generate_digest {
+sub generate_digest
+{
     my $self = shift;
 
     # Full path to the ebuild file in question
     my $ebuild = shift;
-    system( "ebuild", $ebuild, "digest" );
+    system("ebuild", $ebuild, "digest");
 }
 
-sub read_ebuild {
+
+sub emerge_ebuild
+{
     my $self = shift;
-    my ($find_ebuild,$portdir,$tc,$tp,$file) = @_;
-    my $e_file = "$portdir/$tc/$tp/$file";
-     # Grab some info for display
-                        my $e_import = Shell::EnvImporter->new(
-                            file => $e_file,
-                            shell => 'bash',
-                            auto_run => 1,
-                            auto_import => 1,
-                        );
-                        $e_import->shellobj->envcmd('set');
-                        $e_import->run();
-                        $e_import->env_import();
-                        $self->{'portage'}{lc($find_ebuild)}{'DESCRIPTION'} = strip_env($ENV{DESCRIPTION});
-                        $self->{'portage'}{lc($find_ebuild)}{'HOMEPAGE'} = strip_env($ENV{HOMEPAGE});
-                        $e_import->restore_env;
-
-                    }
-
-sub emerge_ebuild {
-    my $self  = shift;
     my @call = @_;
+
     # emerge forks and returns, which confuses this process. So
     # we call it the old fashioned way :(
-    system( "emerge", @call );
+    system("emerge", @call);
 }
 
-sub wanted_dirs {
-    my ( $dev, $ino, $mode, $nlink, $uid, $gid );
-    ( ( $dev, $ino, $mode, $nlink, $uid, $gid ) = lstat($_) )
+sub wanted_dirs
+{
+    my ($dev, $ino, $mode, $nlink, $uid, $gid);
+    (($dev, $ino, $mode, $nlink, $uid, $gid) = lstat($_))
       && -d _
-      && ( $name !~ m|/files| )
-      && ( $name !~ m|/CVS| )
+      && ($name !~ m|/files|)
+      && ($name !~ m|/CVS|)
       && push @store_found_dirs, $name;
 }
 
-sub wanted_ebuilds {
+sub wanted_ebuilds
+{
     /\.ebuild\z/s
       && push @store_found_ebuilds, $name;
 }
 
-sub DESTROY {
+sub DESTROY
+{
     my ($self) = @_;
     return if $self->{DESTROY}{__PACKAGE__}++;
 }
@@ -769,8 +820,6 @@ Given the name of a package and any optional flags, emerge the package with
 portage.
 
 =cut
-
-
 
 __DATA__
 dev-perl    XML-Sablot		XML-Sablotron

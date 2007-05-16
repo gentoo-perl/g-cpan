@@ -22,10 +22,10 @@ memoize('FindDeps');
 
 require Exporter;
 
-our @ISA = qw(Exporter Gentoo );
+use base qw(Exporter Gentoo );
 
-our @EXPORT = qw( getCPANInfo makeCPANstub unpackModule transformCPAN 
-);
+our @EXPORT_OK = qw( &getCPANInfo &makeCPANstub &unpackModule &transformCPAN);
+our %EXPORT_TAGS = (all => [ qw( getCPANInfo makeCPANstub unpackModule transformCPAN)]);
 
 our $VERSION = '0.01';
 
@@ -46,18 +46,19 @@ use constant DEF_UNZIP_PROG    => '/usr/bin/unzip';
 use constant DEF_WGET_PROG     => '/usr/bin/wget';
 use constant DEF_BASH_PROG     => '/bin/bash';
 
-unless ( $ENV{TMPDIR} ) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
+unless ($ENV{TMPDIR}) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
 
-sub new {
+sub new
+{
     my $proto = shift;
     my %args  = @_;
     my $class = ref($proto) || $proto;
     my $self  = {};
 
-    $self->{cpan}               = {};
-    $self->{DEBUG}              = $args{debug}||"";
+    $self->{cpan} = {};
+    $self->{DEBUG} = $args{debug} || q{};
 
-    bless( $self, $class );
+    bless($self, $class);
     return $self;
 }
 
@@ -66,24 +67,27 @@ sub new {
 #############################
 
 *CPAN::myprint = sub {
-	my ($self, $text) = @_;
+    my ($self, $text) = @_;
+
     #spinner_start();
-	my @fake_results;
-	# if there is only one result, the string is different
+    my @fake_results;
+
+    # if there is only one result, the string is different
     chomp($text);
-	if ( $text =~ m{Module } )
-	{
-	$text =~ s{Module id = }{\n};
-        if ($text =~ m{\n})  { 
+    if ($text =~ m{Module })
+    {
+        $text =~ s{Module id = }{\n};
+        if ($text =~ m{\n})
+        {
             $text =~ s{\d+ items found}{};
-            @fake_results = split (/\n/, $text);
-            return(@fake_results);
-        
+            @fake_results = split(/\n/, $text);
+            return (@fake_results);
+
         }
-		$text =~ s{\n\n}{}gmx;
-		push @fake_results, $text;
-		return (@fake_results) ;
-	}
+        $text =~ s{\n\n}{}gmx;
+        push @fake_results, $text;
+        return (@fake_results);
+    }
 };
 
 *CPAN::mywarn = sub {
@@ -91,27 +95,28 @@ sub new {
 };
 
 *CPAN::mydie = sub {
-    my ($self,$what) = @_;
+    my ($self, $what) = @_;
     print STDOUT "$what";
     die "\n";
 };
-
 
 ########################
 #
 ########################
 
-
-sub getCPANInfo {
+sub getCPANInfo
+{
     my $self        = shift;
     my $find_module = shift;
     my @tmp_v       = ();
 
-    unless ($find_module) {
+    unless ($find_module)
+    {
         croak("No module supplied");
     }
 
-    if ( $self->{cpan_reload} ) {
+    if ($self->{cpan_reload})
+    {
 
         # - User forced reload of the CPAN index >
         CPAN::Index->force_reload();
@@ -121,39 +126,42 @@ sub getCPANInfo {
     }
 
     my $mod;
-    
-    unless (($mod = CPAN::Shell->expand("Module",$find_module)) ||
-        ($mod = CPAN::Shell->expand("Bundle",$find_module)) ||
-        ($mod = CPAN::Shell->expand("Distribution",$find_module)) ||
-        ($mod = CPAN::Shell->expandany($find_module)) )
-        { return }
 
-# - Fetch CPAN-filename and cut out the filename of the tarball.
-#   We are not using $mod->id here because doing so would end up
-#   missing a lot of our ebuilds/packages >
-# Addendum. Appears we are missing items both ways - have to test both the name in cpan_file and the mod->id. :/
-    next unless ( $mod->id );
-    $self->{'cpan'}{ lc($find_module) }{'description'} =
-      $mod->{RO}{'description'} || "No description available";
-    $self->{'cpan'}{ lc($find_module) }{'src_uri'} = $mod->{RO}{'CPAN_FILE'};
-    $self->{'cpan'}{ lc($find_module) }{'name'}    = $mod->id;
-    $self->{'cpan'}{ lc($find_module) }{'version'} = $mod->{RO}{'CPAN_VERSION'}
+    unless (($mod = CPAN::Shell->expand("Module", $find_module))
+        || ($mod = CPAN::Shell->expand("Bundle",       $find_module))
+        || ($mod = CPAN::Shell->expand("Distribution", $find_module))
+        || ($mod = CPAN::Shell->expandany($find_module)))
+    {
+        return;
+    }
+
+    # - Fetch CPAN-filename and cut out the filename of the tarball.
+    #   We are not using $mod->id here because doing so would end up
+    #   missing a lot of our ebuilds/packages >
+    # Addendum. Appears we are missing items both ways - have to test both the name in cpan_file and the mod->id. :/
+    next unless ($mod->id);
+    $self->{'cpan'}{lc($find_module)}{'description'} = $mod->{RO}{'description'} || "No description available";
+    $self->{'cpan'}{lc($find_module)}{'src_uri'}     = $mod->{RO}{'CPAN_FILE'};
+    $self->{'cpan'}{lc($find_module)}{'name'}        = $mod->id;
+    $self->{'cpan'}{lc($find_module)}{'version'}     = $mod->{RO}{'CPAN_VERSION'}
       || "0";
     return;
 }
 
-sub unpackModule {
+sub unpackModule
+{
     my $self        = shift;
     my $module_name = shift;
     unless (defined($module_name)) { return }
-    if ( $module_name !~ m|::| ) {
+    if ($module_name !~ m|::|)
+    {
         $module_name =~ s{-}{::}xmsg;
     }    # Assume they gave us module-name instead of module::name
 
     my $obj = CPAN::Shell->expandany($module_name);
-    unless ( ( ref $obj eq "CPAN::Module" )
-        || ( ref $obj eq "CPAN::Bundle" )
-        || ( ref $obj eq "CPAN::Distribution" ) )
+    unless ((ref $obj eq "CPAN::Module")
+        || (ref $obj eq "CPAN::Bundle")
+        || (ref $obj eq "CPAN::Distribution"))
     {
         warn("Don't know what '$module_name' is\n");
         return;
@@ -163,9 +171,10 @@ sub unpackModule {
     $CPAN::Config->{prerequisites_policy} = "";
     $CPAN::Config->{inactivity_timeout}   = 10;
 
-    my $pack = $CPAN::META->instance( 'CPAN::Distribution', $file );
-    if ( $pack->can('called_for') ) {
-        $pack->called_for( $obj->id );
+    my $pack = $CPAN::META->instance('CPAN::Distribution', $file);
+    if ($pack->can('called_for'))
+    {
+        $pack->called_for($obj->id);
     }
 
     # Grab the tarball and unpack it
@@ -174,19 +183,21 @@ sub unpackModule {
 
     # Set our starting point
     my $localf = $pack->{localfile};
-    $self->{'cpan'}{ lc($module_name) }{'cpan_tarball'} = $pack->{localfile};
+    $self->{'cpan'}{lc($module_name)}{'cpan_tarball'} = $pack->{localfile};
     my ($startdir) = &cwd;
 
     # chdir to where we were unpacked
     chdir($tmp_dir) or die "Unable to enter dir $tmp_dir:$!\n";
 
     # If we have a Makefile.PL, run it to generate Makefile
-    if ( -f "Makefile.PL" ) {
+    if (-f "Makefile.PL")
+    {
         perl("Makefile.PL");
     }
 
     # If we have a Build.PL, run it to generate the Build script
-    if ( -f "Build.PL" ) {
+    if (-f "Build.PL")
+    {
         perl("Build.PL");
     }
 
@@ -197,210 +208,241 @@ sub unpackModule {
     delete $obj->{'force_update'};
 
     # While we're at it, get the ${S} dir for the ebuld ;)
-    $self->{'cpan'}{ lc($module_name) }{'portage_sdir'} = $pack->{build_dir};
-    $self->{'cpan'}{ lc($module_name) }{'portage_sdir'} =~ s{.*/}{}xmsg;
+    $self->{'cpan'}{lc($module_name)}{'portage_sdir'} = $pack->{build_dir};
+    $self->{'cpan'}{lc($module_name)}{'portage_sdir'} =~ s{.*/}{}xmsg;
+
     # If name is bundle::, then scan the bundle's deps, otherwise findep it
     if (lc($module_name) =~ m{^bundle\::})
     {
-        UnBundle( $self, $tmp_dir, $module_name ); 
-    } else {
-        FindDeps( $self, $tmp_dir, $module_name );
+        UnBundle($self, $tmp_dir, $module_name);
+    }
+    else
+    {
+        FindDeps($self, $tmp_dir, $module_name);
     }
 
     # Most modules don't list module-build as a dep - so we force it if there
     # is a Build.PL file
-    if ( -f "Build.PL" ) {
-        $self->{'cpan'}{ lc($module_name) }{'depends'}{"Module::Build"} = '0';
+    if (-f "Build.PL")
+    {
+        $self->{'cpan'}{lc($module_name)}{'depends'}{"Module::Build"} = '0';
     }
 
     # Final measure - if somehow we got an undef along the way, set to 0
-    foreach my $dep ( keys %{ $self->{'cpan'}{ lc($module_name) }{'depends'} } )
+    foreach my $dep (keys %{$self->{'cpan'}{lc($module_name)}{'depends'}})
     {
-        unless (
-            defined( $self->{'cpan'}{ lc($module_name) }{'depends'}{$dep} ) ||
-         ($self->{'cpan'}{ lc($module_name) }{'depends'}{$dep}   eq "undef" )
-         )
+        unless (defined($self->{'cpan'}{lc($module_name)}{'depends'}{$dep})
+            || ($self->{'cpan'}{lc($module_name)}{'depends'}{$dep} eq "undef"))
         {
-            $self->{'cpan'}{ lc($module_name) }{'depends'}{$dep} = "0";
+            $self->{'cpan'}{lc($module_name)}{'depends'}{$dep} = "0";
         }
     }
     return ($self);
 }
 
-sub UnBundle {
+sub UnBundle
+{
     my $self        = shift;
     my ($workdir)   = shift;
     my $module_name = shift;
     my ($startdir)  = &cwd;
     chdir($workdir) or die "Unable to enter dir $workdir:$!\n";
-    opendir( CURD, "." );
+    opendir(CURD, ".");
     my @dirs = readdir(CURD);
     closedir(CURD);
-    foreach my $object (@dirs) {
-        next if ( $object eq "." );
-        next if ( $object eq ".." );
-        if ( -f $object ) {
-            if ($object =~ m{\.pm$} )
-                {
-                    my $fh;
-                    my $in_cont = 0;
-                    open ($fh, "$object");
-                    while (<$fh>) {
-                        $in_cont = m/^=(?!head1\s+CONTENTS)/ ? 0 :
-                        m/^=head1\s+CONTENTS/ ? 1 : $in_cont;
-                        next unless $in_cont;
-                        next if /^=/;
-                        s/\#.*//;
-                        next if /^\s+$/;
-                        chomp;
-                        my $module;
-                        my $ver = 0;
-                        my $junk;
-                        if (m{ }) {
-                            ($module,$ver,$junk) = (split " ", $_);
-                            if ($ver !~ m{^\d+}) { $ver = 0}
-                        } else {
-                            $module = (split " ", $_, 2)[0];
-                        }
 
-                        next if ($self->{'cpan'}{ lc($module_name)
-                            }{'depends'}{$module});
-                        next if (lc($module_name) eq lc($module));
-                       $self->{'cpan'}{ lc($module_name) }{'depends'}{$module} = $ver;
-                   }
-               }
-           }
-              elsif ( -d $object ) {
-            UnBundle( $self, $object, $module_name );
+    foreach my $object (@dirs)
+    {
+        next if ($object eq ".");
+        next if ($object eq "..");
+        if (-f $object)
+        {
+            if ($object =~ m{\.pm$})
+            {
+                my $fh;
+                my $in_cont = 0;
+                open($fh, "$object");
+                while (<$fh>)
+                {
+                    $in_cont =
+                        m/^=(?!head1\s+CONTENTS)/ ? 0
+                      : m/^=head1\s+CONTENTS/     ? 1
+                      :                             $in_cont;
+                    next unless $in_cont;
+                    next if /^=/;
+                    s/\#.*//;
+                    next if /^\s+$/;
+                    chomp;
+                    my $module;
+                    my $ver = 0;
+                    my $junk;
+
+                    if (m{ })
+                    {
+                        ($module, $ver, $junk) = (split " ", $_);
+                        if ($ver !~ m{^\d+}) { $ver = 0 }
+                    }
+                    else
+                    {
+                        $module = (split " ", $_, 2)[0];
+                    }
+
+                    next if ($self->{'cpan'}{lc($module_name)}{'depends'}{$module});
+                    next if (lc($module_name) eq lc($module));
+                    $self->{'cpan'}{lc($module_name)}{'depends'}{$module} = $ver;
+                }
+            }
+        }
+        elsif (-d $object)
+        {
+            UnBundle($self, $object, $module_name);
             next;
         }
 
     }
     chdir($startdir) or die "Unable to change to dir $startdir:$!\n";
-    return ($self); 
-   }
+    return ($self);
+}
 
-
-sub FindDeps {
+sub FindDeps
+{
     my $self        = shift;
     my ($workdir)   = shift;
     my $module_name = shift;
     my ($startdir)  = &cwd;
     chdir($workdir) or die "Unable to enter dir $workdir:$!\n";
-    opendir( CURD, "." );
+    opendir(CURD, ".");
     my @dirs = readdir(CURD);
     closedir(CURD);
     my %req_list = ();
 
-    foreach my $object (@dirs) {
-        next if ( $object eq "." );
-        next if ( $object eq ".." );
-        if ( -f $object ) {
+    foreach my $object (@dirs)
+    {
+        next if ($object eq ".");
+        next if ($object eq "..");
+        if (-f $object)
+        {
             my $abs_path = abs_path($object);
-            if ( $object eq "META\.yml" ) {
+            if ($object eq "META\.yml")
+            {
 
                 # Do YAML parsing if you can
                 my $b_n = dirname($abs_path);
                 $b_n = basename($b_n);
-                open(YAML,"$abs_path");
+                open(YAML, "$abs_path");
                 my @yaml = <YAML>;
                 close(YAML);
-                if ( check_yaml(@yaml) ) {
-                my $arr = YAML::Load(@yaml);
-                foreach my $type qw(requires build_requires recommends) {
-                    if ( my $ar_type = $arr->{$type} ) {
-                        foreach my $module ( keys %{$ar_type} ) {
-                            next if ( $module eq "" );
-                            next if ( $module =~ /Cwd/i );
-                            #next if ( lc($module) eq "perl" );
-                            next unless ($module);
-                            next if (lc($module_name) eq lc($module));
-                            $self->{'cpan'}{ lc($module_name) }{'depends'}
-                              {$module} = $ar_type->{$module};
+                if (check_yaml(@yaml))
+                {
+                    my $arr = YAML::Load(@yaml);
+                    foreach my $type qw(requires build_requires recommends)
+                    {
+                        if (my $ar_type = $arr->{$type})
+                        {
+                            foreach my $module (keys %{$ar_type})
+                            {
+                                next if ($module eq "");
+                                next if ($module =~ /Cwd/i);
+
+                                #next if ( lc($module) eq "perl" );
+                                next unless ($module);
+                                next if (lc($module_name) eq lc($module));
+                                $self->{'cpan'}{lc($module_name)}{'depends'}{$module} = $ar_type->{$module};
+                            }
                         }
                     }
                 }
             }
-            }
-            if ( $object =~ m/^Makefile$/ ) {
+            if ($object =~ m/^Makefile$/)
+            {
 
                 # Do some makefile parsing
                 # RIPPED from CPAN.pm ;)
                 use FileHandle;
 
-                my $b_dir    = dirname($abs_path);
-                my $makefile = File::Spec->catfile( $b_dir, "Makefile" );
+                my $b_dir = dirname($abs_path);
+                my $makefile = File::Spec->catfile($b_dir, "Makefile");
 
                 my $fh;
                 my (%p) = ();
-                if ( $fh = FileHandle->new("<$makefile\0") ) {
+                if ($fh = FileHandle->new("<$makefile\0"))
+                {
                     local ($/) = "\n";
-                    while (<$fh>) {
+                    while (<$fh>)
+                    {
                         chomp;
                         last if /MakeMaker post_initialize section/;
                         my ($p) = m{^[\#]
        \s{0,}PREREQ_PM\s+=>\s+(.+)
        }x;
                         next unless $p;
-                        while ( $p =~ m/(?:\s)([\w\:]+)=>q\[(.*?)\],?/g ) {
+                        while ($p =~ m/(?:\s)([\w\:]+)=>q\[(.*?)\],?/g)
+                        {
                             my $module = $1;
-                            next if ( $module eq "" );
-                            next if ( $module =~ /Cwd/i );
+                            next if ($module eq "");
+                            next if ($module =~ /Cwd/i);
+
                             #next if ( lc($module) eq "perl" );
                             next unless ($module);
                             next if (lc($module_name) eq lc($module));
                             my $version = $2;
-                            $self->{'cpan'}{ lc($module_name) }{'depends'}
-                              {$module} = $version;
+                            $self->{'cpan'}{lc($module_name)}{'depends'}{$module} = $version;
                         }
 
                         last;
                     }
                 }
             }
-            if ( $object eq "Build.PL" ) {
+            if ($object eq "Build.PL")
+            {
 
                 # Do some Build file parsing
                 use FileHandle;
                 my $b_dir = dirname($abs_path);
                 my $b_n   = dirname($abs_path);
                 $b_n = basename($b_n);
-                my $makefile = File::Spec->catfile( $b_dir, "Build.PL" );
+                my $makefile = File::Spec->catfile($b_dir, "Build.PL");
                 my (%p) = ();
                 my $fh;
 
-                foreach my $type qw(requires build_requires) {
-                    if ( $fh = FileHandle->new("<$makefile\0") ) {
+                foreach my $type qw(requires build_requires)
+                {
+                    if ($fh = FileHandle->new("<$makefile\0"))
+                    {
                         local ($/) = "";
-                        while (<$fh>) {
+                        while (<$fh>)
+                        {
                             chomp;
                             my ($p) = m/^\s+$type\s+=>\s+\{(.*?)(?:\#.*)?\}/smx;
                             next unless $p;
                             undef($/);
 
                             #local($/) = "\n";
-                            my @list = split( ',', $p );
-                            foreach my $pa (@list) {
+                            my @list = split(',', $p);
+                            foreach my $pa (@list)
+                            {
                                 $pa =~ s/\n|\s+|\'//mg;
-                                if ($pa =~ /=~/) {
-                                    my ($module, $version ) = eval $pa;
-                                    next if ((!defined($module)) or
-                                            ( $module eq "" ) or 
-                                            ( $module =~ /Cwd/i ) );
+                                if ($pa =~ /=~/)
+                                {
+                                    my ($module, $version) = eval $pa;
+                                    next if ((!defined($module))
+                                        or ($module eq "")
+                                        or ($module =~ /Cwd/i));
+
                                     #next if ( lc($module) eq "perl" );
                                     next unless ($module);
                                     next if (lc($module_name) eq lc($module));
-                                    $self->{'cpan'}{ lc($module_name) }
-                                      {'depends'}{$module} = $version;
+                                    $self->{'cpan'}{lc($module_name)}{'depends'}{$module} = $version;
                                 }
-                                elsif ($pa) {
-                                    my ( $module, $version ) = split( /=>/, $pa );
-                                    next if ( $module eq "" );
-                                    next if ( $module =~ /Cwd/i );
+                                elsif ($pa)
+                                {
+                                    my ($module, $version) = split(/=>/, $pa);
+                                    next if ($module eq "");
+                                    next if ($module =~ /Cwd/i);
+
                                     #next if ( lc($module) eq "perl" );
                                     next unless ($module);
-                                    $self->{'cpan'}{ lc($module_name) }
-                                      {'depends'}{$module} = $version;
+                                    $self->{'cpan'}{lc($module_name)}{'depends'}{$module} = $version;
                                 }
                             }
                             last;
@@ -412,8 +454,9 @@ sub FindDeps {
             }
 
         }
-        elsif ( -d $object ) {
-            FindDeps( $self, $object, $module_name );
+        elsif (-d $object)
+        {
+            FindDeps($self, $object, $module_name);
             next;
         }
 
@@ -423,16 +466,19 @@ sub FindDeps {
 
 }
 
-sub check_yaml {
+sub check_yaml
+{
     my @yaml = @_;
     return 1 if YAML::Load(@yaml);
     return 0;
 }
-sub transformCPAN {
+
+sub transformCPAN
+{
     my $self = shift;
     my $name = shift;
-    my $req = shift;
-    return unless ( defined($name) );
+    my $req  = shift;
+    return unless (defined($name));
     my $re_path = '(?:.*)?';
     my $re_pkg  = '(?:.*)?';
     my $re_ver  = '(?:v?[\d\.]+[a-z]?)?';
@@ -441,15 +487,16 @@ sub transformCPAN {
     my $re_ext  = '(?:(?:tar|tgz|zip|bz2|gz|tar\.gz))?';
 
     my $filename = $name;
-    my($modpath, $filenamever, $fileext);
-    $fileext = $1 if $filename =~ s/\.($re_ext)$//;
-    $modpath = $1 if $filename =~ s/^($re_path)\///;
+    my ($modpath, $filenamever, $fileext);
+    $fileext     = $1 if $filename =~ s/\.($re_ext)$//;
+    $modpath     = $1 if $filename =~ s/^($re_path)\///;
     $filenamever = $1 if $filename =~ s/-($re_ver$re_suf$re_rev)$//;
 
     # Alphanumeric version numbers? (http://search.cpan.org/~pip/)
-    if ($filename =~ s/-(\d\.\d\.\d)([A-Za-z0-9]{6})$//) {
+    if ($filename =~ s/-(\d\.\d\.\d)([A-Za-z0-9]{6})$//)
+    {
         $filenamever = $1;
-        $filenamever .= ('.'.ord($_)) foreach split(//, $2);
+        $filenamever .= ('.' . ord($_)) foreach split(//, $2);
     }
 
     # remove underscores
@@ -469,7 +516,8 @@ sub transformCPAN {
     # Some modules don't use the /\d\.\d\d/ convention, and portage goes
     # berserk if the ebuild is called ebulldname-.02.ebuild -- so we treat
     # this special case
-    if ( substr( $filenamever, 0, 1 ) eq '.' ) {
+    if (substr($filenamever, 0, 1) eq '.')
+    {
         $filenamever = 0 . $filenamever;
     }
     if ($req eq "v")
@@ -482,33 +530,35 @@ sub transformCPAN {
     }
 }
 
-sub makeCPANstub {
+sub makeCPANstub
+{
     my $self          = shift;
-    my $cpan_cfg_dir  = File::Spec->catfile( $ENV{HOME}, CPAN_CFG_DIR );
-    my $cpan_cfg_file = File::Spec->catfile( $cpan_cfg_dir, CPAN_CFG_NAME );
+    my $cpan_cfg_dir  = File::Spec->catfile($ENV{HOME}, CPAN_CFG_DIR);
+    my $cpan_cfg_file = File::Spec->catfile($cpan_cfg_dir, CPAN_CFG_NAME);
 
-    if ( not -d $cpan_cfg_dir ) {
-        mkpath( $cpan_cfg_dir, 1, 0755 )
-          or fatal( $Gentoo::ERR_FOLDER_CREATE, $cpan_cfg_dir, $! );
+    if (not -d $cpan_cfg_dir)
+    {
+        mkpath($cpan_cfg_dir, 1, 0755)
+          or fatal($Gentoo::ERR_FOLDER_CREATE, $cpan_cfg_dir, $!);
     }
 
-    my $tmp_dir   = -d $ENV{TMPDIR}            ? $ENV{TMPDIR}    : $ENV{HOME};
-    my $ftp_proxy = defined( $ENV{ftp_proxy} ) ? $ENV{ftp_proxy} : '';
-    my $http_proxy = defined( $ENV{http_proxy} ) ? $ENV{http_proxy} : '';
-    my $user_shell = defined( $ENV{SHELL} ) ? $ENV{SHELL}   : DEF_BASH_PROG;
-    my $ftp_prog   = -f DEF_FTP_PROG        ? DEF_FTP_PROG  : '';
-    my $gpg_prog   = -f DEF_GPG_PROG        ? DEF_GPG_PROG  : '';
-    my $gzip_prog  = -f DEF_GZIP_PROG       ? DEF_GZIP_PROG : '';
-    my $lynx_prog  = -f DEF_LYNX_PROG       ? DEF_LYNX_PROG : '';
-    my $make_prog  = -f DEF_MAKE_PROG       ? DEF_MAKE_PROG : '';
-    my $ncftpget_prog = -f DEF_NCFTPGET_PROG ? DEF_NCFTPGET_PROG : '';
-    my $less_prog     = -f DEF_LESS_PROG     ? DEF_LESS_PROG     : '';
-    my $tar_prog      = -f DEF_TAR_PROG      ? DEF_TAR_PROG      : '';
-    my $unzip_prog    = -f DEF_UNZIP_PROG    ? DEF_UNZIP_PROG    : '';
-    my $wget_prog     = -f DEF_WGET_PROG     ? DEF_WGET_PROG     : '';
+    my $tmp_dir       = -d $ENV{TMPDIR}           ? $ENV{TMPDIR}      : $ENV{HOME};
+    my $ftp_proxy     = defined($ENV{ftp_proxy})  ? $ENV{ftp_proxy}   : '';
+    my $http_proxy    = defined($ENV{http_proxy}) ? $ENV{http_proxy}  : '';
+    my $user_shell    = defined($ENV{SHELL})      ? $ENV{SHELL}       : DEF_BASH_PROG;
+    my $ftp_prog      = -f DEF_FTP_PROG           ? DEF_FTP_PROG      : '';
+    my $gpg_prog      = -f DEF_GPG_PROG           ? DEF_GPG_PROG      : '';
+    my $gzip_prog     = -f DEF_GZIP_PROG          ? DEF_GZIP_PROG     : '';
+    my $lynx_prog     = -f DEF_LYNX_PROG          ? DEF_LYNX_PROG     : '';
+    my $make_prog     = -f DEF_MAKE_PROG          ? DEF_MAKE_PROG     : '';
+    my $ncftpget_prog = -f DEF_NCFTPGET_PROG      ? DEF_NCFTPGET_PROG : '';
+    my $less_prog     = -f DEF_LESS_PROG          ? DEF_LESS_PROG     : '';
+    my $tar_prog      = -f DEF_TAR_PROG           ? DEF_TAR_PROG      : '';
+    my $unzip_prog    = -f DEF_UNZIP_PROG         ? DEF_UNZIP_PROG    : '';
+    my $wget_prog     = -f DEF_WGET_PROG          ? DEF_WGET_PROG     : '';
 
     open CPANCONF, ">$cpan_cfg_file"
-      or fatal( $Gentoo::ERR_FOLDER_CREATE, $cpan_cfg_file, $! );
+      or fatal($Gentoo::ERR_FOLDER_CREATE, $cpan_cfg_file, $!);
     print CPANCONF <<"SHERE";
 
 # This is CPAN.pm's systemwide configuration file. This file provides
@@ -643,3 +693,4 @@ Generates a default CPAN stub file if none exists in the user's environment
 =back
 
 =cut
+

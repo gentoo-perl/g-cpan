@@ -1,0 +1,8 @@
+use Cwd;
+
+my $HOME = getcwd;
+$ENV{HOME} = "$HOME/t/";
+$ENV{PORTDIR} = "t/portdir";
+$ENV{OVERLAY} = "t/overlay";
+$ENV{TMPDIR} = "t/tmpdir";
+
