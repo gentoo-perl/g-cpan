@@ -12,6 +12,18 @@ our %EXPORT_TAGS = (all => [qw(&check_access &make_path &strip_env)]);
 
 our $VERSION = '0.01';
 
+sub new
+{
+    my $proto = shift;
+    my %args  = @_;
+    my $class = ref($proto) || $proto;
+    my $self  = {};
+    foreach my $arg (keys %args)
+    {
+        $self->{$arg} = $args{$arg};
+    }
+    return bless($self, $class);
+}
 sub make_path
 {
     my $self = shift;
@@ -62,12 +74,9 @@ sub check_access{
     {
         if (!-w $path)
         {
-            return $self->{"W"} = "Path $path not writeable";
+            $self->{"W"} = "Path $path not writeable";
         }
-        else
-        {
             return $self->{"PATH"} = $path;
-        }
     }
     return;
 }
@@ -76,6 +85,7 @@ sub strip_env
 {
     my $self = shift;
     my $key  = shift;
+    if (!$key) {  return }
     if (defined $ENV{$key})
     {
         $ENV{$key} =~ s{\\t}{ }gxms;

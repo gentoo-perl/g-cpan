@@ -1,8 +1,5 @@
-use Cwd;
-
-my $HOME = getcwd;
-$ENV{HOME} = "$HOME/t/";
-$ENV{PORTDIR} = "t/portdir";
-$ENV{OVERLAY} = "t/overlay";
-$ENV{TMPDIR} = "t/tmpdir";
-
+curdir=`pwd`
+export PORTDIR="${curdir}/t/portdir"
+export HOME="${curdir}/t/"
+export PORTDIR_OVERLAY="${curdir}/t/overlay"
+export TMPDIR="${curdir}/t/tmpdir"

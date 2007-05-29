@@ -1,6 +1,5 @@
 package Gentoo::CPAN;
 
-use 5.008007;
 use strict;
 use warnings;
 use File::Spec;
@@ -22,12 +21,12 @@ memoize('FindDeps');
 
 require Exporter;
 
-use base qw(Exporter Gentoo );
+use base qw(Exporter);
 
-our @EXPORT_OK = qw( &getCPANInfo &makeCPANstub &unpackModule &transformCPAN);
-our %EXPORT_TAGS = (all => [ qw( getCPANInfo makeCPANstub unpackModule transformCPAN)]);
+our @EXPORT_OK = qw( &CPANSearch &getCPANInfo &need_cpan &unpackModule &transformCPAN);
+our %EXPORT_TAGS = (all => [ qw( CPANSearch getCPANInfo need_cpan unpackModule transformCPAN)]);
 
-our $VERSION = '0.01';
+our $VERSION = '0.03';
 
 ##### CPAN CONFIG #####
 use constant CPAN_CFG_DIR  => '.cpan/CPAN';
@@ -46,7 +45,7 @@ use constant DEF_UNZIP_PROG    => '/usr/bin/unzip';
 use constant DEF_WGET_PROG     => '/usr/bin/wget';
 use constant DEF_BASH_PROG     => '/bin/bash';
 
-unless ($ENV{TMPDIR}) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
+if (! $ENV{TMPDIR}) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
 
 sub new
 {
@@ -54,13 +53,40 @@ sub new
     my %args  = @_;
     my $class = ref($proto) || $proto;
     my $self  = {};
+    foreach my $arg (keys %args)
+    {
+        $self->{$arg} = $args{$arg};
+    }
 
-    $self->{cpan} = {};
     $self->{DEBUG} = $args{debug} || q{};
+    $self->{E} = undef;
+    $self->{W} = undef;
+    $self->{M} = undef;
 
-    bless($self, $class);
-    return $self;
+   return  bless($self, $class);
 }
+
+sub need_cpan {
+    my $self = shift;
+    eval 'use CPAN::Config;';
+    my $needs_cpan_stub = $@ ? 1 : 0;
+    if (defined $needs_cpan_stub || ( $> > 0 )
+        && ( ! -f "$ENV{HOME}/.cpan/CPAN/MyConfig.pm" )
+    )
+    {
+        makeCPANstub($self);
+        if ($self->{E}) { return }
+    }
+    if ( ! -f "$ENV{HOME}/.cpan/CPAN/MyConfig.pm" )
+    {
+        return $self->{E} = qq{CPAN config file not generated!}
+    } else {
+        return
+    }
+    return;
+}
+
+
 
 ##### - CPAN OVERRIDE - #####
 #
@@ -80,7 +106,7 @@ sub new
         if ($text =~ m{\n})
         {
             $text =~ s{\d+ items found}{};
-            @fake_results = split(/\n/, $text);
+            @fake_results = split /\n/, $text;
             return (@fake_results);
 
         }
@@ -96,7 +122,7 @@ sub new
 
 *CPAN::mydie = sub {
     my ($self, $what) = @_;
-    print STDOUT "$what";
+    print {*STDOUT} "$what";
     die "\n";
 };
 
@@ -108,11 +134,10 @@ sub getCPANInfo
 {
     my $self        = shift;
     my $find_module = shift;
-    my @tmp_v       = ();
 
-    unless ($find_module)
+    if (! $find_module)
     {
-        croak("No module supplied");
+        return $self->{E} = qq{No module supplied};
     }
 
     if ($self->{cpan_reload})
@@ -132,7 +157,7 @@ sub getCPANInfo
         || ($mod = CPAN::Shell->expand("Distribution", $find_module))
         || ($mod = CPAN::Shell->expandany($find_module)))
     {
-        return;
+        return $self->{E} = qq{Module not found for $find_module};
     }
 
     # - Fetch CPAN-filename and cut out the filename of the tarball.
@@ -140,14 +165,26 @@ sub getCPANInfo
     #   missing a lot of our ebuilds/packages >
     # Addendum. Appears we are missing items both ways - have to test both the name in cpan_file and the mod->id. :/
     next unless ($mod->id);
-    $self->{'cpan'}{lc($find_module)}{'description'} = $mod->{RO}{'description'} || "No description available";
-    $self->{'cpan'}{lc($find_module)}{'src_uri'}     = $mod->{RO}{'CPAN_FILE'};
-    $self->{'cpan'}{lc($find_module)}{'name'}        = $mod->id;
-    $self->{'cpan'}{lc($find_module)}{'version'}     = $mod->{RO}{'CPAN_VERSION'}
-      || "0";
-    return;
+    $self->{'description'} = $mod->{RO}{'description'} || "No description available";
+    $self->{'src_uri'}     = $mod->{RO}{'CPAN_FILE'};
+    $self->{'name'}        = $mod->id;
+    $self->{'version'}     = $mod->{RO}{'CPAN_VERSION'} || "0";
+    return $self;
 }
 
+
+sub CPANSearch {
+    my $self = shift;
+    my $find_module = shift;
+    my @args = "/$find_module/";
+    my @results;
+    my @type = qw/Bundle Distribution Module/;
+    for my $type (@type) {
+        push @results, CPAN::Shell->expand($type, @args);
+    }
+    $self->{search} = \@results;
+    return $self;
+}
 sub unpackModule
 {
     my $self        = shift;
@@ -183,7 +220,7 @@ sub unpackModule
 
     # Set our starting point
     my $localf = $pack->{localfile};
-    $self->{'cpan'}{lc($module_name)}{'cpan_tarball'} = $pack->{localfile};
+    $self->{lc($module_name)}{'cpan_tarball'} = $pack->{localfile};
     my ($startdir) = &cwd;
 
     # chdir to where we were unpacked
@@ -208,8 +245,8 @@ sub unpackModule
     delete $obj->{'force_update'};
 
     # While we're at it, get the ${S} dir for the ebuld ;)
-    $self->{'cpan'}{lc($module_name)}{'portage_sdir'} = $pack->{build_dir};
-    $self->{'cpan'}{lc($module_name)}{'portage_sdir'} =~ s{.*/}{}xmsg;
+    $self->{lc($module_name)}{'portage_sdir'} = $pack->{build_dir};
+    $self->{lc($module_name)}{'portage_sdir'} =~ s{.*/}{}xmsg;
 
     # If name is bundle::, then scan the bundle's deps, otherwise findep it
     if (lc($module_name) =~ m{^bundle\::})
@@ -225,16 +262,16 @@ sub unpackModule
     # is a Build.PL file
     if (-f "Build.PL")
     {
-        $self->{'cpan'}{lc($module_name)}{'depends'}{"Module::Build"} = '0';
+        $self->{lc($module_name)}{'depends'}{"Module::Build"} = '0';
     }
 
     # Final measure - if somehow we got an undef along the way, set to 0
-    foreach my $dep (keys %{$self->{'cpan'}{lc($module_name)}{'depends'}})
+    foreach my $dep (keys %{$self->{lc($module_name)}{'depends'}})
     {
-        unless (defined($self->{'cpan'}{lc($module_name)}{'depends'}{$dep})
-            || ($self->{'cpan'}{lc($module_name)}{'depends'}{$dep} eq "undef"))
+        unless (defined($self->{lc($module_name)}{'depends'}{$dep})
+            || ($self->{lc($module_name)}{'depends'}{$dep} eq "undef"))
         {
-            $self->{'cpan'}{lc($module_name)}{'depends'}{$dep} = "0";
+            $self->{lc($module_name)}{'depends'}{$dep} = "0";
         }
     }
     return ($self);
@@ -287,9 +324,9 @@ sub UnBundle
                         $module = (split " ", $_, 2)[0];
                     }
 
-                    next if ($self->{'cpan'}{lc($module_name)}{'depends'}{$module});
+                    next if ($self->{lc($module_name)}{'depends'}{$module});
                     next if (lc($module_name) eq lc($module));
-                    $self->{'cpan'}{lc($module_name)}{'depends'}{$module} = $ver;
+                    $self->{lc($module_name)}{'depends'}{$module} = $ver;
                 }
             }
         }
@@ -347,7 +384,7 @@ sub FindDeps
                                 #next if ( lc($module) eq "perl" );
                                 next unless ($module);
                                 next if (lc($module_name) eq lc($module));
-                                $self->{'cpan'}{lc($module_name)}{'depends'}{$module} = $ar_type->{$module};
+                                $self->{lc($module_name)}{'depends'}{$module} = $ar_type->{$module};
                             }
                         }
                     }
@@ -386,7 +423,7 @@ sub FindDeps
                             next unless ($module);
                             next if (lc($module_name) eq lc($module));
                             my $version = $2;
-                            $self->{'cpan'}{lc($module_name)}{'depends'}{$module} = $version;
+                            $self->{lc($module_name)}{'depends'}{$module} = $version;
                         }
 
                         last;
@@ -432,7 +469,7 @@ sub FindDeps
                                     #next if ( lc($module) eq "perl" );
                                     next unless ($module);
                                     next if (lc($module_name) eq lc($module));
-                                    $self->{'cpan'}{lc($module_name)}{'depends'}{$module} = $version;
+                                    $self->{lc($module_name)}{'depends'}{$module} = $version;
                                 }
                                 elsif ($pa)
                                 {
@@ -442,7 +479,7 @@ sub FindDeps
 
                                     #next if ( lc($module) eq "perl" );
                                     next unless ($module);
-                                    $self->{'cpan'}{lc($module_name)}{'depends'}{$module} = $version;
+                                    $self->{lc($module_name)}{'depends'}{$module} = $version;
                                 }
                             }
                             last;
@@ -539,7 +576,7 @@ sub makeCPANstub
     if (not -d $cpan_cfg_dir)
     {
         mkpath($cpan_cfg_dir, 1, 0755)
-          or fatal($Gentoo::ERR_FOLDER_CREATE, $cpan_cfg_dir, $!);
+          or return $self->{E} = "$cpan_cfg_dir, $!";
     }
 
     my $tmp_dir       = -d $ENV{TMPDIR}           ? $ENV{TMPDIR}      : $ENV{HOME};
@@ -558,7 +595,7 @@ sub makeCPANstub
     my $wget_prog     = -f DEF_WGET_PROG          ? DEF_WGET_PROG     : '';
 
     open CPANCONF, ">$cpan_cfg_file"
-      or fatal($Gentoo::ERR_FOLDER_CREATE, $cpan_cfg_file, $!);
+      or return $self->{E} = "$cpan_cfg_file, $!";
     print CPANCONF <<"SHERE";
 
 # This is CPAN.pm's systemwide configuration file. This file provides
@@ -628,10 +665,10 @@ for a portage friendly environment
     use Gentoo::CPAN;
     my $obj = Gentoo::CPAN->new();
     $obj->getCPANInfo("Module::Build");
-    my $version = $obj->{cpan}->{lc("Module::Build")}->{'version'};
-    my $realname = $obj->{cpan}->{lc($module)}->{'name'};
-    my $srcuri = $obj->{cpan}->{lc($module)}->{'src_uri'};
-    my $desc = $obj->{cpan}->{lc($module)}->{'description'};
+    my $version = $obj->{lc("Module::Build")}->{'version'};
+    my $realname = $obj->{lc($module)}->{'name'};
+    my $srcuri = $obj->{lc($module)}->{'src_uri'};
+    my $desc = $obj->{lc($module)}->{'description'};
 
 =head1 DESCRIPTION
 
@@ -654,19 +691,19 @@ object and populate the $obj hash. Provides:
 
 =over 4
 
-=item $obj->{cpan}{lc($module)}{'version'}
+=item $obj->{lc($module)}{'version'}
 
 Version number
 
-=item $obj->{cpan}{lc($module)}{'name'}
+=item $obj->{lc($module)}{'name'}
 
 CPAN's name for the distribution
 
-=item $obj->{cpan}{lc($module)}{'src_uri'}
+=item $obj->{lc($module)}{'src_uri'}
 
 The context path on cpan for the module source
 
-=item $obj->{cpan}{lc($module)}{'description'}
+=item $obj->{lc($module)}{'description'}
 
 Description, if available
 
@@ -675,7 +712,7 @@ Description, if available
 =item $obj->unpackModule($somemodule)
 
 Grabs the module from CPAN and unpacks it. It then procedes to scan for
-dependencies, filling in $obj->{'cpan'}{lc($somemodule)}{'depends'} with and
+dependencies, filling in $obj->{lc($somemodule)}{'depends'} with and
 deps that were found (hash). 
 
 =item $obj->transformCPANVersion($somemodule)

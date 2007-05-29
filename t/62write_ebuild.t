@@ -1,4 +1,4 @@
-require "t/SET_ENV";
+do "t/load_env.pl";
 
 use strict;
 use warnings;
