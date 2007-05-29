@@ -4,8 +4,9 @@ use warnings;
 
 #use Smart::Comments '###', '####';
 
-use Test::More tests => 1;                      # last test to print
+use Test::More  qw(no_plan);
 
+$ENV{PORTDIR} = "/usr/portage";
 
 BEGIN { use_ok('Gentoo::Ebuild') }
 
@@ -19,7 +20,18 @@ my $ebuild = Gentoo::Ebuild->new(portage_categories => @categories,
 								portage_bases => @portage_dirs,
 							);
 	$ebuild->scan_tree("$module");
+	if ($module ne "knockknock") {
+		foreach my $eb (@{$ebuild->{packagelist}}) 
+		{
+			ok($ebuild->{lc($module)}{$eb}{DESCRIPTION}, "DESCRIPTION exists for $eb");
+				ok($ebuild->{lc($module)}{$eb}{HOMEPAGE}, "HOMEPAGE defined for $eb");
+				ok($ebuild->{lc($module)}{$eb}{KEYWORDS}, "KEYWORDS filled for $eb");
+				ok($ebuild->{lc($module)}{$eb}{DEPEND}, "DEPEND populated for $eb");
+		}
+	} else {
 	#### $ebuild
+		ok($ebuild->{E}, "ERROR found for knockknock");
+	}
 }
 
 # Locate an ebuild in the tree :)

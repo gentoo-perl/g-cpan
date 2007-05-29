@@ -408,6 +408,8 @@ sub scan_tree {
         defined $self->{lc($module)}{found} and last;
     }
     if ($root_checks == 0 ) { return $self->{E} = qq{NO EBUILD DIRECTORIES FOUND!!}; }
+    if ($self->{lc($module)}{'found'}) { return $self }
+    else { return $self->{E} = "Module not found!" }
     return;
 }
 
