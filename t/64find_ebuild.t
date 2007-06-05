@@ -21,6 +21,7 @@ my $ebuild = Gentoo::Ebuild->new(portage_categories => @categories,
 							);
 	$ebuild->scan_tree("$module");
 	if ($module ne "knockknock") {
+	#### $ebuild
 		foreach my $eb (@{$ebuild->{packagelist}}) 
 		{
 			ok($ebuild->{lc($module)}{$eb}{DESCRIPTION}, "DESCRIPTION exists for $eb");
@@ -29,7 +30,6 @@ my $ebuild = Gentoo::Ebuild->new(portage_categories => @categories,
 				ok($ebuild->{lc($module)}{$eb}{DEPEND}, "DEPEND populated for $eb");
 		}
 	} else {
-	#### $ebuild
 		ok($ebuild->{E}, "ERROR found for knockknock");
 	}
 }
