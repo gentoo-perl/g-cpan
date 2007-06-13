@@ -36,6 +36,10 @@ our @EXPORT = qw( generatePackageInfo getEnv getAltName getAvailableEbuilds getA
 
 our $VERSION = '0.05';
 
+sub JB {
+    my $self = shift;
+    return;
+}
 sub getEnv
 {
 

@@ -1,5 +1,6 @@
 curdir=`pwd`
-export PORTDIR="${curdir}/t/portdir"
+#export PORTDIR="${curdir}/t/portdir"
+export PORTDIR="/usr/portage"
 export HOME="${curdir}/t/"
 export PORTDIR_OVERLAY="${curdir}/t/overlay"
 export TMPDIR="${curdir}/t/tmpdir"

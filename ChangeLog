@@ -2,6 +2,10 @@
 # Copyright 2002-2007 Gentoo Foundation; Distributed under the GPL v2
 # $Rev: $
 
+  13 Jun 2007; <mcumming@gentoo.org> ChangeLog:
+  Another sanity save. All of the current work has been on fleshing out the
+  tests under t/ so that they can then be strung together to form a g-cpan.
+
   28 Apr 2007; Michael Cummings <mcummings@gentoo.org> bin/g-cpan,
   +lib/Gentoo/Ebuild.pm, lib/Gentoo/Portage.pm:
   Sanity save. I've started to break out ebuild specific functions from portage

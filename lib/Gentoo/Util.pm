@@ -88,20 +88,26 @@ sub strip_env
     if (!$key) {  return }
     if (defined $ENV{$key})
     {
-        $ENV{$key} =~ s{\\t}{ }gxms;
-        $ENV{$key} =~ s{\\n}{ }gxms;
-        $ENV{$key} =~ s{\\|\'|\\'|\$|\s*$}{}gmxs;
-        $key       =~ s{\s+}{ }gmxs;
+        $ENV{$key} = clean_text($ENV{$key});
         return $ENV{$key};
     }
     else
     {
-        $key =~ s{\\t}{ }gxms;
-        $key =~ s{\\n}{ }gxms;
-        $key =~ s{(\'|\\|\\'|\$|\s*$)}{}gmxs;
-        $key =~ s{\s+}{ }gmxs;
+        $key = clean_text($key);
         return $key;
     }
+}
+
+sub clean_text
+{
+    my $string = shift;
+    $string =~ s{\\t}{ }gxms;
+    $string =~ s{\\n}{ }gxms;
+    $string =~ s{(\'|\\|\\'|\$|\s*$)}{}gmxs;
+    $string =~ s{\s+}{ }gmxs;
+    $string =~ s{^\s}{}gmxs;
+    $string =~ s{\s$}{}gmxs;
+    return $string;
 }
 
 1;

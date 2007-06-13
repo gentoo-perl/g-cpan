@@ -1,0 +1,4 @@
+PORTDIR_OVERLAY="$PORTDIR_OVERLAY
+t/overlay
+"
+ACCEPT_KEYWORDS="~amd64 ~x86 ~sparc"
