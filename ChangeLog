@@ -2,6 +2,9 @@
 # Copyright 2002-2007 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+  20 Oct 2007; Christian Hartmann <ian@gentoo.org> ChangeLog:
+  Fix bug #190449
+
   05 Apr 2007; Michael Cummings <mcummings@gentoo.org> ChangeLog:
   Quick fix for search results of 0
 

@@ -325,7 +325,7 @@ if ($overlay)
     }
 
 }
-elsif ($generate || $pretend)
+elsif ($generate || $list || $pretend)
 {
     print_err("The option you have chosen isn't supported without a configured overlay.\n");
     exit();
