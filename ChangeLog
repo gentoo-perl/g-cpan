@@ -2,6 +2,30 @@
 # Copyright 2002-2007 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+  12 Feb 2010; Robin H. Johnson <robbat2@gentoo.org> ChangeLog, bin/g-cpan:
+  Use EAPI2 by default, and clean up licenses. Thanks to tove for the patch.
+
+  12 Feb 2010; Robin H. Johnson <robbat2@gentoo.org> ChangeLog,
+  lib/Gentoo/Portage.pm:
+  Sync non-standard mappings with the up2date-ng copy. Thanks to tove for the
+  patch.
+  
+  12 Feb 2010; Robin H. Johnson <robbat2@gentoo.org> ChangeLog,
+  lib/Gentoo/CPAN.pm:
+  Fix version detection for alpha/beta marker with trailing digit per bug
+  #233490.
+
+  12 Feb 2010; Robin H. Johnson <robbat2@gentoo.org> ChangeLog, bin/g-cpan:
+  Fix keyword generation per bug #293377.
+
+  12 Feb 2010; Robin H. Johnson <robbat2@gentoo.org> ChangeLog,
+  lib/Gentoo/CPAN.pm, lib/Gentoo/Portage.pm, bin/g-cpan:
+  Merge my fixes to generate new-style clean ebuilds, fixes bugs 239217
+  (desc/author), 281948/250718 (S=), 256912 (insufficent permissions).
+
+  12 Feb 2010; Robin H. Johnson <robbat2@gentoo.org> ChangeLog, README.svn:
+  Change in maintence/dev branch policies.
+
   20 Oct 2007; Christian Hartmann <ian@gentoo.org> ChangeLog:
   Fix bug #190449
 
