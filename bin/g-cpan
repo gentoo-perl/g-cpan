@@ -273,7 +273,7 @@ $keywords ||= do
 {
     open my $tmp, '<', "$PORTAGE_DIR/profiles/arch.list"
       or fatal(print_err("ERROR READING $PORTAGE_DIR/profiles/arch.list: $!"));
-    join ' ', map { chomp; $_ } <$tmp>;
+    join ' ', map { chomp; s/^#.*$//g; $_ } <$tmp>;
 };
 
 $ENV{ACCEPT_KEYWORDS} = $keywords;
