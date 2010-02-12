@@ -450,7 +450,7 @@ sub transformCPAN {
     return unless ( defined($name) );
     my $re_path = '(?:.*)?';
     my $re_pkg  = '(?:.*)?';
-    my $re_ver  = '(?:v?[\d\.]+[a-z]?)?';
+    my $re_ver  = '(?:v?[\d\.]+[a-z]?\d*)?';
     my $re_suf  = '(?:_(?:alpha|beta|pre|rc|p)(?:\d+)?)?';
     my $re_rev  = '(?:\-r?\d+)?';
     my $re_ext  = '(?:(?:tar|tgz|zip|bz2|gz|tar\.gz))?';
