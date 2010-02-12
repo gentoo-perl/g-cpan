@@ -133,8 +133,21 @@ sub getCPANInfo {
 #   missing a lot of our ebuilds/packages >
 # Addendum. Appears we are missing items both ways - have to test both the name in cpan_file and the mod->id. :/
     next unless ( $mod->id );
+    # manpage_headline spews a bunch of warnings, and is not always valid.
+    # If this is a # CPAN::Bundle, manual work is needed anyway.
+    sub manpage_title {
+        my $mod = shift;
+		# Force the calculation of contents.
+		$mod->as_string();
+        my $module_name = shift;
+        my $desc = $mod->{MANPAGE};
+		return $desc unless $desc;
+		return $desc unless $module_name;
+        $desc =~ s/^$module_name - //g;
+        return $desc;
+    }
     $self->{'cpan'}{ lc($find_module) }{'description'} =
-      $mod->{RO}{'description'} || "No description available";
+      $mod->{RO}{'description'} || manpage_title($mod, $find_module) || "No description available";
     $self->{'cpan'}{ lc($find_module) }{'src_uri'} = $mod->{RO}{'CPAN_FILE'};
     $self->{'cpan'}{ lc($find_module) }{'name'}    = $mod->id;
     $self->{'cpan'}{ lc($find_module) }{'version'} = $mod->{RO}{'CPAN_VERSION'}
@@ -169,7 +182,9 @@ sub unpackModule {
     }
 
     # Grab the tarball and unpack it
-    $pack->get or die "Insufficient permissions!";
+    unless (defined($pack->{build_dir})) {
+        $pack->get or die "Insufficient permissions!";
+    }
     my $tmp_dir = $pack->{build_dir};
 
     # Set our starting point
@@ -553,7 +568,7 @@ sub makeCPANstub {
   'tar' => q[$tar_prog],
   'term_is_latin' => q[1],
   'unzip' => q[$unzip_prog],
-  'urllist' => [qw["http://search.cpan.org/CPAN" "http://www.cpan.org/pub/CPAN" ],],
+  'urllist' => [qw[http://search.cpan.org/CPAN http://www.cpan.org/pub/CPAN ],],
   'wget' => q[$wget_prog],
 };
 1;
@@ -643,4 +658,3 @@ Generates a default CPAN stub file if none exists in the user's environment
 =back
 
 =cut
-

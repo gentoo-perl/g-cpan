@@ -69,6 +69,7 @@ foreach my $file ( "$ENV{HOME}/.gcpanrc", "/etc/make.conf", "/etc/make.globals" 
 
 sub strip_env {
     my $key = shift;
+    return $key unless defined($key);
     if (defined($ENV{$key})) {
         $ENV{$key} =~ s{\\n}{ }gxms;
         $ENV{$key} =~ s{\\|\'|\\'|\$|\s*$}{}gmxs;
