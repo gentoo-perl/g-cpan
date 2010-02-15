@@ -1,6 +1,10 @@
 # ChangeLog for g-cpan
-# Copyright 2002-2007 Gentoo Foundation; Distributed under the GPL v2
+# Copyright 1999-2010 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
+
+  15 Feb 2010; Robin H. Johnson <robbat2@gentoo.org> lib/Gentoo/CPAN.pm:
+  Bug #269173: We run the configure/setup phases prior to build, but we need
+  to remember to block stdin in case the build script tries to read it.
 
   12 Feb 2010; Robin H. Johnson <robbat2@gentoo.org> ChangeLog, bin/g-cpan:
   Use EAPI2 by default, and clean up licenses. Thanks to tove for the patch.
