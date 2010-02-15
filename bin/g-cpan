@@ -208,6 +208,14 @@ use CPAN;
 # main() #
 ##########
 
+# Grab some configuration options for g-cpan
+my $GCPAN_CAT = $ENV{GCPAN_CAT} || 'perl-gcpan';
+my $GCPAN_OVERLAY = $ENV{GCPAN_OVERLAY} || 0;
+# Ensure it's in the category list
+if(length(grep {/$GCPAN_CAT/} @perl_dirs) == 0) {
+	push @perl_dirs, $GCPAN_CAT;
+}
+
 # Confirm that there is an /etc/portage/categories file
 # and that we have an entry for perl-gcpan in it.
 my $cat_file = "/etc/portage/categories";
@@ -224,12 +232,12 @@ if (-f "$cat_file")
         my $data = <$cat_read>;
         undef $cat_read;
         autoflush STDOUT 1;
-        unless ($data =~ m{gcpan}gmxi)
+        unless ($data =~ m{$GCPAN_CAT}gmxi)
         {
             my $cat_write = IO::File->new($cat_file, '>>');
             if (defined $cat_write)
             {
-                print $cat_write "perl-gcpan\n";
+                print $cat_write "$GCPAN_CAT\n";
                 undef $cat_write;
                 autoflush STDOUT 1;
             }
@@ -247,7 +255,7 @@ else
     my $cat_write = IO::File->new($cat_file, '>');
     if (defined $cat_write)
     {
-        print $cat_write "perl-gcpan";
+        print $cat_write $GCPAN_CAT;
     }
     else
     {
@@ -408,7 +416,7 @@ if ($list || $upgrade)
         my @overlays = split ' ', $overlay;
         foreach my $overlay_dir (@overlays)
         {
-            my $gcpan_dir = File::Spec->catdir($overlay_dir, 'perl-gcpan');
+            my $gcpan_dir = File::Spec->catdir($overlay_dir, $GCPAN_CAT);
 
             #$list and print_info("OVERLAY: $gcpan_dir");
             print_info("OVERLAY: $gcpan_dir");
@@ -417,7 +425,7 @@ if ($list || $upgrade)
                 while (my $file = readdir PDIR)
                 {
                     next if ($file eq '.' || $file eq '..');
-                    $list and print_info("perl-gcpan/$file");
+                    $list and print_info("$GCPAN_CAT/$file");
                     $upgrade and $passed_to_install{$file} = 1;
                 }
                 closedir PDIR;
@@ -635,7 +643,7 @@ sub generatePackageInfo
             {
                 if (-d $target_dir)
                 {
-                    my $gcpan_dir = File::Spec->catdir($target_dir, 'perl-gcpan');
+                    my $gcpan_dir = File::Spec->catdir($target_dir, $GCPAN_CAT);
                     if (!-d $gcpan_dir)
                     {
                         $verbose and print_info("Create directory '$gcpan_dir'");
@@ -722,7 +730,12 @@ HERE
 
                       #my $eb_version = stripdown($gcpan_run->{portage}{lc($portage_name)}{version});
                       #my $cpan_version = defined($gcpan_run->{cpan}{lc($dep)}{portage_version})? stripdown($gcpan_run->{cpan}{lc($dep)}{portage_version}): "0";
-                                if (   defined($gcpan_run->{cpan}{lc($dep)}{portage_version})
+                                if ( $gcpan_run->{portage}{$portage_name}{name} eq "module-build") 
+                                {
+                                    print $EBUILD ""
+                                      . "virtual/perl-Module-Build\n";
+                                } 
+                                elsif (   defined($gcpan_run->{cpan}{lc($dep)}{portage_version})
                                     && $gcpan_run->{cpan}{lc($original_ebuild)}{depends}{$dep} ne '0'
                                     && int($eb_version) >= int($cpan_version)
                                     && $gcpan_run->{cpan}{lc($original_ebuild)}{depends}{$dep} =~ m{\d}gx
@@ -958,6 +971,7 @@ END
             -d $dir and rmtree(["$ENV{TMPDIR}/.cpan/$dir"]);
         }
         if (-d "$ENV{TMPDIR}/perl-gcpan") { rmtree(["$ENV{TMPDIR}/perl-gcpan"]) }
+        if (-d "$ENV{TMPDIR}/$GCPAN_CAT") { rmtree(["$ENV{TMPDIR}/$GCPAN_CAT"]) }
     }
 }
 
