@@ -633,7 +633,14 @@ sub generatePackageInfo
             # Write ebuild here?
             $debug and $gcpan_run->debug;
             my @overlays;
-            if ($overlay) { @overlays = split ' ', $overlay }
+            if ($GCPAN_OVERLAY) 
+            { 
+                push @overlays, $GCPAN_OVERLAY
+            }
+            elsif ($overlay) 
+            { 
+                @overlays = split ' ', $overlay 
+            }
             else
             {
                 push @overlays, "/var/tmp/g-cpan"
@@ -1069,6 +1076,10 @@ B<g-cpan> is now overlay "friendly." B<g-cpan> will scan both the overlays provi
 
 If no overlays are defined, or the user operating B<g-cpan> cannot write to an overlay, then anything generated will be written to a temporary space and wiped on exit. 
 
+If you want to generate ebuilds to a specific overlay, you may set GCPAN_OVERLAY in your make.conf, .gcpanrc or environment.
+
+If you want to generate ebuilds into a specific category, you may set GCPAN_CAT in your make.conf, .gcpanrc or environment.
+
 =head1 Arguments
 
 The following arguments are accepted by g-cpan.
@@ -1161,7 +1172,7 @@ L<B<emerge>(1)>, L<B<ebuild>(5)>, L<B<make.conf>(5)>, L<B<perl>(1)>
 
 =head1 Authors
 
-mcummings <mcummings@gentoo.org> cab <cab@gentoo.org> sniper <sniper@mongueurs.net> beu <beu@gentoo.org> J Robert Ray <jrray@gentoo.org> (g-cpan) RAC <rac@gentoo.org>  Sven Vermeulen <swift@gentoo.org> (Original manpage) Damien Krotkine <dams@gentoo.org> Yuval Yaari <yuval@gentoo.org>
+mcummings <mcummings@gentoo.org> cab <cab@gentoo.org> sniper <sniper@mongueurs.net> beu <beu@gentoo.org> J Robert Ray <jrray@gentoo.org> (g-cpan) RAC <rac@gentoo.org>  Sven Vermeulen <swift@gentoo.org> (Original manpage) Damien Krotkine <dams@gentoo.org> Yuval Yaari <yuval@gentoo.org> Robin J Johnson <robbat2@gentoo.org>
 
 =head1 Reporting Bugs 
 

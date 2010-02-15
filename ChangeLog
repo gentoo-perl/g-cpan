@@ -3,6 +3,11 @@
 # $Header: $
 
   15 Feb 2010; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan:
+  New variable GCPAN_OVERLAY to control what overlay is used for output of new
+  ebuilds. If not set, the previous detection behavior is used. Update manpage
+  for new config stuff.
+
+  15 Feb 2010; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan:
   Allow usage of GCPAN_CAT variable from make.conf, .gcpanrc or env to
   control what category generated ebuilds are placed into.
 
