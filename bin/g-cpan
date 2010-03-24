@@ -208,9 +208,18 @@ use CPAN;
 # main() #
 ##########
 
+my $gcpan_run = Gentoo->new(
+    'cpan_reload' => $cpan_reload,
+    'DEBUG'       => $debug,
+);
+
 # Grab some configuration options for g-cpan
-my $GCPAN_CAT = $ENV{GCPAN_CAT} || 'perl-gcpan';
-my $GCPAN_OVERLAY = $ENV{GCPAN_OVERLAY} || 0;
+my $GCPAN_CAT = $gcpan_run->getEnv('GCPAN_CAT');
+$GCPAN_CAT = 'perl-gcpan' unless defined($GCPAN_CAT) and length($GCPAN_CAT) > 0;
+# Push back to the env so we can use during cleanup
+$ENV{GCPAN_CAT} = $GCPAN_CAT;
+
+my $GCPAN_OVERLAY = $gcpan_run->getEnv('GCPAN_OVERLAY') || 0;
 # Ensure it's in the category list
 if(length(grep {/$GCPAN_CAT/} @perl_dirs) == 0) {
 	push @perl_dirs, $GCPAN_CAT;
@@ -265,7 +274,8 @@ else
     }
 }
 
-my $gcpan_run = Gentoo->new(
+# Reset the object in case we created a new category.
+$gcpan_run = Gentoo->new(
     'cpan_reload' => $cpan_reload,
     'DEBUG'       => $debug,
 );
@@ -966,6 +976,7 @@ END
     {
         $verbose and print_ok('Cleaning temporary space');
         my ($startdir) = cwd();
+		my $GCPAN_CAT = $ENV{GCPAN_CAT};
         chdir("$ENV{TMPDIR}/.cpan");
         opendir(CURD, '.');
         my @dirs = readdir(CURD);
@@ -977,8 +988,8 @@ END
             $dir eq 'sources' and next;
             -d $dir and rmtree(["$ENV{TMPDIR}/.cpan/$dir"]);
         }
-        if (-d "$ENV{TMPDIR}/perl-gcpan") { rmtree(["$ENV{TMPDIR}/perl-gcpan"]) }
-        if (-d "$ENV{TMPDIR}/$GCPAN_CAT") { rmtree(["$ENV{TMPDIR}/$GCPAN_CAT"]) }
+		rmtree(["$ENV{TMPDIR}/perl-gcpan"]) if (-d "$ENV{TMPDIR}/perl-gcpan");
+		rmtree(["$ENV{TMPDIR}/$GCPAN_CAT"]) if (defined($GCPAN_CAT) and -d "$ENV{TMPDIR}/$GCPAN_CAT");
     }
 }
 

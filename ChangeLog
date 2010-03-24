@@ -2,6 +2,9 @@
 # Copyright 1999-2010 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+  24 Mar 2010; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan:
+  Bug #311117: Support GCPAN_CAT/GCPAN_OVERLAY from make.conf as well as env.
+
   15 Feb 2010; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan:
   New variable GCPAN_OVERLAY to control what overlay is used for output of new
   ebuilds. If not set, the previous detection behavior is used. Update manpage
