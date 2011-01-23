@@ -426,6 +426,7 @@ if ($list || $upgrade)
         my @overlays = split ' ', $overlay;
         foreach my $overlay_dir (@overlays)
         {
+			next unless (-d $overlay_dir);
             my $gcpan_dir = File::Spec->catdir($overlay_dir, $GCPAN_CAT);
 
             #$list and print_info("OVERLAY: $gcpan_dir");
