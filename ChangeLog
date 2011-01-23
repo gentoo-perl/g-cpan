@@ -3,6 +3,10 @@
 # $Header: $
 
   23 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan:
+  Bug #313049: Detect the file extension for upstream distfiles. Relies on new
+  eclass variable MODULE_A_EXT.
+
+  23 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan:
   Avoid warning about uninitialized to lc for built-in perl core modules.
 
   23 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan:

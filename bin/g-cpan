@@ -701,6 +701,16 @@ sub generatePackageInfo
                             $module_author = $module_bits[0];
                             $module_section = sprintf "MODULE_SECTION=\"%s\"\n", $module_bits[1];
                         }
+
+                        # Detect the file extension, upstream usually uses .tar.gz, but not always
+                        my $module_a_ext;
+                        foreach my $ext qw(tgz tbz2 tar.bz2 tar.xz tar.Z zip)
+                        {
+                            if ( $gcpan_run->{'cpan'}{lc($original_ebuild)}{'src_uri'} =~ m/\.\Q$ext\E$/ ) {
+                                $module_a_ext = sprintf 'MODULE_A_EXT="%s"', $ext;
+                            }
+                        }
+
                         my $description = $gcpan_run->{'cpan'}{lc($original_ebuild)}{'description'};
 
                         print $EBUILD <<"HERE";
@@ -711,6 +721,7 @@ sub generatePackageInfo
 EAPI="2"
 
 MODULE_AUTHOR="$module_author"
+$module_a_ext
 $module_section
 inherit perl-module
 
