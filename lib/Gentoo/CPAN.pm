@@ -467,9 +467,9 @@ sub transformCPAN {
         $filenamever .= ('.'.ord($_)) foreach split(//, $2);
     }
 
-    # remove underscores
+    # remove invalid characters
     return unless ($filename);
-    $filename =~ tr/A-Za-z0-9\./-/c;
+    $filename =~ tr/_A-Za-z0-9\./-/c;
     $filename =~ s/\.pm//;             # e.g. CGI.pm
 
     # Remove double .'s - happens on occasion with odd packages
