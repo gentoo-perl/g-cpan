@@ -3,6 +3,9 @@
 # $Header: $
 
   23 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan:
+  Avoid warning about uninitialized to lc for built-in perl core modules.
+
+  23 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan:
   Bug #349329: check for existence of specified overlay directories before
   using them.
 

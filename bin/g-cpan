@@ -730,7 +730,9 @@ HERE
                             foreach my $dep (@deps)
                             {
                                 defined $dep && $dep ne '' or next;
-                                my $portage_name = lc($gcpan_run->{cpan}{lc($dep)}{portage_name});
+                                my $portage_name = $gcpan_run->{cpan}{lc($dep)}{portage_name};
+                                next unless defined $portage_name;
+                                $portage_name = lc($portage_name);
                                 $portage_name =~ m{\S}x or next;
 
                                 # Last ditch call to scanTree to make sure we
