@@ -1,6 +1,9 @@
 # ChangeLog for g-cpan
-# Copyright 1999-2010 Gentoo Foundation; Distributed under the GPL v2
+# Copyright 1999-2011 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
+
+  23 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> lib/Gentoo/CPAN.pm:
+  Pick up configure_requires dependencies.
 
   24 Mar 2010; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan:
   Bug #311117: Support GCPAN_CAT/GCPAN_OVERLAY from make.conf as well as env.

@@ -322,7 +322,7 @@ sub FindDeps {
                 close(YAML);
                 if ( check_yaml(@yaml) ) {
                 my $arr = YAML::Load(@yaml);
-                foreach my $type qw(requires build_requires recommends) {
+                foreach my $type qw(configure_requires requires build_requires recommends) {
                     if ( my $ar_type = $arr->{$type} ) {
                         foreach my $module ( keys %{$ar_type} ) {
                             next if ( $module eq "" );
@@ -384,7 +384,7 @@ sub FindDeps {
                 my (%p) = ();
                 my $fh;
 
-                foreach my $type qw(requires build_requires) {
+                foreach my $type qw(requires configure_requires build_requires) {
                     if ( $fh = FileHandle->new("<$makefile\0") ) {
                         local ($/) = "";
                         while (<$fh>) {
