@@ -2,6 +2,9 @@
 # Copyright 1999-2011 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+  23 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan:
+  Bump version for next release.
+
   23 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan,
   lib/Gentoo/CPAN.pm:
   Match the existing version tag.
