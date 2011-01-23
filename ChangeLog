@@ -2,6 +2,10 @@
 # Copyright 1999-2011 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+  23 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan,
+  lib/Gentoo/CPAN.pm:
+  Match the existing version tag.
+
   23 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> lib/Gentoo/CPAN.pm:
   Do not convert underscores to dashes. There is only a single package in the
   tree where the upstream did this for the tarball (dev-perl/HTML-Object), and
