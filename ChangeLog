@@ -3,6 +3,11 @@
 # $Header: $
 
   24 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> lib/Gentoo/Portage.pm:
+  Bug #350070: The data DATA file handle was being reused, without being reset
+  to the start each time. This resulted in creation of extra packages when it
+  should have matched an entry the DATA section.
+
+  24 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> lib/Gentoo/Portage.pm:
   Update __DATA__ block.
 
   24 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan:

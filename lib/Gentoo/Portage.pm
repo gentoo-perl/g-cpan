@@ -213,6 +213,11 @@ sub getBestVersion {
                     }
                 }
             }
+
+# This is strictly so we can seek back to __DATA__
+( my $data_pos = tell DATA) >= 0 or die "DATA not seekable"; 
+use IO::Seekable qw(SEEK_SET);
+
 sub getAvailableVersions {
     my $self        = shift;
     my $portdir     = shift;
@@ -232,13 +237,16 @@ sub getAvailableVersions {
     if ($find_ebuild) {
         return if ( defined($self->{portage}{ lc($find_ebuild) }{'found'} ));
     }
-    while (<DATA>) {
-        my ($cat,$eb,$cpan_file) = split(/\s+|\t+/, $_);
+    seek DATA, $data_pos, SEEK_SET;
+    while (my $line = <DATA>) {
+        chomp $line;
+        next unless $line =~ /^.+/;
+        my ($cat,$eb,$cpan_file) = split(/\s+|\t+/, $line);
         if ( $cpan_file =~ m{^$find_ebuild$}i ) {
             getBestVersion($self,$find_ebuild,$portdir,$cat,$eb);
-            $self->{portage}{ lc($find_ebuild) }{'found'}	 = 1;
+            $self->{portage}{ lc($find_ebuild) }{'found'}    = 1;
             $self->{portage}{ lc($find_ebuild) }{'category'} = $cat;
-            $self->{portage}{ lc($find_ebuild) }{'name'}	 = $eb;
+            $self->{portage}{ lc($find_ebuild) }{'name'}     = $eb;
            return;
         }
     }
