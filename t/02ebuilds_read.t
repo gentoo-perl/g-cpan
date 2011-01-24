@@ -33,22 +33,20 @@ ok( defined($GC), 'new() works' );
 
 my $portdir;
 # Can we get the PORTDIR value?
-ok(  $portdir = $GC->getValue("PORTDIR"), 'getValue("PORTDIR") worked' );
+ok(  $portdir = $GC->getEnv("PORTDIR"), 'getEnv("PORTDIR") worked' );
 
 $GC->getAvailableEbuilds($portdir,'gnustep-base');
 # Test getting the contents of a directory
 ok( $GC->{packagelist}, 'Grabbed gnustep-base' );
 
 $GC->{portage_categories} = [ "gnustep-base" ];
-$GC->getAvailableVersions($portdir);
-ok( $GC->{ebuilds}, 'Digested available versions' );
-ok( $GC->{ebuilds}{portage_lc}, 'Portage_lc check' );
-ok( $GC->{ebuilds}{portage}, 'Digested available versions' );
-foreach my $ebuild (keys %{$GC->{ebuilds}{portage_lc}} ) {
-	ok($ebuild, '$ebuild has value');
-	ok($GC->{ebuilds}{portage_lc}{$ebuild}, '$ebuild has version');
+$GC->getAvailableVersions($portdir, 'gnustep-base');
+ok( $GC->{portage}, 'Digested available versions' );
+foreach my $pn (keys %{$GC->{portage}} ) {
+	ok($pn, '$pn has value');
+	ok($GC->{portage}{$pn}, '$pn has version');
 }
-foreach my $ebuild (keys %{$GC->{ebuilds}{portage}} ) {
-	ok($GC->{ebuilds}{portage}{$ebuild}{name}, "$ebuild name check");
-	ok($GC->{ebuilds}{portage}{$ebuild}{category}, "$ebuild category check");
+foreach my $pn (keys %{$GC->{portage}} ) {
+	ok($GC->{portage}{$pn}{name}, "$pn name check");
+	ok($GC->{portage}{$pn}{category}, "$pn category check");
 }

@@ -2,6 +2,10 @@
 # Copyright 1999-2011 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+  24 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> t/01config.t,
+  t/02ebuilds_read.t, t/10cpan_packages.t:
+  Fix testsuite to work again.
+
   23 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan:
   Bug #313049: Detect the file extension for upstream distfiles. Relies on new
   eclass variable MODULE_A_EXT.

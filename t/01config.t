@@ -30,17 +30,17 @@ my $GC = Gentoo->new();
 ok( defined($GC), 'new() works' );
 
 # Can we get the PORTDIR value?
-ok( $GC->getValue("PORTDIR"), 'getValue("PORTDIR") worked' );
+ok( $GC->getEnv("PORTDIR"), 'getEnv("PORTDIR") worked' );
 
 # Can we get the PORTDIR_OVERLAY?
-ok( $GC->getValue("PORTDIR_OVERLAY"), 'Got PORTDIR_OVERLAY' );
+ok( $GC->getEnv("PORTDIR_OVERLAY"), 'Got PORTDIR_OVERLAY' );
 
 # Can we grab USE flags?
-ok( $GC->getValue("USE"), 'Got USE flags' );
+ok( $GC->getEnv("USE"), 'Got USE flags' );
 
 # What if we try to grab something bogus? This is to eliminate that
 # we've gotten false positives up to this point.
-ok( ! $GC->getValue("BOGUS"), 'Fake data test' );
+ok( ! $GC->getEnv("BOGUS"), 'Fake data test' );
 
 exit(0);
 # last test to print

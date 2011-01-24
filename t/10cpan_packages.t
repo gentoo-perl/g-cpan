@@ -31,7 +31,7 @@ else {
     }
     else
     {
-        plan tests => 7;
+        plan tests => 8;
     }
 }
 
@@ -41,7 +41,7 @@ use warnings;
 my $module = "Module::Build";
 
 # Verify we can load Gentoo name space
-BEGIN { use_ok(' Gentoo'); }
+use_ok(' Gentoo');
 
 # Can we call new?
 my $GC = Gentoo->new();
@@ -49,7 +49,7 @@ ok( defined($GC), 'new() works' );
 
 
 # Can we get the PORTDIR value?
-ok( $GC->getValue("PORTDIR"), 'getValue("PORTDIR") worked' );
+ok( $GC->getEnv("PORTDIR"), 'getEnv("PORTDIR") worked' );
 
 $GC->getCPANInfo($module);
 # Test getting the contents of a directory
