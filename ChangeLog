@@ -2,6 +2,9 @@
 # Copyright 1999-2011 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+  24 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan:
+  Avoid uninitialized warning.
+
   24 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> lib/Gentoo/CPAN.pm:
   Prevent spam about CPAN config changes by adding new auto_commit variable.
 
