@@ -46,10 +46,10 @@ my @perl_dirs = ("perl-gcpan", "dev-perl", "perl-core", "perl-text", "perl-tools
 my @main_switches = \my ($search, $list, $install, $generate, $buildpkgonly);
 
 # Then, additional switches
-my @additional_switches = \my ($upgrade, $pretend, $buildpkg, $ask);
+my @additional_switches = \my ($upgrade, $pretend, $buildpkg, $ask, $cpan_reload);
 
 # Then, the normal options
-my ($debug, $verbose, $cpan_reload, $log);
+my ($debug, $verbose, $log);
 
 # Set colors here so we can use them at will anywhere :)
 my $green = color("bold green");
@@ -142,7 +142,7 @@ if (!grep { defined $$_ } @main_switches, @additional_switches)
 }
 
 # Output error if no arguments
-if (@ARGV == 0 && !(defined $upgrade || defined $list))
+if (@ARGV == 0 && !(defined $upgrade || defined $list || defined $cpan_reload))
 {
     print_err("Not even one module name or expression given!\n");
     print_out("${white}Please consult ${cyan}$prog ${green}--help${reset} for more information\n\n");
@@ -279,6 +279,12 @@ $gcpan_run = Gentoo->new(
     'cpan_reload' => $cpan_reload,
     'DEBUG'       => $debug,
 );
+
+# If passed --cpan_reload and nothing else, just reload and exit.
+if (@ARGV == 0 && defined $cpan_reload) {
+	CPAN::Index->force_reload();
+	exit;
+}
 
 # Get the main portdir
 my $PORTAGE_DIR = $gcpan_run->getEnv('PORTDIR');

@@ -2,6 +2,9 @@
 # Copyright 1999-2011 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+  24 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan:
+  Bug #352561: Allow --cpan_reload without arguments for reload-only.
+
   24 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> +MANIFEST, +META.yml,
   Makefile.PL:
   Improve Perl build code.
