@@ -717,6 +717,7 @@ sub generatePackageInfo
                             }
                         }
 
+                        my $module_version = $gcpan_run->{cpan}{lc($original_ebuild)}{version};
                         my $description = $gcpan_run->{'cpan'}{lc($original_ebuild)}{'description'};
 
                         print $EBUILD <<"HERE";
@@ -727,6 +728,7 @@ sub generatePackageInfo
 EAPI="2"
 
 MODULE_AUTHOR="$module_author"
+MODULE_VERSION="$module_version"
 $module_a_ext
 $module_section
 inherit perl-module
