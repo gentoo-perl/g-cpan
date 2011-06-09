@@ -6,7 +6,7 @@ use warnings;
 use File::Spec;
 use CPAN;
 use File::Path;
-use YAML;
+use YAML ();
 use YAML::Node;
 use Memoize;
 use Cwd qw(getcwd abs_path cwd);
@@ -313,15 +313,8 @@ sub FindDeps {
         if ( -f $object ) {
             my $abs_path = abs_path($object);
             if ( $object eq "META\.yml" ) {
-
                 # Do YAML parsing if you can
-                my $b_n = dirname($abs_path);
-                $b_n = basename($b_n);
-                open(YAML,"$abs_path");
-                my @yaml = <YAML>;
-                close(YAML);
-                if ( check_yaml(@yaml) ) {
-                my $arr = YAML::Load(@yaml);
+                if ( my $arr = yaml_load($abs_path) ) {
                 foreach my $type qw(configure_requires requires build_requires recommends) {
                     if ( my $ar_type = $arr->{$type} ) {
                         foreach my $module ( keys %{$ar_type} ) {
@@ -438,10 +431,11 @@ sub FindDeps {
 
 }
 
-sub check_yaml {
-    my @yaml = @_;
-    return 1 if YAML::Load(@yaml);
-    return 0;
+sub yaml_load {
+    my $filepath = shift;
+    my $yaml = eval { YAML::LoadFile($filepath); };
+    return if $@;
+    return $yaml;
 }
 sub transformCPAN {
     my $self = shift;
