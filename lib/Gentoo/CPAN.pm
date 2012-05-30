@@ -390,7 +390,7 @@ sub FindDeps {
                             my @list = split( ',', $p );
                             foreach my $pa (@list) {
                                 $pa =~ s/\n|\s+|\'//mg;
-                                if ($pa =~ /=~/) {
+                                if ( $pa =~ /=~|\?\(/ ) {
                                     my ($module, $version ) = eval $pa;
                                     next if ((!defined($module)) or
                                             ( $module eq "" ) or 
