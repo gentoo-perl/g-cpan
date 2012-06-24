@@ -711,8 +711,7 @@ sub generatePackageInfo
 
                         # Detect the file extension, upstream usually uses .tar.gz, but not always
                         my $module_a_ext = '';
-                        foreach my $ext qw(tgz tbz2 tar.bz2 tar.xz tar.Z zip)
-                        {
+                        foreach my $ext (qw( tgz tbz2 tar.bz2 tar.xz tar.Z zip )) {
                             if ( $gcpan_run->{'cpan'}{lc($original_ebuild)}{'src_uri'} =~ m/\.\Q$ext\E$/ ) {
                                 $module_a_ext = sprintf 'MODULE_A_EXT="%s"', $ext;
                             }
