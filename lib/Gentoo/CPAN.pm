@@ -11,7 +11,6 @@ use YAML::Node;
 use Memoize;
 use Cwd qw(getcwd abs_path cwd);
 use File::Basename;
-use Shell qw(perl);
 
 memoize('transformCPAN');
 memoize('FindDeps');
@@ -196,13 +195,13 @@ sub unpackModule {
     chdir($tmp_dir) or die "Unable to enter dir $tmp_dir:$!\n";
 
     # If we have a Makefile.PL, run it to generate Makefile
-    if ( -f "Makefile.PL" ) {
-        perl("Makefile.PL",'</dev/null');
+    if ( -f 'Makefile.PL' ) {
+        system('perl Makefile.PL </dev/null');
     }
 
     # If we have a Build.PL, run it to generate the Build script
-    if ( -f "Build.PL" ) {
-        perl("Build.PL",'</dev/null');
+    if ( -f 'Build.PL' ) {
+        system('perl Build.PL </dev/null');
     }
 
     # Return whence we came
