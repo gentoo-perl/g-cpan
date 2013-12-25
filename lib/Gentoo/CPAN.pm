@@ -6,12 +6,11 @@ use warnings;
 use File::Spec;
 use CPAN;
 use File::Path;
-use YAML;
+use YAML ();
 use YAML::Node;
 use Memoize;
 use Cwd qw(getcwd abs_path cwd);
 use File::Basename;
-use Shell qw(perl);
 
 memoize('transformCPAN');
 memoize('FindDeps');
@@ -196,13 +195,13 @@ sub unpackModule {
     chdir($tmp_dir) or die "Unable to enter dir $tmp_dir:$!\n";
 
     # If we have a Makefile.PL, run it to generate Makefile
-    if ( -f "Makefile.PL" ) {
-        perl("Makefile.PL",'</dev/null');
+    if ( -f 'Makefile.PL' ) {
+        system('perl Makefile.PL </dev/null');
     }
 
     # If we have a Build.PL, run it to generate the Build script
-    if ( -f "Build.PL" ) {
-        perl("Build.PL",'</dev/null');
+    if ( -f 'Build.PL' ) {
+        system('perl Build.PL </dev/null');
     }
 
     # Return whence we came
@@ -313,16 +312,9 @@ sub FindDeps {
         if ( -f $object ) {
             my $abs_path = abs_path($object);
             if ( $object eq "META\.yml" ) {
-
                 # Do YAML parsing if you can
-                my $b_n = dirname($abs_path);
-                $b_n = basename($b_n);
-                open(YAML,"$abs_path");
-                my @yaml = <YAML>;
-                close(YAML);
-                if ( check_yaml(@yaml) ) {
-                my $arr = YAML::Load(@yaml);
-                foreach my $type qw(configure_requires requires build_requires recommends) {
+                if ( my $arr = yaml_load($abs_path) ) {
+                foreach my $type (qw( configure_requires requires build_requires recommends )) {
                     if ( my $ar_type = $arr->{$type} ) {
                         foreach my $module ( keys %{$ar_type} ) {
                             next if ( $module eq "" );
@@ -384,7 +376,7 @@ sub FindDeps {
                 my (%p) = ();
                 my $fh;
 
-                foreach my $type qw(requires configure_requires build_requires) {
+                foreach my $type (qw( requires configure_requires build_requires )) {
                     if ( $fh = FileHandle->new("<$makefile\0") ) {
                         local ($/) = "";
                         while (<$fh>) {
@@ -397,7 +389,7 @@ sub FindDeps {
                             my @list = split( ',', $p );
                             foreach my $pa (@list) {
                                 $pa =~ s/\n|\s+|\'//mg;
-                                if ($pa =~ /=~/) {
+                                if ( $pa =~ /=~|\?\(/ ) {
                                     my ($module, $version ) = eval $pa;
                                     next if ((!defined($module)) or
                                             ( $module eq "" ) or 
@@ -438,10 +430,11 @@ sub FindDeps {
 
 }
 
-sub check_yaml {
-    my @yaml = @_;
-    return 1 if YAML::Load(@yaml);
-    return 0;
+sub yaml_load {
+    my $filepath = shift;
+    my $yaml = eval { YAML::LoadFile($filepath); };
+    return if $@;
+    return $yaml;
 }
 sub transformCPAN {
     my $self = shift;

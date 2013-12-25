@@ -47,7 +47,7 @@ sub getEnv {
         return($var =~ /^$envvar$/ );
     };
 
-foreach my $file ( "$ENV{HOME}/.gcpanrc", "/etc/make.conf", "/etc/make.globals" ) {
+foreach my $file ( "$ENV{HOME}/.gcpanrc", '/etc/portage/make.conf', '/etc/make.conf', '/etc/make.globals' ) {
     if ( -f $file) {
     	my $importer = Shell::EnvImporter->new(
     		file => $file,
