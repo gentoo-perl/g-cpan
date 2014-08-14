@@ -2,6 +2,10 @@
 # Copyright 1999-2011 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+  14 Jul 2014; Tony Vroon <chainsaw@gentoo.org> +g-cpan-0.16.5.ebuild:
+  Release incorporating fixes from bugs #420617, #424657 & #484108. With both
+  my thanks and my apologies to Sergiy Borodych, Roberto Araneda & Petr Pisar.
+
   24 Jan 2011; Robin H. Johnson <robbat2@gentoo.org> bin/g-cpan:
   Bump version.
 
