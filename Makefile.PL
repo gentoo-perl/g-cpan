@@ -1,7 +1,6 @@
 use 5.008007;
 use ExtUtils::MakeMaker;
 
-my @programs_to_install = qw ( g-cpan );
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
 WriteMakefile(
@@ -9,7 +8,7 @@ WriteMakefile(
     ABSTRACT  =>      'Install modules from CPAN in a portage friendly way', 
     VERSION_FROM      => 'bin/g-cpan', # finds $VERSION
     LICENSE           => 'gpl',
-    EXE_FILES         => [ map "bin/$_", @programs_to_install ],
+    EXE_FILES         => [ 'bin/g-cpan' ],
     PREREQ_PM         => {
                         'File::Basename'   => 0,
                         'File::Copy'       => 0,
