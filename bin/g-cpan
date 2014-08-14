@@ -35,7 +35,7 @@ my $prog = basename($0);
 unless ($ENV{TMPDIR}) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
 
 my %dep_list = ();
-my @perl_dirs = ("perl-gcpan", "dev-perl", "perl-core", "perl-text", "perl-tools", "perl-xml", "perl-dev", "dev-lang",);
+my @perl_dirs = (qw( dev-perl perl-core perl-gcpan dev-lang ));
 
 ###############################
 # Command line interpretation #
