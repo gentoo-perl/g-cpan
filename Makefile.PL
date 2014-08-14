@@ -1,15 +1,15 @@
 use 5.008007;
+use strict;
+use warnings;
 use ExtUtils::MakeMaker;
 
-my @programs_to_install = qw ( g-cpan );
-# See lib/ExtUtils/MakeMaker.pm for details of how to influence
-# the contents of the Makefile that is written.
 WriteMakefile(
     NAME              => 'g-cpan',
-    ABSTRACT  =>      'Install modules from CPAN in a portage friendly way', 
+    ABSTRACT          => 'Install modules from CPAN in a portage friendly way', 
+    AUTHOR            => 'Michael Cummings <mcummings@gentoo.org>, Robin H. Johnson <robbat2@gentoo.org>',
     VERSION_FROM      => 'bin/g-cpan', # finds $VERSION
     LICENSE           => 'gpl',
-    EXE_FILES         => [ map "bin/$_", @programs_to_install ],
+    EXE_FILES         => [ 'bin/g-cpan' ],
     PREREQ_PM         => {
                         'File::Basename'   => 0,
                         'File::Copy'       => 0,
@@ -24,13 +24,5 @@ WriteMakefile(
                         'Test::More'       => 0,
                         'YAML'             => 0,
                         'YAML::Node'       => 0,
-
-                        }, # e.g., Module::Name => 1.1
-    DIST_AUTHOR       => ['Michael Cummings <mcummings@gentoo.org>', 'Robin H. Johnson <robbat2@gentoo.org>'],
-    AUTHOR            => 'Michael Cummings <mcummings@gentoo.org>, Robin H. Johnson <robbat2@gentoo.org>',
-    LIBS              => [''], # e.g., '-lm'
-    DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
-    INC               => '-I.', # e.g., '-I. -I/usr/include/other'
+    },
 );
-
-# PERL_DL_NONLAZY=1 /usr/bin/perl5.8.8 "-MExtUtils::Command::MM" "-e" "test_harness(0, 'lib')" t/*.t
