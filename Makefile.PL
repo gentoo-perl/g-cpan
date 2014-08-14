@@ -29,9 +29,6 @@ WriteMakefile(
                         }, # e.g., Module::Name => 1.1
     DIST_AUTHOR       => ['Michael Cummings <mcummings@gentoo.org>', 'Robin H. Johnson <robbat2@gentoo.org>'],
     AUTHOR            => 'Michael Cummings <mcummings@gentoo.org>, Robin H. Johnson <robbat2@gentoo.org>',
-    LIBS              => [''], # e.g., '-lm'
-    DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
-    INC               => '-I.', # e.g., '-I. -I/usr/include/other'
 );
 
 # PERL_DL_NONLAZY=1 /usr/bin/perl5.8.8 "-MExtUtils::Command::MM" "-e" "test_harness(0, 'lib')" t/*.t
