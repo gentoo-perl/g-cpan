@@ -25,4 +25,6 @@ WriteMakefile(
                         'YAML'             => 0,
                         'YAML::Node'       => 0,
     },
+    NO_META   => 1,    # suppresses the generation and addition to the MANIFEST of the META.yml and META.json
+    NO_MYMETA => 1,    # suppresses the generation of MYMETA.yml and MYMETA.json
 );
