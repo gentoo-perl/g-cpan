@@ -1,8 +1,10 @@
 Makefile
-blib
-pm_to_blib
-META.yml
+Makefile.old
+MANIFEST.bak
 MYMETA.json
 MYMETA.yml
+blib
+cover_db
+pm_to_blib
+META.yml
 g-cpan-*.tar.gz
-MANIFEST.bak
