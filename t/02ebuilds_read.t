@@ -34,13 +34,16 @@ my $portdir;
 # Can we get the PORTDIR value?
 ok(  $portdir = $GC->getEnv("PORTDIR"), 'getEnv("PORTDIR") worked' );
 
-$GC->getAvailableEbuilds($portdir,'gnustep-base');
-# Test getting the contents of a directory
-ok( $GC->{packagelist}, 'Grabbed gnustep-base' );
+# test getting the contents of a category directory
+my $category = 'dev-perl';
+$GC->getAvailableEbuilds( $portdir, $category );
+ok( $GC->{packagelist}, "Grabbed '$category'" );
 
-$GC->{portage_categories} = [ "gnustep-base" ];
-$GC->getAvailableVersions($portdir, 'gnustep-base');
-ok( $GC->{portage}, 'Digested available versions' );
+# test getting information for package
+$GC->{portage_categories} = [$category];
+my $package = 'URI';
+$GC->getAvailableVersions( $portdir, $package );
+ok( $GC->{portage}, "Digested available versions for '$package'" );
 foreach my $pn (keys %{$GC->{portage}} ) {
 	ok($pn, '$pn has value');
 	ok($GC->{portage}{$pn}, '$pn has version');
