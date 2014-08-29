@@ -31,7 +31,7 @@ else {
     }
     else
     {
-        plan tests => 8;
+        plan tests => 9;
     }
 }
 
@@ -47,9 +47,8 @@ use_ok(' Gentoo');
 my $GC = Gentoo->new();
 ok( defined($GC), 'new() works' );
 
-
-# Can we get the PORTDIR value?
-ok( $GC->getEnv("PORTDIR"), 'getEnv("PORTDIR") worked' );
+ok( $GC->getEnv('PORTDIR'), 'getEnv("PORTDIR") worked' );
+ok( $GC->getEnv('DISTDIR'), 'getEnv("DISTDIR") worked' );
 
 $GC->getCPANInfo($module);
 # Test getting the contents of a directory
