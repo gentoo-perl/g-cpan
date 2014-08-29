@@ -44,11 +44,10 @@ $GC->{portage_categories} = [$category];
 my $package = 'URI';
 $GC->getAvailableVersions( $portdir, $package );
 ok( $GC->{portage}, "Digested available versions for '$package'" );
-foreach my $pn (keys %{$GC->{portage}} ) {
-	ok($pn, '$pn has value');
-	ok($GC->{portage}{$pn}, '$pn has version');
-}
-foreach my $pn (keys %{$GC->{portage}} ) {
-	ok($GC->{portage}{$pn}{name}, "$pn name check");
-	ok($GC->{portage}{$pn}{category}, "$pn category check");
+
+foreach my $pn ( keys %{ $GC->{portage} } ) {
+    ok( $pn,                           '$pn has value' );
+    ok( $GC->{portage}{$pn},           '$pn has version' );
+    ok( $GC->{portage}{$pn}{name},     "'$pn' name check" );
+    ok( $GC->{portage}{$pn}{category}, "'$pn' category check" );
 }
