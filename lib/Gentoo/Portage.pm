@@ -71,14 +71,14 @@ sub strip_env {
     my $key = shift;
     return $key unless defined($key);
     if (defined($ENV{$key})) {
-        $ENV{$key} =~ s{\\n}{ }gxms;
+        $ENV{$key} =~ s{\\n|\\t}{ }gxms;
         $ENV{$key} =~ s{\\|\'|\\'|\$|\s*$}{}gmxs;
         $key =~ s{\s+}{ }gmxs;
         return $ENV{$key};
     }
     else
     {
-        $key =~ s{\\n}{ }gxms;
+        $key =~ s{\\n|\\t}{ }gxms;
         $key =~ s{(\'|\\|\\'|\$|\s*$)}{}gmxs;
         $key =~ s{\s+}{ }gmxs;
         return $key;
