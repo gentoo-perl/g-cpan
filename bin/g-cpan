@@ -301,8 +301,6 @@ $keywords ||= do
 };
 
 $ENV{ACCEPT_KEYWORDS} = $keywords;
-# Get the overlays
-my $overlay = $gcpan_run->getEnv('PORTDIR_OVERLAY') || undef;
 # Get the DISTDIR - we'd like store the tarballs in here the one time
 $gcpan_run->{sources} = ($gcpan_run->getEnv('DISTDIR'));
 
@@ -329,6 +327,8 @@ if (   $generate
     }
 }
 
+# Get the overlays
+my $overlay = $gcpan_run->getEnv('PORTDIR_OVERLAY');
 if ($overlay)
 {
     if ($overlay =~ m{\S*\s+\S*}x)
@@ -432,10 +432,10 @@ if ($list || $upgrade)
         my @overlays = split ' ', $overlay;
         foreach my $overlay_dir (@overlays)
         {
-			next unless (-d $overlay_dir);
-            my $gcpan_dir = File::Spec->catdir($overlay_dir, $GCPAN_CAT);
+            next unless -d $overlay_dir;
+            my $gcpan_dir = File::Spec->catdir( $overlay_dir, $GCPAN_CAT );
+            next unless -d $gcpan_dir;
 
-            #$list and print_info("OVERLAY: $gcpan_dir");
             print_info("OVERLAY: $gcpan_dir");
             if (opendir PDIR, $gcpan_dir)
             {
