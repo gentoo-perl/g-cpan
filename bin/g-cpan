@@ -264,7 +264,8 @@ else
     my $cat_write = IO::File->new($cat_file, '>');
     if (defined $cat_write)
     {
-        print $cat_write $GCPAN_CAT;
+        print $cat_write "$GCPAN_CAT\n";
+	undef $cat_write;
     }
     else
     {
