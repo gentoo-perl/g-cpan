@@ -38,8 +38,8 @@ our @EXPORT =
 our $VERSION = '0.01';
 
 
+# import ENV variables
 sub getEnv {
-#IMPORT VARIABLES
     my $self = shift;
     my $envvar = shift;
     my $filter = sub {
@@ -47,24 +47,27 @@ sub getEnv {
         return($var =~ /^$envvar$/ );
     };
 
-foreach my $file ( "$ENV{HOME}/.gcpanrc", '/etc/portage/make.conf', '/etc/make.conf', '/etc/make.globals' ) {
-    if ( -f $file) {
-    	my $importer = Shell::EnvImporter->new(
-    		file => $file,
-    		shell => 'bash',
-            import_filter => $filter,
-    	);
-    $importer->shellobj->envcmd('set');
-    $importer->run();
-    if (defined($ENV{$envvar}) && ($ENV{$envvar} =~ m{\W*}))
-    { 
-        my $tm = strip_env($ENV{$envvar}); 
-        $importer->restore_env; 
-        return $tm;
+    foreach my $file (
+        "$ENV{HOME}/.gcpanrc", '/etc/portage/make.conf',
+        '/etc/make.conf',      '/etc/make.globals',
+        '/usr/share/portage/config/make.globals'    # system-wide defaults for the Portage system
+      )
+    {
+        if ( -f $file ) {
+            my $importer = Shell::EnvImporter->new(
+                file          => $file,
+                shell         => 'bash',
+                import_filter => $filter,
+            );
+            $importer->shellobj->envcmd('set');
+            $importer->run();
+            if ( defined( $ENV{$envvar} ) && ( $ENV{$envvar} =~ m{\W*} ) ) {
+                my $tm = strip_env( $ENV{$envvar} );
+                $importer->restore_env;
+                return $tm;
+            }
+        }
     }
-
-}
-  }
 }
 
 sub strip_env {
