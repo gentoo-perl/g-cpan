@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 package main;
 
-# Copyright 1999-2011 Gentoo Foundation
+# Copyright 1999-2014 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 #
 
@@ -28,7 +28,7 @@ use Log::Agent;
 use Log::Agent::Driver::File;
 use Log::Agent::Driver::Silent;
 
-our $VERSION = "0.16.5";
+our $VERSION = "0.16.6";
 my $prog = basename($0);
 
 ##### Establish our tmpdir
