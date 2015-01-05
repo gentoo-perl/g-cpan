@@ -143,12 +143,15 @@ sub getCPANInfo {
         $desc =~ s/^$module_name - //g;
         return $desc;
     }
-    $self->{'cpan'}{ lc($find_module) }{'description'} =
-      $mod->{RO}{'description'} || manpage_title($mod, $find_module) || "No description available";
-    $self->{'cpan'}{ lc($find_module) }{'src_uri'} = $mod->{RO}{'CPAN_FILE'};
-    $self->{'cpan'}{ lc($find_module) }{'name'}    = $mod->id;
-    $self->{'cpan'}{ lc($find_module) }{'version'} = $mod->{RO}{'CPAN_VERSION'}
-      || "0";
+
+    my $dist_info = $self->{cpan}{ lc($find_module) };
+    $dist_info->{description} =
+      $mod->{RO}{description} || manpage_title( $mod, $find_module ) || 'No description available';
+    $dist_info->{src_uri}             = $mod->{RO}{CPAN_FILE};
+    $dist_info->{name}                = $mod->id;
+    $dist_info->{version}             = $mod->{RO}{CPAN_VERSION} || '0';
+    $self->{cpan}{ lc($find_module) } = $dist_info;
+
     return;
 }
 
