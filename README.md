@@ -1,3 +1,5 @@
+[![Coverage Status](https://coveralls.io/repos/gentoo-perl/g-cpan/badge.png?branch=master)](https://coveralls.io/r/gentoo-perl/g-cpan?branch=master)
+
 ### NAME
 
 g-cpan - generate and install CPAN modules using portage
