@@ -722,6 +722,7 @@ sub generatePackageInfo
 
                         my $module_version = $gcpan_run->{cpan}{lc($original_ebuild)}{version};
                         my $description = $gcpan_run->{'cpan'}{lc($original_ebuild)}{'description'};
+                        $description =~ s/"/\\"/g;
 
                         print $EBUILD <<"HERE";
 # Copyright 1999-2014 Gentoo Foundation
