@@ -533,14 +533,16 @@ sub generatePackageInfo
                     close(FH);
                     foreach (@data)
                     {
-                        my $thisfile = (split(/ /, $_))[1];
-                        $thisfile =~ s{\.([A-Za-z]{1,3})$}{};
-                        if ( ($thisfile =~ m{\Q$eb\E$}x) && !defined($passed_to_install{$eb}) )
-						{
-    						spinner_stop();
-							print_info("$ebuild_wanted is part of the core perl install");
-							return;
-						}
+                        my ( $type, $file ) = split( / /, $_ );
+                        next unless $type eq 'obj';
+                        # match entries like a /usr/lib??/perl5/5.??.??/JSON/PP.pm
+                        my $file_wanted_re = qr{(?:5\.[\d\.]+)\Q$eb\E\.(?:[A-Za-z]{1,3})$};
+                        if ( $file =~ $file_wanted_re and not $passed_to_install{$eb} )
+                        {
+                            spinner_stop();
+                            print_info("$ebuild_wanted is part of the core perl install (located: $file)");
+                            return;
+                        }
                     }
     				spinner_stop();
                     last;
