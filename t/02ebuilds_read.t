@@ -23,9 +23,8 @@ use Test::More qw(no_plan);
 
 
 
-
 # Verify we can load Gentoo name space
-BEGIN { use_ok(' Gentoo'); }
+BEGIN { use_ok('Gentoo'); }
 
 # Can we call new?
 my $GC = Gentoo->new();
@@ -35,18 +34,20 @@ my $portdir;
 # Can we get the PORTDIR value?
 ok(  $portdir = $GC->getEnv("PORTDIR"), 'getEnv("PORTDIR") worked' );
 
-$GC->getAvailableEbuilds($portdir,'gnustep-base');
-# Test getting the contents of a directory
-ok( $GC->{packagelist}, 'Grabbed gnustep-base' );
+# test getting the contents of a category directory
+my $category = 'dev-perl';
+$GC->getAvailableEbuilds( $portdir, $category );
+ok( $GC->{packagelist}, "Grabbed '$category'" );
 
-$GC->{portage_categories} = [ "gnustep-base" ];
-$GC->getAvailableVersions($portdir, 'gnustep-base');
-ok( $GC->{portage}, 'Digested available versions' );
-foreach my $pn (keys %{$GC->{portage}} ) {
-	ok($pn, '$pn has value');
-	ok($GC->{portage}{$pn}, '$pn has version');
-}
-foreach my $pn (keys %{$GC->{portage}} ) {
-	ok($GC->{portage}{$pn}{name}, "$pn name check");
-	ok($GC->{portage}{$pn}{category}, "$pn category check");
+# test getting information for package
+$GC->{portage_categories} = [$category];
+my $package = 'URI';
+$GC->getAvailableVersions( $portdir, $package );
+ok( $GC->{portage}, "Digested available versions for '$package'" );
+
+foreach my $pn ( keys %{ $GC->{portage} } ) {
+    ok( $pn,                           '$pn has value' );
+    ok( $GC->{portage}{$pn},           '$pn has version' );
+    ok( $GC->{portage}{$pn}{name},     "'$pn' name check" );
+    ok( $GC->{portage}{$pn}{category}, "'$pn' category check" );
 }

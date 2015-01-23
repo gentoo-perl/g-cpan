@@ -21,9 +21,8 @@ use warnings;
 use Test::More tests => 6;
 
 
-
 # Verify we can load Gentoo name space
-BEGIN { use_ok(' Gentoo'); }
+BEGIN { use_ok('Gentoo'); }
 
 # Can we call new?
 my $GC = Gentoo->new();

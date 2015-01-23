@@ -41,7 +41,7 @@ use warnings;
 my $module = "Module::Build";
 
 # Verify we can load Gentoo name space
-use_ok(' Gentoo');
+use_ok('Gentoo');
 
 # Can we call new?
 my $GC = Gentoo->new();
