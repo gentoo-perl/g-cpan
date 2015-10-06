@@ -24,9 +24,7 @@ use Test::More tests => 6;
 # Verify we can load Gentoo name space
 BEGIN { use_ok('Gentoo'); }
 
-# Can we call new?
-my $GC = Gentoo->new();
-ok( defined($GC), 'new() works' );
+my $GC = new_ok('Gentoo');
 
 # Can we get the PORTDIR value?
 ok( $GC->getEnv("PORTDIR"), 'getEnv("PORTDIR") worked' );

@@ -31,32 +31,26 @@ else {
     }
     else
     {
-        plan tests => 8;
+        plan tests => 5;
     }
 }
 
 use strict;
 use warnings;
 
-my $module = "Module::Build";
-
-# Verify we can load Gentoo name space
 use_ok('Gentoo');
+my $GC = new_ok('Gentoo');
 
-# Can we call new?
-my $GC = Gentoo->new();
-ok( defined($GC), 'new() works' );
+ok( $GC->getEnv('PORTDIR'), 'getEnv("PORTDIR") worked' );
+ok( $GC->getEnv('DISTDIR'), 'getEnv("DISTDIR") worked' );
 
-
-# Can we get the PORTDIR value?
-ok( $GC->getEnv("PORTDIR"), 'getEnv("PORTDIR") worked' );
-
-$GC->getCPANInfo($module);
-# Test getting the contents of a directory
-ok( $GC->{cpan}, 'Information for $module obtained' );
-ok($GC->{cpan}{lc($module)}{'version'}, '$module has version');
-ok($GC->{cpan}{lc($module)}{'name'}, '$module has a name');
-ok($GC->{cpan}{lc($module)}{'src_uri'}, '$module has src_uri');
-ok($GC->{cpan}{lc($module)}{'description'}, '$module has a description');
-
-#MPC $GC->debug;
+my $module = 'Module::Build';
+subtest "retrieve and check information for $module", sub {
+    $GC->getCPANInfo($module);
+    my $module_lc = lc($module);
+    ok( $GC->{cpan}{$module_lc},              'information obtained' );
+    ok( $GC->{cpan}{$module_lc}{version},     'has version' );
+    ok( $GC->{cpan}{$module_lc}{name},        'has a name' );
+    ok( $GC->{cpan}{$module_lc}{src_uri},     'has src_uri' );
+    ok( $GC->{cpan}{$module_lc}{description}, 'has a description' );
+};

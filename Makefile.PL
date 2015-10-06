@@ -21,7 +21,7 @@ WriteMakefile(
                         'IO::File'         => 0,
                         'Shell::EnvImporter' => 0,
                         'Term::ANSIColor'  => 0,
-                        'Test::More'       => 0,
+                        'Test::More'       => 0.94,
                         'YAML'             => 0,
                         'YAML::Node'       => 0,
     },
