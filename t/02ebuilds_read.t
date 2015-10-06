@@ -26,9 +26,7 @@ use Test::More qw(no_plan);
 # Verify we can load Gentoo name space
 BEGIN { use_ok('Gentoo'); }
 
-# Can we call new?
-my $GC = Gentoo->new();
-ok( defined($GC), 'new() works' );
+my $GC = new_ok('Gentoo');
 
 my $portdir;
 # Can we get the PORTDIR value?
