@@ -19,18 +19,11 @@ eval 'use CPAN::Config;';
 my $needs_cpan_stub = $@ ? 1 : 0;
 use Test::More;
 
-if ( ( $needs_cpan_stub || ( $> > 0 ) ) and not _init_cpan_config() ) {
+if ( $needs_cpan_stub and not _init_cpan_config() ) {
     plan skip_all => 'Tests impossible without a configured CPAN::Config';
 }
 else {
-    if ( $> > 0 )
-    {
-        plan skip_all => 'Root needed for these tests, sorry';
-    }
-    else
-    {
-        plan tests => 5;
-    }
+    plan tests => 5;
 }
 
 use strict;
