@@ -1,23 +1,12 @@
-#
-#===============================================================================
-#
-#         FILE:  10cpan_packages.t
-#
-#  DESCRIPTION:  Test Gentoo::CPAN Functionality
-#
-#        FILES:  ---
-#         BUGS:  ---
-#        NOTES:  ---
-#       AUTHOR:  Michael Cummings (), <mcummings@gentoo.org>
-#      COMPANY:  Gentoo
-#      VERSION:  1.0
-#      CREATED:  05/09/06 14:36:47 EDT
-#     REVISION:  ---
-#===============================================================================
+#!/usr/bin/env perl
+
+use strict;
+use warnings;
+
+use Test::More;
 
 eval 'use CPAN::Config;';
 my $needs_cpan_stub = $@ ? 1 : 0;
-use Test::More;
 
 if ( $needs_cpan_stub and not _init_cpan_config() ) {
     plan skip_all => 'Tests impossible without a configured CPAN::Config';
@@ -25,9 +14,6 @@ if ( $needs_cpan_stub and not _init_cpan_config() ) {
 else {
     plan tests => 5;
 }
-
-use strict;
-use warnings;
 
 use_ok('Gentoo');
 my $GC = new_ok('Gentoo');
@@ -45,7 +31,6 @@ subtest "retrieve and check information for $module", sub {
     ok( $GC->{cpan}{$module_lc}{src_uri},     'has src_uri' );
     ok( $GC->{cpan}{$module_lc}{description}, 'has a description' );
 };
-
 
 sub _init_cpan_config {
     my $cpan_home = "$ENV{HOME}/.cpan";
