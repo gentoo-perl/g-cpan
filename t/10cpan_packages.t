@@ -19,10 +19,8 @@ eval 'use CPAN::Config;';
 my $needs_cpan_stub = $@ ? 1 : 0;
 use Test::More;
 
-if (   ( ($needs_cpan_stub) || ( $> > 0 ) )
-    && ( !-f "$ENV{HOME}/.cpan/CPAN/MyConfig.pm" ) )
-{
-	plan skip_all => 'Tests impossible without a configured CPAN::Config';
+if ( ( $needs_cpan_stub || ( $> > 0 ) ) and not _init_cpan_config() ) {
+    plan skip_all => 'Tests impossible without a configured CPAN::Config';
 }
 else {
     if ( $> > 0 )
@@ -54,3 +52,24 @@ subtest "retrieve and check information for $module", sub {
     ok( $GC->{cpan}{$module_lc}{src_uri},     'has src_uri' );
     ok( $GC->{cpan}{$module_lc}{description}, 'has a description' );
 };
+
+
+sub _init_cpan_config {
+    my $cpan_home = "$ENV{HOME}/.cpan";
+    my $configpm  = "$cpan_home/CPAN/MyConfig.pm";
+    unless ( -f $configpm ) {
+        # NOTE: such code doesn't work due to a weird bug in CPAN::FirstTime::init
+        #       - didn't resolve %args correctly
+        # ensure to exists due to respect for CPAN detecting mechanism
+        #mkdir $cpan_home unless -d $cpan_home;
+        #require CPAN;
+        #require CPAN::FirstTime;
+        #$configpm = CPAN::HandleConfig::make_new_config();
+        #CPAN::FirstTime::init( $configpm, autoconfig => 1 );
+
+        # so try to use our stub
+        require Gentoo::CPAN;
+        eval { Gentoo::CPAN->makeCPANstub(); };
+    }
+    return -f $configpm;
+}
