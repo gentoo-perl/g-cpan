@@ -6,11 +6,12 @@ perl:
 before_script:
     - sudo touch /etc/make.conf
     - sudo chmod 666 /etc/make.conf
+    - sudo mkdir -p /usr/portage /usr/local/portage /usr/share/portage/config
+    - sudo chown $USER:$USER /usr/portage /usr/local/portage /usr/share/portage/config
     - echo "PORTDIR=/usr/portage" >> /etc/make.conf
     - echo "PORTDIR_OVERLAY=/usr/local/portage" >> /etc/make.conf
     - echo 'USE="perl -python"' >> /etc/make.conf
-    - sudo mkdir /usr/portage /usr/local/portage
-    - sudo chown $USER:$USER /usr/portage /usr/local/portage
+    - wget "https://raw.githubusercontent.com/gentoo/portage/master/cnf/make.globals" -O /usr/share/portage/config/make.globals
     - wget "http://distfiles.gentoo.org/snapshots/portage-latest.tar.xz"
     - tar xJf portage-latest.tar.xz -C /usr/
 after_success:
