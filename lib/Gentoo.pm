@@ -17,12 +17,7 @@ use Gentoo::CPAN;
 # parts are ian's - the rest is mcummings messing around.
 
 require Exporter;
-
-our @ISA = qw(Exporter UNIVERSAL );
-
-#our @EXPORT = qw( getAvailableEbuilds
-#getCPANPackages
-#);
+our @ISA = qw( Exporter UNIVERSAL );
 
 our $VERSION = '0.01';
 
