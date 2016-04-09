@@ -1,19 +1,3 @@
-#
-#===============================================================================
-#
-#         FILE:  02ebuilds_read.t
-#
-#  DESCRIPTION:  Test Gentoo::Portage Functionality
-#
-#        FILES:  ---
-#         BUGS:  ---
-#        NOTES:  ---
-#       AUTHOR:  Michael Cummings (), <mcummings@gentoo.org>
-#      COMPANY:  Gentoo
-#      VERSION:  1.0
-#      CREATED:  05/09/06 14:36:47 EDT
-#     REVISION:  ---
-#===============================================================================
 
 use strict;
 use warnings;
@@ -21,9 +5,6 @@ use warnings;
 use Test::More qw(no_plan);
 #tests => 5;
 
-
-
-# Verify we can load Gentoo name space
 BEGIN { use_ok('Gentoo'); }
 
 my $GC = new_ok('Gentoo');

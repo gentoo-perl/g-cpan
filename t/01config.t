@@ -1,19 +1,3 @@
-#
-#===============================================================================
-#
-#         FILE:  01config.t
-#
-#  DESCRIPTION:  Test Gentoo::Config
-#
-#        FILES:  ---
-#         BUGS:  ---
-#        NOTES:  ---
-#       AUTHOR:  Michael Cummings (), <mcummings@gentoo.org>
-#      COMPANY:  Gentoo
-#      VERSION:  1.0
-#      CREATED:  05/09/06 14:03:26 EDT
-#     REVISION:  ---
-#===============================================================================
 
 use strict;
 use warnings;
@@ -40,4 +24,3 @@ ok( $GC->getEnv("USE"), 'Got USE flags' );
 ok( ! $GC->getEnv("BOGUS"), 'Fake data test' );
 
 exit(0);
-# last test to print
