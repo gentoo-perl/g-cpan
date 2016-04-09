@@ -1,3 +1,4 @@
+#!/usr/bin/env perl
 
 use strict;
 use warnings;
@@ -22,5 +23,3 @@ ok( $GC->getEnv("USE"), 'Got USE flags' );
 # What if we try to grab something bogus? This is to eliminate that
 # we've gotten false positives up to this point.
 ok( ! $GC->getEnv("BOGUS"), 'Fake data test' );
-
-exit(0);
