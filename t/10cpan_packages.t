@@ -8,7 +8,14 @@ use Test::More;
 eval 'use CPAN::Config;';
 my $needs_cpan_stub = $@ ? 1 : 0;
 
-if ( $needs_cpan_stub and not _init_cpan_config() ) {
+my $cpan_home = "$ENV{HOME}/.cpan";
+my $configpm  = "$cpan_home/CPAN/MyConfig.pm";
+$needs_cpan_stub = 0 if -f $configpm;
+
+if ( $needs_cpan_stub and $ENV{NO_NETWORK_TESTING} ) {
+    plan skip_all => 'since network activity is disabled (NO_NETWORK_TESTING is set)';
+}
+elsif ( $needs_cpan_stub and not _init_cpan_config() ) {
     plan skip_all => 'Tests impossible without a configured CPAN::Config';
 }
 else {
@@ -33,21 +40,19 @@ subtest "retrieve and check information for $module", sub {
 };
 
 sub _init_cpan_config {
-    my $cpan_home = "$ENV{HOME}/.cpan";
-    my $configpm  = "$cpan_home/CPAN/MyConfig.pm";
-    unless ( -f $configpm ) {
-        # NOTE: such code doesn't work due to a weird bug in CPAN::FirstTime::init
-        #       - didn't resolve %args correctly
-        # ensure to exists due to respect for CPAN detecting mechanism
-        #mkdir $cpan_home unless -d $cpan_home;
-        #require CPAN;
-        #require CPAN::FirstTime;
-        #$configpm = CPAN::HandleConfig::make_new_config();
-        #CPAN::FirstTime::init( $configpm, autoconfig => 1 );
 
-        # so try to use our stub
-        require Gentoo::CPAN;
-        eval { Gentoo::CPAN->makeCPANstub(); };
-    }
+    # NOTE: such code doesn't work due to a weird bug in CPAN::FirstTime::init
+    #       - didn't resolve %args correctly
+    # ensure to exists due to respect for CPAN detecting mechanism
+    #mkdir $cpan_home unless -d $cpan_home;
+    #require CPAN;
+    #require CPAN::FirstTime;
+    #$configpm = CPAN::HandleConfig::make_new_config();
+    #CPAN::FirstTime::init( $configpm, autoconfig => 1 );
+
+    # so try to use our stub
+    require Gentoo::CPAN;
+    eval { Gentoo::CPAN->makeCPANstub(); };
+
     return -f $configpm;
 }
