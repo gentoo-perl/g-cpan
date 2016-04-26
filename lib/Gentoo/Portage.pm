@@ -442,5 +442,4 @@ dev-perl     text-wrapper                 Text-Wrapper
 dev-perl     tie-encryptedhash            Tie-EncryptedHash
 dev-perl     yaml                         YAML
 media-gfx    imagemagick                  PerlMagick
-perl-core    File-Spec                    PathTools
-perl-core    Term-ANSIColor               ANSIColor
+virtual      perl-File-Spec               File-Spec
