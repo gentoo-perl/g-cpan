@@ -21,10 +21,9 @@ memoize('FindDeps');
 
 require Exporter;
 
-our @ISA = qw(Exporter Gentoo );
+our @ISA = qw( Exporter Gentoo );
 
-our @EXPORT = qw( getCPANInfo makeCPANstub unpackModule transformCPAN 
-);
+our @EXPORT = qw( getCPANInfo makeCPANstub unpackModule transformCPAN );
 
 our $VERSION = '0.01';
 
@@ -73,11 +72,11 @@ sub new {
 	if ( $text =~ m{Module } )
 	{
 	$text =~ s{Module id = }{\n};
-        if ($text =~ m{\n})  { 
+        if ($text =~ m{\n})  {
             $text =~ s{\d+ items found}{};
             @fake_results = split (/\n/, $text);
             return(@fake_results);
-        
+
         }
 		$text =~ s{\n\n}{}gmx;
 		push @fake_results, $text;
@@ -120,7 +119,7 @@ sub getCPANInfo {
     }
 
     my $mod;
-    
+
     unless (($mod = CPAN::Shell->expand("Module",$find_module)) ||
         ($mod = CPAN::Shell->expand("Bundle",$find_module)) ||
         ($mod = CPAN::Shell->expand("Distribution",$find_module)) ||
@@ -216,7 +215,7 @@ sub unpackModule {
     # If name is bundle::, then scan the bundle's deps, otherwise findep it
     if (lc($module_name) =~ m{^bundle\::})
     {
-        UnBundle( $self, $tmp_dir, $module_name ); 
+        UnBundle( $self, $tmp_dir, $module_name );
     } else {
         FindDeps( $self, $tmp_dir, $module_name );
     }
@@ -291,7 +290,7 @@ sub UnBundle {
 
     }
     chdir($startdir) or die "Unable to change to dir $startdir:$!\n";
-    return ($self); 
+    return ($self);
    }
 
 
@@ -392,7 +391,7 @@ sub FindDeps {
                                 if ( $pa =~ /=~|\?\(/ ) {
                                     my ($module, $version ) = eval $pa;
                                     next if ((!defined($module)) or
-                                            ( $module eq "" ) or 
+                                            ( $module eq "" ) or
                                             ( $module =~ /Cwd/i ) );
                                     #next if ( lc($module) eq "perl" );
                                     next unless ($module);
@@ -635,7 +634,7 @@ Description, if available
 
 Grabs the module from CPAN and unpacks it. It then procedes to scan for
 dependencies, filling in $obj->{'cpan'}{lc($somemodule)}{'depends'} with and
-deps that were found (hash). 
+deps that were found (hash).
 
 =item $obj->transformCPANVersion($somemodule)
 

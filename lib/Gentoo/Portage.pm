@@ -57,9 +57,9 @@ foreach my $file ( "$ENV{HOME}/.gcpanrc", '/etc/portage/make.conf', '/etc/make.c
     $importer->shellobj->envcmd('set');
     $importer->run();
     if (defined($ENV{$envvar}) && ($ENV{$envvar} =~ m{\W*}))
-    { 
-        my $tm = strip_env($ENV{$envvar}); 
-        $importer->restore_env; 
+    {
+        my $tm = strip_env($ENV{$envvar});
+        $importer->restore_env;
         return $tm;
     }
 
@@ -215,7 +215,7 @@ sub getBestVersion {
             }
 
 # This is strictly so we can seek back to __DATA__
-( my $data_pos = tell DATA) >= 0 or die "DATA not seekable"; 
+( my $data_pos = tell DATA) >= 0 or die "DATA not seekable";
 use IO::Seekable qw(SEEK_SET);
 
 sub getAvailableVersions {
@@ -252,7 +252,7 @@ sub getAvailableVersions {
     }
 
     unless(defined($self->{'portage'}{lc($find_ebuild)}{'name'})) {
-    
+
     foreach my $tc ( @{ $self->{portage_categories} } ) {
         next if ( !-d "$portdir/$tc" );
         @store_found_dirs = [];
@@ -361,7 +361,7 @@ Gentoo::Portage - perl access to portage information and commands
     my $obj = Gentoo->new();
     $obj->getAvailableEbuilds($portdir,'category');
     $obj->getAvailableVersions($portdir);
-    
+
 =head1 DESCRIPTION
 
 The C<Gentoo::Portage> class provides access to portage tools and tree
