@@ -524,6 +524,8 @@ sub generatePackageInfo
             my $eb       = $ebuild_wanted;
             $eb =~ s{::}{/}gxs;
             $eb = '/' . $eb;
+            # match entries like a /usr/lib??/perl5/5.??.??/JSON/PP.pm
+            my $file_wanted_re = qr{(?:5\.[\d\.]+)\Q$eb\E\.(?:[A-Za-z]{1,3})$};
             while (defined(my $read = $s_perl->read))
             {
                 if ((-d $pkgdbdir . "/" . $read) and ($read =~ m{^perl}x))
@@ -535,8 +537,6 @@ sub generatePackageInfo
                     {
                         my ( $type, $file ) = split( / /, $_ );
                         next unless $type eq 'obj';
-                        # match entries like a /usr/lib??/perl5/5.??.??/JSON/PP.pm
-                        my $file_wanted_re = qr{(?:5\.[\d\.]+)\Q$eb\E\.(?:[A-Za-z]{1,3})$};
                         if ( $file =~ $file_wanted_re and not $passed_to_install{$eb} )
                         {
                             spinner_stop();
