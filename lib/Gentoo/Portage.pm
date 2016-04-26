@@ -405,7 +405,6 @@ __DATA__
 dev-perl     Ace                          AcePerl
 dev-perl     Authen-NTLM                  NTLM
 dev-perl     Boulder                      Stone
-dev-perl     CPAN-Mini-Phalanx            CPAN-Mini-Phalanx100
 dev-perl     DelimMatch                   Text-DelimMatch
 dev-perl     Locale-gettext               gettext
 dev-perl     Net-SSLeay                   Net_SSLeay
@@ -413,9 +412,6 @@ dev-perl     Net-SSLeay                   Net_SSLeay.pm
 dev-perl     OLE-StorageLite              OLE-Storage_Lite
 dev-perl     PDF-Create                   perl-pdf
 dev-perl     SGMLSpm                      SGMLSpmii
-dev-perl     SpeedyCGI                    CGI-SpeedyCGI
-dev-perl     TextToHTML                   txt2html
-dev-perl     XML-Sablot                   XML-Sablotron
 dev-perl     cache-mmap                   Cache-Mmap
 dev-perl     class-loader                 Class-Loader
 dev-perl     convert-ascii-armour         Convert-ASCII-Armour
@@ -426,7 +422,6 @@ dev-perl     digest-bubblebabble          Digest-BubbleBabble
 dev-perl     digest-md2                   Digest-MD2
 dev-perl     extutils-pkgconfig           ExtUtils-PkgConfig
 dev-perl     frontier-rpc                 Frontier-RPC
-dev-perl     gimp-perl                    Gimp
 dev-perl     glib-perl                    Glib
 dev-perl     gnome2-canvas                Gnome2-Canvas
 dev-perl     gnome2-gconf                 Gnome2-GConf
