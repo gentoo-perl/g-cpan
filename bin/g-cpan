@@ -656,13 +656,13 @@ sub generatePackageInfo
             # Write ebuild here?
             $debug and $gcpan_run->debug;
             my @overlays;
-            if ($GCPAN_OVERLAY) 
-            { 
+            if ($GCPAN_OVERLAY)
+            {
                 push @overlays, $GCPAN_OVERLAY
             }
-            elsif ($overlay) 
-            { 
-                @overlays = split ' ', $overlay 
+            elsif ($overlay)
+            {
+                @overlays = split ' ', $overlay
             }
             else
             {
@@ -775,11 +775,11 @@ HERE
 
                       #my $eb_version = stripdown($gcpan_run->{portage}{lc($portage_name)}{version});
                       #my $cpan_version = defined($gcpan_run->{cpan}{lc($dep)}{portage_version})? stripdown($gcpan_run->{cpan}{lc($dep)}{portage_version}): "0";
-                                if ( $gcpan_run->{portage}{$portage_name}{name} eq "module-build") 
+                                if ( $gcpan_run->{portage}{$portage_name}{name} eq "module-build")
                                 {
                                     print $EBUILD ""
                                       . "virtual/perl-Module-Build\n";
-                                } 
+                                }
                                 elsif (   defined($gcpan_run->{cpan}{lc($dep)}{portage_version})
                                     && $gcpan_run->{cpan}{lc($original_ebuild)}{depends}{$dep} ne '0'
                                     && int($eb_version) >= int($cpan_version)

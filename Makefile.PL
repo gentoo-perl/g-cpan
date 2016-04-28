@@ -5,7 +5,7 @@ use ExtUtils::MakeMaker;
 
 WriteMakefile(
     NAME              => 'g-cpan',
-    ABSTRACT          => 'Install modules from CPAN in a portage friendly way', 
+    ABSTRACT          => 'Install modules from CPAN in a portage friendly way',
     AUTHOR            => 'Michael Cummings <mcummings@gentoo.org>, Robin H. Johnson <robbat2@gentoo.org>',
     VERSION_FROM      => 'bin/g-cpan', # finds $VERSION
     LICENSE           => 'gpl',

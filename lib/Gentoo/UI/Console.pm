@@ -90,7 +90,7 @@ sub print_out { print @_ }
 #     x LIST   variables filling blank in pattern
 #################################################
 sub fatal { exit }
- 
+
 sub spinner_start {
     print "\r".('/', '-', '\\', '|')[$spin++%4];
 }
