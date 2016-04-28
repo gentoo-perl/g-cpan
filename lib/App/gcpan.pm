@@ -3,24 +3,25 @@ package App::gcpan;
 use strict;
 use warnings;
 
-use File::Spec;
-use File::Path;
-use File::Basename;
-use File::Copy;
-use Term::ANSIColor;
-use Cwd qw(getcwd abs_path cwd);
-use YAML;
-use YAML::Node;
 use Carp;
-use IO::File;
+use Cwd qw( getcwd abs_path cwd );
 use DirHandle;
-
-# Module load & configure
+use File::Basename;
+use File::Path;
+use File::Spec;
+use File::Copy;
+use Gentoo;
+use Gentoo::UI::Console;
 use Getopt::Long;
-Getopt::Long::Configure("bundling");
+use IO::File;
 use Log::Agent;
 use Log::Agent::Driver::File;
 use Log::Agent::Driver::Silent;
+use Term::ANSIColor;
+use YAML;
+use YAML::Node;
+
+Getopt::Long::Configure('bundling');
 
 our $VERSION = "0.16.6";
 my $prog = basename($0);
@@ -76,9 +77,6 @@ GetOptions(
     'cpan_reload'    => \$cpan_reload,
     'help|h'         => sub { exit_usage(); }
 ) or exit_usage();
-
-use Gentoo;
-use Gentoo::UI::Console;
 
 if ($log)
 {
