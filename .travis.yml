@@ -2,6 +2,9 @@ language: perl
 perl:
     - "5.22"
     - "5.20"
+env:
+    global:
+        - PERL_CPANM_OPT="--quiet --notest --skip-satisfied"
 before_script:
     - sudo touch /etc/make.conf
     - sudo chmod 666 /etc/make.conf
@@ -14,7 +17,7 @@ before_script:
     - wget "http://distfiles.gentoo.org/snapshots/portage-latest.tar.xz"
     - tar xJf portage-latest.tar.xz -C /usr/
 after_success:
-    - cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Coveralls
+    - cpanm Devel::Cover::Report::Coveralls
     - cover -test -report coveralls
 #notifications:
 #    irc: "chat.freenode.net#gentoo-perl"
