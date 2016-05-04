@@ -437,9 +437,5 @@ dev-perl     gtk2-spell                   Gtk2-Spell
 dev-perl     gtk2-trayicon                Gtk2-TrayIcon
 dev-perl     gtk2-traymanager             Gtk2-TrayManager
 dev-perl     regexp-common                Regexp-Common
-dev-perl     text-template                Text-Template
-dev-perl     text-wrapper                 Text-Wrapper
-dev-perl     tie-encryptedhash            Tie-EncryptedHash
-dev-perl     yaml                         YAML
 media-gfx    imagemagick                  PerlMagick
 virtual      perl-File-Spec               File-Spec
