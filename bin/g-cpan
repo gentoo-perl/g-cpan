@@ -1209,6 +1209,8 @@ L<B<emerge>(1)>, L<B<ebuild>(5)>, L<B<make.conf>(5)>, L<B<perl>(1)>
 
 =head1 AUTHORS
 
+=for stopwords mcummings beu RAC Vermeulen Krotkine Yuval Yaari
+
 mcummings <mcummings@gentoo.org>, cab <cab@gentoo.org>, sniper <sniper@mongueurs.net>, beu <beu@gentoo.org>,
 J Robert Ray <jrray@gentoo.org> (g-cpan), RAC <rac@gentoo.org>, Sven Vermeulen <swift@gentoo.org> (Original manpage),
 Damien Krotkine <dams@gentoo.org>, Yuval Yaari <yuval@gentoo.org>, Robin J Johnson <robbat2@gentoo.org>.
