@@ -1,5 +1,7 @@
 ^.git
-^.gitignore
+^.gitignore$
+^.perltidyrc$
+^.travis.yml$
 ^Makefile$
 ^Makefile\.old$
 ^MANIFEST\.bak$
@@ -10,3 +12,4 @@
 ^cover_db
 ^pm_to_blib
 ^g-cpan-[\d\.]+\.tar\.gz
+\.swp$
