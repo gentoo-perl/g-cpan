@@ -622,7 +622,7 @@ CPAN's name for the distribution
 
 =item $obj->{cpan}{lc($module)}{'src_uri'}
 
-The context path on cpan for the module source
+The context path on CPAN for the module source
 
 =item $obj->{cpan}{lc($module)}{'description'}
 
@@ -632,9 +632,9 @@ Description, if available
 
 =item $obj->unpackModule($somemodule)
 
-Grabs the module from CPAN and unpacks it. It then procedes to scan for
+Grabs the module from CPAN and unpacks it. It then proceeds to scan for
 dependencies, filling in $obj->{'cpan'}{lc($somemodule)}{'depends'} with and
-deps that were found (hash).
+deeps that were found (hash).
 
 =item $obj->transformCPANVersion($somemodule)
 
