@@ -399,6 +399,10 @@ portage.
 
 =back
 
+=head1 SEE ALSO
+
+See L<Gentoo>.
+
 =cut
 
 # Reformat the below with: sprintf("%-12s %-28s %s\n",...)

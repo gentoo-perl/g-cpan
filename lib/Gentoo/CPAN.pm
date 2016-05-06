@@ -650,4 +650,8 @@ Generates a default CPAN stub file if none exists in the user's environment
 
 =back
 
+=head1 SEE ALSO
+
+See L<Gentoo>.
+
 =cut
