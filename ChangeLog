@@ -1,6 +1,9 @@
 # ChangeLog for g-cpan
-# Copyright 1999-2014 Gentoo Foundation; Distributed under the GPL v2
+# Copyright 1999-2016 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
+
+  06 Mayc 2016; Sergiy Borodych <Sergiy.Borodych@gmail.com> g-cpan-0.16.7:
+   A lot of fixes, including bugs #432992, #431080, #578678
 
   19 Dec 2014; Andreas K. Huettel <dilfridge@gentoo.org> bin/g-cpan:
   Incorporate various fixes by Sergiy Borodych and Martin von Gagern, fixes
