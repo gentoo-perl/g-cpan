@@ -158,4 +158,6 @@ messages that shouldn't be marked with an indicator, such as free form text.
 Print passed message (including calling another C<Gentoo::UI::Console>
 message) and exiting the program.
 
+=back
+
 =cut

@@ -397,8 +397,9 @@ Given the full path to an ebuild, generate a digest via C<ebuild PKG digest>
 Given the name of a package and any optional flags, emerge the package with
 portage.
 
-=cut
+=back
 
+=cut
 
 # Reformat the below with: sprintf("%-12s %-28s %s\n",...)
 __DATA__
