@@ -373,7 +373,7 @@ information.
 
 =item $obj->getAvailableEbuilds($portdir, $package);
 
-Providing the PORTDIR you want to invesitage, and either the name of the
+Providing the C<PORTDIR> you want to investigate, and either the name of the
 category or the category/package you are interested, this will populate an
 array in $obj->{packagelist} of the available ebuilds.
 
@@ -397,8 +397,13 @@ Given the full path to an ebuild, generate a digest via C<ebuild PKG digest>
 Given the name of a package and any optional flags, emerge the package with
 portage.
 
-=cut
+=back
 
+=head1 SEE ALSO
+
+See L<Gentoo>.
+
+=cut
 
 # Reformat the below with: sprintf("%-12s %-28s %s\n",...)
 __DATA__

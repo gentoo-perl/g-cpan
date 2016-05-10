@@ -92,6 +92,6 @@ Gentoo::modules.
 
 =head1 SEE ALSO
 
-See L<Gentoo::Config>, L<Gentoo::Portage>, L<Gentoo::CPAN>
+See L<Gentoo::Portage>, L<Gentoo::CPAN>.
 
 =cut

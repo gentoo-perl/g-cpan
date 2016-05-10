@@ -123,7 +123,7 @@ returning text to the user.
 
 =head1 INVOCATION
 
-All of C<Gentoo::UI::Console> functions except for fatal take two paramaters,
+All of C<Gentoo::UI::Console> functions except for fatal take two parameters,
 the name of the program calling the function, and the message to be displayed.
 fatal() is simple a short cut to passing text and exiting the program
 gracefully.
@@ -150,12 +150,14 @@ Print a message with a red indicator
 
 =item print_out($message)
 
-Print a message to STDOUT, no indicator. This function is intended for
+Print a message to C<STDOUT>, no indicator. This function is intended for
 messages that shouldn't be marked with an indicator, such as free form text.
 
 =item fatal($message)
 
 Print passed message (including calling another C<Gentoo::UI::Console>
 message) and exiting the program.
+
+=back
 
 =cut
