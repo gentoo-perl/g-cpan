@@ -17,7 +17,7 @@ before_script:
     - wget "https://raw.githubusercontent.com/gentoo/portage/master/cnf/make.globals" -O /usr/share/portage/config/make.globals
     - wget "http://distfiles.gentoo.org/snapshots/portage-latest.tar.xz"
     - tar xJf portage-latest.tar.xz -C /usr/
-    - cpanm Test::EOL   # DEV_TESTING dependency
+    - cpanm Test::CheckManifest Test::EOL   # DEV_TESTING dependencies
 after_success:
     - cpanm Devel::Cover::Report::Coveralls
     - cover -test -report coveralls
