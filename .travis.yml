@@ -6,6 +6,11 @@ env:
     global:
         - DEV_TESTING=1
         - PERL_CPANM_OPT="--quiet --notest --skip-satisfied"
+addons:
+    apt:
+        packages:
+            - aspell
+            - aspell-en
 before_script:
     - sudo touch /etc/make.conf
     - sudo chmod 666 /etc/make.conf
@@ -17,7 +22,7 @@ before_script:
     - wget "https://raw.githubusercontent.com/gentoo/portage/master/cnf/make.globals" -O /usr/share/portage/config/make.globals
     - wget "http://distfiles.gentoo.org/snapshots/portage-latest.tar.xz" -O /tmp/portage-latest.tar.xz
     - tar xJf /tmp/portage-latest.tar.xz -C /usr/
-    - cpanm Test::CheckManifest Test::EOL   # DEV_TESTING dependencies
+    - cpanm Test::CheckManifest Test::EOL Test::Spelling    # DEV_TESTING dependency
 after_success:
     - cpanm Devel::Cover::Report::Coveralls
     - cover -test -report coveralls
