@@ -26,4 +26,5 @@ buildpkgonly
 ebuild
 ebuilds
 g-cpan
+online
 namespace
