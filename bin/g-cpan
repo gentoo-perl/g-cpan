@@ -28,7 +28,7 @@ use Log::Agent;
 use Log::Agent::Driver::File;
 use Log::Agent::Driver::Silent;
 
-our $VERSION = "0.16.7";
+our $VERSION = "0.16.8";
 my $prog = basename($0);
 
 ##### Establish our tmpdir
