@@ -201,6 +201,9 @@ sub unpackModule {
     # If we have a Build.PL, run it to generate the Build script
     if ( -f 'Build.PL' ) {
         system('perl Build.PL </dev/null');
+
+        # most modules don't list Module::Build as a dep, but we need it due to perl-module.eclass requirements
+        $self->{cpan}{ lc($module_name) }{depends}{'Module::Build'} = 0;
     }
 
     # Return whence we came
@@ -218,12 +221,6 @@ sub unpackModule {
         UnBundle( $self, $tmp_dir, $module_name );
     } else {
         FindDeps( $self, $tmp_dir, $module_name );
-    }
-
-    # Most modules don't list module-build as a dep - so we force it if there
-    # is a Build.PL file
-    if ( -f "Build.PL" ) {
-        $self->{'cpan'}{ lc($module_name) }{'depends'}{"Module::Build"} = '0';
     }
 
     # Final measure - if somehow we got an undef along the way, set to 0
