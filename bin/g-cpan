@@ -517,8 +517,9 @@ sub generatePackageInfo
     spinner_start();
     unless (defined($gcpan_run->{portage}{lc($ebuild_wanted)}{found}))
     {
-
-            # First, check to see if this came with the core perl install
+        # First, check to see if this came with the core perl install
+        # but with one exception 'Module::Build' due to perl-module.eclass requirements
+        if ( $ebuild_wanted ne 'Module::Build' ) {
             my $pkgdbdir = "/var/db/pkg/dev-lang/";
             my $s_perl   = new DirHandle($pkgdbdir);
             my $eb       = $ebuild_wanted;
@@ -550,6 +551,7 @@ sub generatePackageInfo
                     last;
                 }
             }
+        }
 
         unless (defined($upgrade) or defined($passed_to_install{$ebuild_wanted}))
         {
