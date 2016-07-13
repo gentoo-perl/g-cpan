@@ -636,7 +636,6 @@ sub generatePackageInfo
             foreach my $dep (keys %{$gcpan_run->{cpan}{lc($original_ebuild)}{depends}})
             {
                 defined $dep && $dep ne '' or next;
-				#next if (defined $dep && $dep ne '');
                 $dep eq 'perl' and delete $gcpan_run->{cpan}{lc($original_ebuild)}{depends}{$dep};
 
                 $dep =~ m{ExtUtils(::|-)MakeMaker}ix and print_info("Skipping ExtUtils::MakeMaker dependency"), next;
@@ -645,8 +644,7 @@ sub generatePackageInfo
                 $verbose and print_info("Checking on dependency $dep for $original_ebuild");
                 $passed_to_install{$dep} or generatePackageInfo($dep);
 
-                # Remove dep from list of modules to install later on - no
-                # more dup'd installs!
+                # Remove dep from list of modules to install later on - no more dup'd installs!
                 defined $passed_to_install{$dep} and delete $really_install{$dep};
 
                 # Reindex one last time for anything we build after the fact
@@ -697,8 +695,7 @@ sub generatePackageInfo
                     my $ebuild = File::Spec->catdir($ebuild_dir,
                         $gcpan_run->{cpan}{lc($original_ebuild)}{portage_name} . '-' . $gcpan_run->{cpan}{lc($original_ebuild)}{portage_version} . '.ebuild');
 
-                    # Break out if we already have an ebuild (upgrade or
-                    # mistake in the code)
+                    # Break out if we already have an ebuild (upgrade or mistake in the code)
                     if (!-f $ebuild)
                     {
                         print_info('Generating ebuild for ' . $gcpan_run->{cpan}{lc($original_ebuild)}{name});
@@ -760,8 +757,7 @@ HERE
                                 $portage_name = lc($portage_name);
                                 $portage_name =~ m{\S}x or next;
 
-                                # Last ditch call to scanTree to make sure we
-                                # have info
+                                # Last ditch call to scanTree to make sure we have info
                                 scanTree($portage_name);
                                 next if ( defined($seen_deps{$portage_name}) && $seen_deps{$portage_name} > 0 );
                                 $seen_deps{$portage_name} = 1;
@@ -773,8 +769,6 @@ HERE
                                 my ($eb_version, $cpan_version) =
                                   stripdown($gcpan_run->{portage}{lc($portage_name)}{version}, $gcpan_run->{cpan}{lc($dep)}{portage_version});
 
-                      #my $eb_version = stripdown($gcpan_run->{portage}{lc($portage_name)}{version});
-                      #my $cpan_version = defined($gcpan_run->{cpan}{lc($dep)}{portage_version})? stripdown($gcpan_run->{cpan}{lc($dep)}{portage_version}): "0";
                                 if ( $gcpan_run->{portage}{$portage_name}{name} eq "module-build")
                                 {
                                     print $EBUILD ""
