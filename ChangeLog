@@ -2,8 +2,11 @@
 # Copyright 1999-2016 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
 
+  14 Jul 2016; Sergiy Borodych <Sergiy.Borodych@gmail.com> g-cpan-0.16.9:
+  Fix bug #573308, bug #583374
+
   11 Jul 2016; Sergiy Borodych <Sergiy.Borodych@gmail.com> g-cpan-0.16.8:
-   Fix bug #542180 (github#23), some POD fixes
+  Fix bug #542180 (github#23), some POD fixes
 
   06 May 2016; Sergiy Borodych <Sergiy.Borodych@gmail.com> g-cpan-0.16.7:
    A lot of fixes, including bugs #432992, #431080, #578678
