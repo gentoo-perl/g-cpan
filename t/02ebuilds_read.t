@@ -10,9 +10,8 @@ BEGIN { use_ok('Gentoo'); }
 
 my $GC = new_ok('Gentoo');
 
-my $portdir;
-# Can we get the PORTDIR value?
-ok(  $portdir = $GC->getEnv("PORTDIR"), 'getEnv("PORTDIR") worked' );
+my $portdir = $GC->getEnv('PORTDIR');
+ok( $portdir, 'getEnv("PORTDIR") worked' );
 
 # test getting the contents of a category directory
 my $category = 'dev-perl';
