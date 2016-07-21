@@ -5,11 +5,13 @@ lib/App/gcpan.pm
 lib/Gentoo.pm
 lib/Gentoo/CPAN.pm
 lib/Gentoo/Portage.pm
+lib/Gentoo/Portage/Q.pm
 lib/Gentoo/UI/Console.pm
 Makefile.PL
 MANIFEST			This list of files
 README.md
 t/00_Gentoo.t
+t/01_Gentoo_Portage_Q.t
 t/05_Gentoo_Portage.t
 t/10cpan_packages.t
 t/11_App_gcpan.t
@@ -19,3 +21,5 @@ t/98_manifest.t
 t/98_pod_spelling.t
 t/98_pod_syntax.t
 t/data/etc/portage/make.conf
+t/data/etc/portage/repos.conf/gentoo.conf
+t/data/etc/portage/repos.conf/local.conf
