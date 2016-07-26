@@ -418,9 +418,6 @@ dev-perl     OLE-StorageLite              OLE-Storage_Lite
 dev-perl     PDF-Create                   perl-pdf
 dev-perl     SGMLSpm                      SGMLSpmii
 dev-perl     cache-mmap                   Cache-Mmap
-dev-perl     class-loader                 Class-Loader
-dev-perl     convert-ascii-armour         Convert-ASCII-Armour
-dev-perl     convert-pem                  Convert-PEM
 dev-perl     data-buffer                  Data-Buffer
 dev-perl     dbix-searchbuilder           DBIx-SearchBuilder
 dev-perl     digest-bubblebabble          Digest-BubbleBabble
