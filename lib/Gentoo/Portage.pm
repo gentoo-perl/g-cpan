@@ -438,6 +438,5 @@ dev-perl     gtk2-perl                    Gtk2
 dev-perl     gtk2-spell                   Gtk2-Spell
 dev-perl     gtk2-trayicon                Gtk2-TrayIcon
 dev-perl     gtk2-traymanager             Gtk2-TrayManager
-dev-perl     regexp-common                Regexp-Common
 media-gfx    imagemagick                  PerlMagick
 virtual      perl-File-Spec               File-Spec
