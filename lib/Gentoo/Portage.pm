@@ -417,10 +417,6 @@ dev-perl     Net-SSLeay                   Net_SSLeay.pm
 dev-perl     OLE-StorageLite              OLE-Storage_Lite
 dev-perl     PDF-Create                   perl-pdf
 dev-perl     SGMLSpm                      SGMLSpmii
-dev-perl     data-buffer                  Data-Buffer
-dev-perl     dbix-searchbuilder           DBIx-SearchBuilder
-dev-perl     digest-bubblebabble          Digest-BubbleBabble
-dev-perl     digest-md2                   Digest-MD2
 dev-perl     extutils-pkgconfig           ExtUtils-PkgConfig
 dev-perl     frontier-rpc                 Frontier-RPC
 dev-perl     glib-perl                    Glib
