@@ -13,9 +13,9 @@ addons:
             - aspell
             - aspell-en
 before_script:
-    - sudo mkdir -p /usr/portage /usr/local/portage /usr/share/portage/config
-    - sudo chown $USER:$USER /usr/portage /usr/local/portage /usr/share/portage/config
-    - sudo cp t/data/make.conf /etc/make.conf
+    - sudo mkdir -p /etc/portage /usr/portage /usr/local/portage /usr/share/portage/config
+    - sudo chown $USER:$USER /etc/portage /usr/portage /usr/local/portage /usr/share/portage/config
+    - cp t/data/make.conf /etc/portage/make.conf
     - wget "https://raw.githubusercontent.com/gentoo/portage/master/cnf/make.globals" -O /usr/share/portage/config/make.globals
     - wget "http://distfiles.gentoo.org/snapshots/portage-latest.tar.xz" -O /tmp/portage-latest.tar.xz
     - tar xJf /tmp/portage-latest.tar.xz -C /usr/
