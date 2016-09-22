@@ -13,13 +13,9 @@ addons:
             - aspell
             - aspell-en
 before_script:
-    - sudo touch /etc/make.conf
-    - sudo chmod 666 /etc/make.conf
     - sudo mkdir -p /usr/portage /usr/local/portage /usr/share/portage/config
     - sudo chown $USER:$USER /usr/portage /usr/local/portage /usr/share/portage/config
-    - echo "PORTDIR=/usr/portage" >> /etc/make.conf
-    - echo "PORTDIR_OVERLAY=/usr/local/portage" >> /etc/make.conf
-    - echo 'USE="perl -python"' >> /etc/make.conf
+    - sudo cp t/data/make.conf /etc/make.conf
     - wget "https://raw.githubusercontent.com/gentoo/portage/master/cnf/make.globals" -O /usr/share/portage/config/make.globals
     - wget "http://distfiles.gentoo.org/snapshots/portage-latest.tar.xz" -O /tmp/portage-latest.tar.xz
     - tar xJf /tmp/portage-latest.tar.xz -C /usr/
