@@ -593,9 +593,9 @@ sub generatePackageInfo
         || (!$upgrade && defined($passed_to_install{$ebuild_wanted}))
         || (!$upgrade && !defined($gcpan_run->{portage}{lc($ebuild_wanted)}{found})))
     {
+        return if $original_ebuild eq 'perl';
 
         # Ebuild wasn't found - scan for the nice version of the module name
-        if (lc($gcpan_run->{cpan}{lc($original_ebuild)}{portage_name}) eq 'perl') { return }
         scanTree($gcpan_run->{cpan}{lc($original_ebuild)}{portage_name});
 
         # We had success in finding this module under a different name
