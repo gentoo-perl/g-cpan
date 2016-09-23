@@ -5,7 +5,7 @@ use warnings;
 
 use Test::More;
 
-eval 'use CPAN::Config;';
+eval { require CPAN::Config; };
 my $needs_cpan_stub = $@ ? 1 : 0;
 
 my $cpan_home = "$ENV{HOME}/.cpan";

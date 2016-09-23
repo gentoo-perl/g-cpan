@@ -154,7 +154,7 @@ $ENV{PERL_EXTUTILS_AUTOINSTALL} = "--skipdeps";
 $ENV{PERL_MM_USE_DEFAULT}       = 1;
 
 # Do we need to generate a config ?
-eval "use CPAN::Config;";
+eval { require CPAN::Config; };
 my $needs_cpan_stub = $@ ? 1 : 0;
 
 # Test Replacement - ((A&B)or(C&B)) should be the same as ((A or C) and B)
