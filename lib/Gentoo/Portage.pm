@@ -6,7 +6,7 @@ use warnings;
 #use Shell qw(ebuild emerge);
 #use Memoize;
 #memoize('getAvailableVersions');
-use Cwd qw(getcwd abs_path cwd);
+use Cwd qw( cwd );
 use File::Find ();
 use Shell::EnvImporter;
 

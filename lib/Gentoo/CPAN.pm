@@ -9,7 +9,7 @@ use File::Path;
 use YAML ();
 use YAML::Node;
 use Memoize;
-use Cwd qw(getcwd abs_path cwd);
+use Cwd qw( abs_path cwd );
 use File::Basename;
 
 memoize('transformCPAN');

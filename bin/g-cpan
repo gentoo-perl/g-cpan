@@ -5,7 +5,7 @@ use strict;
 use warnings;
 
 use Carp;
-use Cwd qw( getcwd abs_path cwd );
+use Cwd qw( cwd );
 use DirHandle;
 use File::Spec;
 use File::Path;
