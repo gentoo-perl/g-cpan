@@ -1,10 +1,6 @@
 #!/usr/bin/perl -w
 package main;
 
-# Copyright 1999-2016 Gentoo Foundation
-# Distributed under the terms of the GNU General Public License v2
-#
-
 # modules to use - these will need to be marked as
 # dependencies, and installable by portage
 use warnings;
@@ -1214,5 +1210,10 @@ Damien Krotkine <dams@gentoo.org>, Yuval Yaari <yuval@gentoo.org>, Robin J Johns
 =head1 BUGS
 
 Please report bugs via L<https://github.com/gentoo-perl/g-cpan/issues> or L<https://bugs.gentoo.org/>.
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright 1999-2016 Gentoo Foundation.
+Distributed under the terms of the GNU General Public License v2.
 
 =cut
