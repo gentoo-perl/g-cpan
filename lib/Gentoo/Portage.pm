@@ -3,16 +3,13 @@ package Gentoo::Portage;
 use 5.008007;
 use strict;
 use warnings;
-#use Shell qw(ebuild emerge);
-#use Memoize;
-#memoize('getAvailableVersions');
+
 use Cwd qw( cwd );
 use File::Find ();
 use Shell::EnvImporter;
 
-
-# Set the variable $File::Find::dont_use_nlink if you're using AFS,
-# since AFS cheats.
+#use Memoize;
+#memoize('getAvailableVersions');
 
 # for the convenience of &wanted calls, including -eval statements:
 use vars qw/*name *dir *prune/;
@@ -137,7 +134,6 @@ sub getAvailableEbuilds {
 
 }
 
-# Description:
 # Returns version of an ebuild. (Without -rX string etc.)
 # $version = getEbuildVersionSpecial("foo-1.23-r1.ebuild");
 sub getEbuildVersionSpecial {
