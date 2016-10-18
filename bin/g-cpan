@@ -765,12 +765,7 @@ HERE
                                 my ($eb_version, $cpan_version) =
                                   stripdown($gcpan_run->{portage}{lc($portage_name)}{version}, $gcpan_run->{cpan}{lc($dep)}{portage_version});
 
-                                if ( $gcpan_run->{portage}{$portage_name}{name} eq "module-build")
-                                {
-                                    print $EBUILD ""
-                                      . "virtual/perl-Module-Build\n";
-                                }
-                                elsif (   defined($gcpan_run->{cpan}{lc($dep)}{portage_version})
+                                if (   defined( $gcpan_run->{cpan}{ lc($dep) }{portage_version} )
                                     && $gcpan_run->{cpan}{lc($original_ebuild)}{depends}{$dep} ne '0'
                                     && int($eb_version) >= int($cpan_version)
                                     && $gcpan_run->{cpan}{lc($original_ebuild)}{depends}{$dep} =~ m{\d}gx
