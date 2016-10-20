@@ -769,7 +769,7 @@ HERE
                                     && $gcpan_run->{cpan}{lc($original_ebuild)}{depends}{$dep} ne '0'
                                     && int($eb_version) >= int($cpan_version)
                                     && $gcpan_run->{cpan}{lc($original_ebuild)}{depends}{$dep} =~ m{\d}gx
-                                    && $gcpan_run->{portage}{$portage_name}{name} ne "module-build")
+                                    && $gcpan_run->{portage}{$portage_name}{name} ne 'Module-Build' )
                                 {
                                     print $EBUILD "\>\="
                                       . $gcpan_run->{portage}{$portage_name}{category} . '/'
