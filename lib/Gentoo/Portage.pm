@@ -151,9 +151,10 @@ s/^([a-zA-Z0-9\-_\/\+]*)-([0-9\.]+[a-zA-Z]?)([\-r|\-rc|_alpha|_beta|_pre|_p]?)/$
 }
 
 sub getBestVersion {
-    my $self = shift;
-    my ( $find_ebuild, $portdir, $tc, $tp ) = @_;
-     getAvailableEbuilds( $self, $portdir, $tc . "/" . $tp );
+    my ( $self, $find_ebuild, $portdir, $tc, $tp ) = @_;
+
+    getAvailableEbuilds( $self, $portdir, "$tc/$tp" );
+    return unless @{ $self->{packagelist} };
 
                 foreach ( @{ $self->{packagelist} } ) {
                     my @tmp_availableVersions = ();
@@ -213,7 +214,9 @@ sub getBestVersion {
 
                     }
                 }
-            }
+
+    return 1;
+}
 
 # This is strictly so we can seek back to __DATA__
 ( my $data_pos = tell DATA) >= 0 or die "DATA not seekable";
