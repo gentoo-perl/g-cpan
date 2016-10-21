@@ -89,10 +89,9 @@ sub _strip_env {
 }
 
 sub getAvailableEbuilds {
-    my $self        = shift;
-    my $portdir     = shift;
-    my $catPackage  = shift;
-    @{$self->{packagelist}} = ();
+    my ( $self, $portdir, $catPackage ) = @_;
+    my @ebuilds;
+
     if ( -e $portdir . "/" . $catPackage ) {
 
         # - get list of ebuilds >
@@ -105,7 +104,7 @@ sub getAvailableEbuilds {
             $_ =~ s{^\./}{}xms;
             if ( $_ =~ m/(.+)\.ebuild$/ ) {
                 next if ( $_ eq "skel.ebuild" );
-                push( @{ $self->{packagelist} }, $_ );
+                push @ebuilds, $_;
             }
             else {
                 if ( -d $portdir . "/" . $catPackage . "/" . $_ ) {
@@ -118,7 +117,7 @@ sub getAvailableEbuilds {
                     foreach (@store_found_ebuilds) {
                         if ( $_ =~ m/(.+)\.ebuild$/ ) {
                             next if ( $_ eq "skel.ebuild" );
-                            push( @{ $self->{packagelist} }, $_ );
+                            push @ebuilds, $_;
                         }
                     }
                 }
@@ -137,6 +136,7 @@ sub getAvailableEbuilds {
         }
     }
 
+    return \@ebuilds;
 }
 
 # Returns version of an ebuild. (Without -rX string etc.)
@@ -153,10 +153,10 @@ s/^([a-zA-Z0-9\-_\/\+]*)-([0-9\.]+[a-zA-Z]?)([\-r|\-rc|_alpha|_beta|_pre|_p]?)/$
 sub getBestVersion {
     my ( $self, $find_ebuild, $portdir, $tc, $tp ) = @_;
 
-    getAvailableEbuilds( $self, $portdir, "$tc/$tp" );
-    return unless @{ $self->{packagelist} };
+    my $ebuilds = $self->getAvailableEbuilds( $portdir, "$tc/$tp" )
+      or return;
 
-                foreach ( @{ $self->{packagelist} } ) {
+    foreach ( @$ebuilds ) {
                     my @tmp_availableVersions = ();
                     push( @tmp_availableVersions, getEbuildVersionSpecial($_) );
 
@@ -213,7 +213,7 @@ sub getBestVersion {
                         }
 
                     }
-                }
+    }
 
     return 1;
 }
@@ -380,8 +380,8 @@ Returns a new C<Gentoo::Portage> object.
 =item getAvailableEbuilds( $portdir, "$category/$package" );
 
 Providing the C<PORTDIR> you want to investigate and the name of
-category/package you are interested, this will populate an array in
-$obj->{packagelist} of the available ebuilds.
+category/package you are interested.
+Returns a list (arrayref) of available ebuilds.
 
 =item getAvailableVersions( $portdir, $package_name )
 

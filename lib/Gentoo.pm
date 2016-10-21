@@ -58,7 +58,6 @@ sub new {
     $self->{portage_bases}      = {};
     $self->{cpan_reload}        = $args{cpan_reload};
     $self->{DEBUG}              = $args{debug};
-    $self->{packagelist}        = [];
 
     bless( $self, $class );
     return $self;

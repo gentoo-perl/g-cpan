@@ -21,15 +21,14 @@ subtest 'getEnv($envvar)', sub {
 };
 
 subtest 'getAvailableEbuilds($portdir, $package)', sub {
-    $portage->getAvailableEbuilds( $portdir, 'non_existen/package' );
-    ok( !@{ $portage->{packagelist} }, 'list of ebuilds is empty for non_existen/package' );
+    my $ebuilds = $portage->getAvailableEbuilds( $portdir, 'non_existen/package' );
+    is_deeply( $ebuilds, [], 'list of ebuilds is empty for non_existen/package' );
 
     my $category = 'dev-perl';
     my $package  = 'YAML';
-    $portage->getAvailableEbuilds( $portdir, "$category/$package" );
-    ok( $portage->{packagelist}, "retrieve OK for '$category/$package'" );
-    is( ref $portage->{packagelist}, 'ARRAY', '  and it is an arrayref' );
-    like( $portage->{packagelist}[0], qr/^YAML-[\d\.]+\.ebuild$/, '  and contains element like ebuild' );
+    $ebuilds = $portage->getAvailableEbuilds( $portdir, "$category/$package" );
+    is( ref $ebuilds, 'ARRAY', "retrieve ebuilds for '$category/$package' (as arrayref)" );
+    like( $ebuilds->[0], qr/^YAML-[\d\.]+\.ebuild$/, '  and contains element like ebuild' );
 };
 
 subtest 'getAvailableVersions($portdir, $find_package)', sub {
