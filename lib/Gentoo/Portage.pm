@@ -19,7 +19,6 @@ use vars qw/*name *dir *prune/;
 
 my @store_found_dirs;
 my @store_found_ebuilds;
-sub wanted;
 
 # These libraries were influenced and largely written by
 # Christian Hartmann <ian@gentoo.org> originally. All of the good
