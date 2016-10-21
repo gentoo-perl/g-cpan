@@ -12,6 +12,7 @@ t/00Gentoo.t
 t/01config.t
 t/02ebuilds_read.t
 t/10cpan_packages.t
+t/98_changes.t
 t/98_eol.t
 t/98_manifest.t
 t/98_pod_spelling.t
