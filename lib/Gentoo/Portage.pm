@@ -60,7 +60,7 @@ sub getEnv {
             $importer->shellobj->envcmd('set');
             $importer->run();
             if ( defined( $ENV{$envvar} ) && ( $ENV{$envvar} =~ m{\W*} ) ) {
-                my $tm = strip_env( $ENV{$envvar} );
+                my $tm = _strip_env( $ENV{$envvar} );
                 $importer->restore_env;
                 return $tm;
             }
@@ -70,7 +70,7 @@ sub getEnv {
     return;
 }
 
-sub strip_env {
+sub _strip_env {
     my $key = shift;
     return $key unless defined($key);
     if (defined($ENV{$key})) {
@@ -99,7 +99,7 @@ sub getAvailableEbuilds {
         my $startdir = &cwd;
         chdir( $portdir . "/" . $catPackage );
         @store_found_ebuilds = [];
-        File::Find::find( { wanted => \&wanted_ebuilds }, "." );
+        File::Find::find( { wanted => \&_wanted_ebuilds }, '.' );
         chdir($startdir);
         foreach (@store_found_ebuilds) {
             $_ =~ s{^\./}{}xms;
@@ -113,7 +113,7 @@ sub getAvailableEbuilds {
                     my $startdir = &cwd;
                     chdir( $portdir . "/" . $catPackage . "/" . $_ );
                     @store_found_ebuilds = [];
-                    File::Find::find( { wanted => \&wanted_ebuilds }, "." );
+                    File::Find::find( { wanted => \&_wanted_ebuilds }, '.' );
                     chdir($startdir);
                     foreach (@store_found_ebuilds) {
                         if ( $_ =~ m/(.+)\.ebuild$/ ) {
@@ -268,7 +268,7 @@ sub getAvailableVersions {
         chdir( $portdir . "/" . $tc );
 
         # Traverse desired filesystems
-        File::Find::find( { wanted => \&wanted_dirs }, "." );
+        File::Find::find( { wanted => \&_wanted_dirs }, '.' );
 
         # Return to where we started
         chdir($startdir);
@@ -318,8 +318,8 @@ sub read_ebuild {
                         $e_import->shellobj->envcmd('set');
                         $e_import->run();
                         $e_import->env_import();
-                        $self->{'portage'}{lc($find_ebuild)}{'DESCRIPTION'} = strip_env($ENV{DESCRIPTION});
-                        $self->{'portage'}{lc($find_ebuild)}{'HOMEPAGE'} = strip_env($ENV{HOMEPAGE});
+                        $self->{portage}{ lc($find_ebuild) }{DESCRIPTION} = _strip_env( $ENV{DESCRIPTION} );
+                        $self->{portage}{ lc($find_ebuild) }{HOMEPAGE}    = _strip_env( $ENV{HOMEPAGE} );
                         $e_import->restore_env;
 
                     }
@@ -332,7 +332,7 @@ sub emerge_ebuild {
     system( "emerge", @call );
 }
 
-sub wanted_dirs {
+sub _wanted_dirs {
     my ( $dev, $ino, $mode, $nlink, $uid, $gid );
     ( ( $dev, $ino, $mode, $nlink, $uid, $gid ) = lstat($_) )
       && -d _
@@ -341,7 +341,7 @@ sub wanted_dirs {
       && push @store_found_dirs, $name;
 }
 
-sub wanted_ebuilds {
+sub _wanted_ebuilds {
     /\.ebuild\z/s
       && push @store_found_ebuilds, $name;
 }
