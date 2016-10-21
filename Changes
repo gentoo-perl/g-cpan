@@ -1,0 +1,6 @@
+Revision history for g-cpan
+
+0.17 Development
+  - migrate to 'Changes' (CPAN-like) instead of 'ChangeLog'
+    but keep 'ChangeLog' anyway to save history
+

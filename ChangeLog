@@ -1,6 +1,9 @@
-# ChangeLog for g-cpan
+# ChangeLog for g-cpan. Do not used anymore, please look on 'Changes' file!
 # Copyright 1999-2016 Gentoo Foundation; Distributed under the GPL v2
 # $Header: $
+
+  23 Sep 2016; Sergiy Borodych <Sergiy.Borodych@gmail.com> g-cpan-0.17:
+  Migrated to use 'Changes' file, please look it. This file kept for a history.
 
   14 Jul 2016; Sergiy Borodych <Sergiy.Borodych@gmail.com> g-cpan-0.16.9:
   Fix bug #573308, bug #583374
