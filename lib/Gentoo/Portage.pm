@@ -36,8 +36,8 @@ our $VERSION = '0.01';
 
 
 sub getEnv {
-    my $self   = shift;
-    my $envvar = shift;
+    my ( $self, $envvar ) = @_;
+
     my $filter = sub {
         my ( $var, $value, $change ) = @_;
         return ( $var =~ /^$envvar$/ );
@@ -61,6 +61,8 @@ sub getEnv {
             }
         }
     }
+
+    return;
 }
 
 sub strip_env {
