@@ -87,8 +87,7 @@ sub strip_env {
         return $key;
     }
 }
-# Description:
-# @listOfEbuilds = getAvailableEbuilds($PORTDIR, category/packagename);
+
 sub getAvailableEbuilds {
     my $self        = shift;
     my $portdir     = shift;
@@ -361,7 +360,6 @@ Gentoo::Portage - perl access to portage information and commands
 
     use Gentoo::Portage;
     my $portage_obj = Gentoo::Portage->new();
-    $portage_obj->getAvailableEbuilds($portdir,'category');
     $portage_obj->getAvailableVersions($portdir);
 
 =head1 DESCRIPTION
@@ -377,11 +375,11 @@ information.
 
 Returns a new C<Gentoo::Portage> object.
 
-=item $obj->getAvailableEbuilds($portdir, $package);
+=item getAvailableEbuilds( $portdir, "$category/$package" );
 
-Providing the C<PORTDIR> you want to investigate, and either the name of the
-category or the category/package you are interested, this will populate an
-array in $obj->{packagelist} of the available ebuilds.
+Providing the C<PORTDIR> you want to investigate and the name of
+category/package you are interested, this will populate an array in
+$obj->{packagelist} of the available ebuilds.
 
 =item $obj->getAvailableVersions($portdir,[$ebuildname])
 

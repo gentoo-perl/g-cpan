@@ -13,10 +13,7 @@ my $GC = new_ok('Gentoo');
 my $portdir = $GC->getEnv('PORTDIR');
 ok( $portdir, 'getEnv("PORTDIR") worked' );
 
-# test getting the contents of a category directory
 my $category = 'dev-perl';
-$GC->getAvailableEbuilds( $portdir, $category );
-ok( $GC->{packagelist}, "Grabbed '$category'" );
 
 # test getting information for package
 $GC->{portage_categories} = [$category];
