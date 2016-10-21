@@ -360,7 +360,6 @@ Gentoo::Portage - perl access to portage information and commands
 
     use Gentoo::Portage;
     my $portage_obj = Gentoo::Portage->new();
-    $portage_obj->getAvailableVersions($portdir);
 
 =head1 DESCRIPTION
 
@@ -381,10 +380,10 @@ Providing the C<PORTDIR> you want to investigate and the name of
 category/package you are interested, this will populate an array in
 $obj->{packagelist} of the available ebuilds.
 
-=item $obj->getAvailableVersions($portdir,[$ebuildname])
+=item getAvailableVersions( $portdir, $package_name )
 
-Given the portage directory and the name of a package (optional), check
-portage to see if the ebuild exists and which versions are available.
+Given the portage directory and the name of a package, try to find
+if any ebuild exists and which versions are available for this name.
 
 =item $obj->getEbuildVersionSpecial($ebuild)
 
