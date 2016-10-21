@@ -28,8 +28,7 @@ require Exporter;
 
 our @ISA = qw(Exporter Gentoo);
 
-our @EXPORT =
-  qw( getEnv getAltName getAvailableEbuilds getAvailableVersions generate_digest emerge_ebuild import_fields );
+our @EXPORT = qw( getAvailableEbuilds getAvailableVersions getEnv generate_digest emerge_ebuild );
 
 our $VERSION = '0.01';
 
