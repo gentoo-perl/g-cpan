@@ -8,7 +8,7 @@ lib/Gentoo/UI/Console.pm
 Makefile.PL
 MANIFEST			This list of files
 README.md
-t/00Gentoo.t
+t/00_Gentoo.t
 t/01config.t
 t/02ebuilds_read.t
 t/10cpan_packages.t
