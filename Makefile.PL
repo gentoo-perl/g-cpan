@@ -13,7 +13,9 @@ my %args = (
     LICENSE      => 'gpl',
     EXE_FILES    => ['bin/g-cpan'],
     PREREQ_PM    => {
+        'Config::Tiny'       => 0,
         'Log::Agent'         => 0,
+        'Path::Tiny'         => 0,
         'Shell::EnvImporter' => 0,
         'YAML'               => 0,
     },
