@@ -34,6 +34,12 @@ our @EXPORT =
 our $VERSION = '0.01';
 
 
+sub new {
+    my $class = shift;
+    return bless {}, $class;
+}
+
+
 sub getEnv {
     my ( $self, $envvar ) = @_;
 
@@ -353,10 +359,10 @@ Gentoo::Portage - perl access to portage information and commands
 
 =head1 SYNOPSIS
 
-    use Gentoo;
-    my $obj = Gentoo->new();
-    $obj->getAvailableEbuilds($portdir,'category');
-    $obj->getAvailableVersions($portdir);
+    use Gentoo::Portage;
+    my $portage_obj = Gentoo::Portage->new();
+    $portage_obj->getAvailableEbuilds($portdir,'category');
+    $portage_obj->getAvailableVersions($portdir);
 
 =head1 DESCRIPTION
 
@@ -366,6 +372,10 @@ information.
 =head1 METHODS
 
 =over 4
+
+=item new()
+
+Returns a new C<Gentoo::Portage> object.
 
 =item $obj->getAvailableEbuilds($portdir, $package);
 
