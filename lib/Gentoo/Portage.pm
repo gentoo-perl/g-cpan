@@ -19,7 +19,6 @@ use vars qw/*name *dir *prune/;
 
 my @store_found_dirs;
 my @store_found_ebuilds;
-sub wanted;
 
 # These libraries were influenced and largely written by
 # Christian Hartmann <ian@gentoo.org> originally. All of the good
@@ -29,42 +28,48 @@ require Exporter;
 
 our @ISA = qw(Exporter Gentoo);
 
-our @EXPORT =
-  qw( getEnv getAltName getAvailableEbuilds getAvailableVersions generate_digest emerge_ebuild import_fields );
+our @EXPORT = qw( getAvailableEbuilds getAvailableVersions getEnv generate_digest emerge_ebuild );
 
 our $VERSION = '0.01';
 
 
+sub new {
+    my $class = shift;
+    return bless {}, $class;
+}
+
+
 sub getEnv {
-#IMPORT VARIABLES
-    my $self = shift;
-    my $envvar = shift;
+    my ( $self, $envvar ) = @_;
+
     my $filter = sub {
-        my ($var, $value, $change ) = @_;
-        return($var =~ /^$envvar$/ );
+        my ( $var, $value, $change ) = @_;
+        return ( $var =~ /^$envvar$/ );
     };
 
-foreach my $file ( "$ENV{HOME}/.gcpanrc", '/etc/portage/make.conf', '/etc/make.conf', '/usr/share/portage/config/make.globals' ) {
-    if ( -f $file) {
-    	my $importer = Shell::EnvImporter->new(
-    		file => $file,
-    		shell => 'bash',
-            import_filter => $filter,
-    	);
-    $importer->shellobj->envcmd('set');
-    $importer->run();
-    if (defined($ENV{$envvar}) && ($ENV{$envvar} =~ m{\W*}))
+    foreach my $file ( "$ENV{HOME}/.gcpanrc", '/etc/portage/make.conf', '/etc/make.conf',
+        '/usr/share/portage/config/make.globals' )
     {
-        my $tm = strip_env($ENV{$envvar});
-        $importer->restore_env;
-        return $tm;
+        if ( -f $file ) {
+            my $importer = Shell::EnvImporter->new(
+                file          => $file,
+                shell         => 'bash',
+                import_filter => $filter,
+            );
+            $importer->shellobj->envcmd('set');
+            $importer->run();
+            if ( defined( $ENV{$envvar} ) && ( $ENV{$envvar} =~ m{\W*} ) ) {
+                my $tm = _strip_env( $ENV{$envvar} );
+                $importer->restore_env;
+                return $tm;
+            }
+        }
     }
 
-}
-  }
+    return;
 }
 
-sub strip_env {
+sub _strip_env {
     my $key = shift;
     return $key unless defined($key);
     if (defined($ENV{$key})) {
@@ -81,26 +86,24 @@ sub strip_env {
         return $key;
     }
 }
-# Description:
-# @listOfEbuilds = getAvailableEbuilds($PORTDIR, category/packagename);
+
 sub getAvailableEbuilds {
-    my $self        = shift;
-    my $portdir     = shift;
-    my $catPackage  = shift;
-    @{$self->{packagelist}} = ();
+    my ( $self, $portdir, $catPackage ) = @_;
+    my @ebuilds;
+
     if ( -e $portdir . "/" . $catPackage ) {
 
         # - get list of ebuilds >
         my $startdir = &cwd;
         chdir( $portdir . "/" . $catPackage );
         @store_found_ebuilds = [];
-        File::Find::find( { wanted => \&wanted_ebuilds }, "." );
+        File::Find::find( { wanted => \&_wanted_ebuilds }, '.' );
         chdir($startdir);
         foreach (@store_found_ebuilds) {
             $_ =~ s{^\./}{}xms;
             if ( $_ =~ m/(.+)\.ebuild$/ ) {
                 next if ( $_ eq "skel.ebuild" );
-                push( @{ $self->{packagelist} }, $_ );
+                push @ebuilds, $_;
             }
             else {
                 if ( -d $portdir . "/" . $catPackage . "/" . $_ ) {
@@ -108,12 +111,12 @@ sub getAvailableEbuilds {
                     my $startdir = &cwd;
                     chdir( $portdir . "/" . $catPackage . "/" . $_ );
                     @store_found_ebuilds = [];
-                    File::Find::find( { wanted => \&wanted_ebuilds }, "." );
+                    File::Find::find( { wanted => \&_wanted_ebuilds }, '.' );
                     chdir($startdir);
                     foreach (@store_found_ebuilds) {
                         if ( $_ =~ m/(.+)\.ebuild$/ ) {
                             next if ( $_ eq "skel.ebuild" );
-                            push( @{ $self->{packagelist} }, $_ );
+                            push @ebuilds, $_;
                         }
                     }
                 }
@@ -132,6 +135,7 @@ sub getAvailableEbuilds {
         }
     }
 
+    return \@ebuilds;
 }
 
 # Returns version of an ebuild. (Without -rX string etc.)
@@ -146,11 +150,12 @@ s/^([a-zA-Z0-9\-_\/\+]*)-([0-9\.]+[a-zA-Z]?)([\-r|\-rc|_alpha|_beta|_pre|_p]?)/$
 }
 
 sub getBestVersion {
-    my $self = shift;
-    my ( $find_ebuild, $portdir, $tc, $tp ) = @_;
-     getAvailableEbuilds( $self, $portdir, $tc . "/" . $tp );
+    my ( $self, $find_ebuild, $portdir, $tc, $tp ) = @_;
 
-                foreach ( @{ $self->{packagelist} } ) {
+    my $ebuilds = $self->getAvailableEbuilds( $portdir, "$tc/$tp" )
+      or return;
+
+    foreach ( @$ebuilds ) {
                     my @tmp_availableVersions = ();
                     push( @tmp_availableVersions, getEbuildVersionSpecial($_) );
 
@@ -207,8 +212,10 @@ sub getBestVersion {
                         }
 
                     }
-                }
-            }
+    }
+
+    return 1;
+}
 
 # This is strictly so we can seek back to __DATA__
 ( my $data_pos = tell DATA) >= 0 or die "DATA not seekable";
@@ -260,7 +267,7 @@ sub getAvailableVersions {
         chdir( $portdir . "/" . $tc );
 
         # Traverse desired filesystems
-        File::Find::find( { wanted => \&wanted_dirs }, "." );
+        File::Find::find( { wanted => \&_wanted_dirs }, '.' );
 
         # Return to where we started
         chdir($startdir);
@@ -310,8 +317,8 @@ sub read_ebuild {
                         $e_import->shellobj->envcmd('set');
                         $e_import->run();
                         $e_import->env_import();
-                        $self->{'portage'}{lc($find_ebuild)}{'DESCRIPTION'} = strip_env($ENV{DESCRIPTION});
-                        $self->{'portage'}{lc($find_ebuild)}{'HOMEPAGE'} = strip_env($ENV{HOMEPAGE});
+                        $self->{portage}{ lc($find_ebuild) }{DESCRIPTION} = _strip_env( $ENV{DESCRIPTION} );
+                        $self->{portage}{ lc($find_ebuild) }{HOMEPAGE}    = _strip_env( $ENV{HOMEPAGE} );
                         $e_import->restore_env;
 
                     }
@@ -324,7 +331,7 @@ sub emerge_ebuild {
     system( "emerge", @call );
 }
 
-sub wanted_dirs {
+sub _wanted_dirs {
     my ( $dev, $ino, $mode, $nlink, $uid, $gid );
     ( ( $dev, $ino, $mode, $nlink, $uid, $gid ) = lstat($_) )
       && -d _
@@ -333,7 +340,7 @@ sub wanted_dirs {
       && push @store_found_dirs, $name;
 }
 
-sub wanted_ebuilds {
+sub _wanted_ebuilds {
     /\.ebuild\z/s
       && push @store_found_ebuilds, $name;
 }
@@ -353,10 +360,8 @@ Gentoo::Portage - perl access to portage information and commands
 
 =head1 SYNOPSIS
 
-    use Gentoo;
-    my $obj = Gentoo->new();
-    $obj->getAvailableEbuilds($portdir,'category');
-    $obj->getAvailableVersions($portdir);
+    use Gentoo::Portage;
+    my $portage_obj = Gentoo::Portage->new();
 
 =head1 DESCRIPTION
 
@@ -367,16 +372,20 @@ information.
 
 =over 4
 
-=item $obj->getAvailableEbuilds($portdir, $package);
+=item new()
 
-Providing the C<PORTDIR> you want to investigate, and either the name of the
-category or the category/package you are interested, this will populate an
-array in $obj->{packagelist} of the available ebuilds.
+Returns a new C<Gentoo::Portage> object.
 
-=item $obj->getAvailableVersions($portdir,[$ebuildname])
+=item getAvailableEbuilds( $portdir, "$category/$package" );
 
-Given the portage directory and the name of a package (optional), check
-portage to see if the ebuild exists and which versions are available.
+Providing the C<PORTDIR> you want to investigate and the name of
+category/package you are interested.
+Returns a list (arrayref) of available ebuilds.
+
+=item getAvailableVersions( $portdir, $package_name )
+
+Given the portage directory and the name of a package, try to find
+if any ebuild exists and which versions are available for this name.
 
 =item $obj->getEbuildVersionSpecial($ebuild)
 

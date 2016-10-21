@@ -19,14 +19,11 @@ elsif ( $needs_cpan_stub and not _init_cpan_config() ) {
     plan skip_all => 'Tests impossible without a configured CPAN::Config';
 }
 else {
-    plan tests => 5;
+    plan tests => 3;
 }
 
 use_ok('Gentoo');
 my $GC = new_ok('Gentoo');
-
-ok( $GC->getEnv('PORTDIR'), 'getEnv("PORTDIR") worked' );
-ok( $GC->getEnv('DISTDIR'), 'getEnv("DISTDIR") worked' );
 
 my $module = 'Module::Build';
 subtest "retrieve and check information for $module", sub {
