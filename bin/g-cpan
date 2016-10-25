@@ -18,7 +18,6 @@ use Log::Agent::Driver::File;
 use Log::Agent::Driver::Silent;
 use Term::ANSIColor;
 use YAML;
-use YAML::Node;
 
 use Gentoo;
 use Gentoo::UI::Console;

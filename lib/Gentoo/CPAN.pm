@@ -7,7 +7,6 @@ use File::Spec;
 use CPAN;
 use File::Path;
 use YAML ();
-use YAML::Node;
 use Memoize;
 use Cwd qw( abs_path cwd );
 use File::Basename;

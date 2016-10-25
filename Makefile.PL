@@ -25,7 +25,6 @@ my %args = (
         'Term::ANSIColor'    => 0,
         'Test::More'         => 0.94,
         'YAML'               => 0,
-        'YAML::Node'         => 0,
     },
 );
 
