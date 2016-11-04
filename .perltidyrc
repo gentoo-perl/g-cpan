@@ -3,3 +3,7 @@
 
 # Basic Options
 --maximum-line-length=120               # default: 80
+
+# Blank Line Control
+--noblanks-before-comments              # default: yes
+--maximum-consecutive-blank-lines=2     # default: 1
