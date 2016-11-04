@@ -16,4 +16,4 @@ t/98_eol.t
 t/98_manifest.t
 t/98_pod_spelling.t
 t/98_pod_syntax.t
-t/data/make.conf
+t/data/etc/portage/make.conf
