@@ -1192,11 +1192,12 @@ L<B<emerge>(1)>, L<B<ebuild>(5)>, L<B<make.conf>(5)>, L<B<perl>(1)>
 
 =head1 AUTHORS
 
-=for stopwords mcummings beu RAC Vermeulen Krotkine Yuval Yaari
+=for stopwords mcummings beu RAC Vermeulen Krotkine Yuval Yaari Sergiy Borodych
 
 mcummings <mcummings@gentoo.org>, cab <cab@gentoo.org>, sniper <sniper@mongueurs.net>, beu <beu@gentoo.org>,
 J Robert Ray <jrray@gentoo.org> (g-cpan), RAC <rac@gentoo.org>, Sven Vermeulen <swift@gentoo.org> (Original manpage),
-Damien Krotkine <dams@gentoo.org>, Yuval Yaari <yuval@gentoo.org>, Robin J Johnson <robbat2@gentoo.org>.
+Damien Krotkine <dams@gentoo.org>, Yuval Yaari <yuval@gentoo.org>, Robin J Johnson <robbat2@gentoo.org>,
+Sergiy Borodych <bor@cpan.org> (maintenance from 2015).
 
 =head1 BUGS
 
