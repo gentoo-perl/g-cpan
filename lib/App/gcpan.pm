@@ -22,6 +22,9 @@ At the moment module is under heavy development. Slowly move all code from C<g-c
 use strict;
 use warnings;
 
+use Gentoo::Portage::Q;
+
+
 =head1 METHODS
 
 =head2 run()
@@ -30,7 +33,38 @@ Only stub now, for future usage.
 
 =cut
 
-sub run { return 1; }
+sub run {
+    my $class = shift;
+
+    my $env = $class->setup_env();
+
+    return 1;
+}
+
+
+=head2 setup_env()
+
+Initialize and setup all environment vars required for C<g-cpan> work
+Returns hashref with C<env> variables.
+
+=cut
+
+sub setup_env {
+    my $class = shift;
+
+    my $portageq = Gentoo::Portage::Q->new();
+
+    my %env = (
+        ACCEPT_KEYWORDS => $portageq->envvar('ACCEPT_KEYWORDS'),
+        GCPAN_CAT       => $portageq->envvar('GCPAN_CAT') || 'perl-gcpan',
+        GCPAN_OVERLAY   => $portageq->envvar('GCPAN_OVERLAY'),
+        DISTDIR         => $portageq->envvar('DISTDIR'),
+        PORTDIR         => $portageq->envvar('PORTDIR'),
+        PORTDIR_OVERLAY => $portageq->envvar('PORTDIR_OVERLAY'),
+    );
+
+    return \%env;
+}
 
 
 1;
