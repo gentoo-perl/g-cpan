@@ -2,6 +2,11 @@ Revision history for g-cpan
 
 0.17 Development
 
+  - add Gentoo::Portage::Q module and migrate to it for get env vars, get repos, etc
+    so should fix Gentoo bug #581490 and github #26
+
+  - introduce App::gcpan and start slowly moving code from g-cpan to there
+
   - rework Makefile.PL to keep only non-core deps
     also place test reqs under proper section
 
