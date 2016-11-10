@@ -18,9 +18,11 @@ Test::Spelling::add_stopwords(<DATA>);
 Test::Spelling::all_pod_files_spelling_ok(qw( bin lib ));
 
 __DATA__
+Borodych
 CPAN
 Gentoo
 Gentoo's
+Sergiy
 TODO
 buildpkg
 buildpkgonly
