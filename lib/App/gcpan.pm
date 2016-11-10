@@ -63,6 +63,15 @@ sub setup_env {
         PORTDIR_OVERLAY => $portageq->envvar('PORTDIR_OVERLAY'),
     );
 
+    # retrive PORTDIR & PORTDIR_OVERLAY from repos.conf if they not set in make.conf
+    $env{PORTDIR} ||= $portageq->get_repo_path( $portageq->envvar('EROOT'), 'gentoo' );
+    unless ( $env{PORTDIR_OVERLAY} ) {
+        my $eroot = $portageq->envvar('EROOT');
+        my $repos = $portageq->get_repos($eroot);
+        $env{PORTDIR_OVERLAY} = join ' ',
+          map { $portageq->get_repo_path( $eroot, $_ ) } grep { $_ ne 'gentoo' } @$repos;
+    }
+
     return \%env;
 }
 
