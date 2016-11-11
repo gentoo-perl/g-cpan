@@ -24,6 +24,7 @@ use warnings;
 
 use Gentoo::Portage::Q;
 
+our $VERSION = '0.16.9';
 
 =head1 METHODS
 

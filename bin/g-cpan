@@ -24,7 +24,7 @@ use Gentoo::UI::Console;
 
 Getopt::Long::Configure('bundling');
 
-our $VERSION = "0.16.9";
+our $VERSION = App::gcpan->VERSION();
 my $prog = basename($0);
 
 ##### Establish our tmpdir
