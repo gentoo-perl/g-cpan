@@ -3,22 +3,18 @@
 use strict;
 use warnings;
 
-use Test::More tests => 6;
+use Test::More tests => 8;
 
 use_ok('Gentoo::Portage');
 
 my $portage = new_ok('Gentoo::Portage');
 
-my $portdir;
+use_ok('Gentoo::Portage::Q');
+my $portageq = new_ok('Gentoo::Portage::Q');
 
-subtest 'getEnv($envvar)', sub {
-    ok( !$portage->getEnv('BOGUS'),  'fake data test' );
-    ok( $portage->getEnv('DISTDIR'), 'get DISTDIR' );
-    ok( $portdir = $portage->getEnv('PORTDIR'), 'get PORTDIR' )
-      and $portage->{portage_bases}{$portdir} = 1;
-    ok( $portage->getEnv('PORTDIR_OVERLAY'), 'get PORTDIR_OVERLAY' );
-    ok( $portage->getEnv('USE'),             'get USE flags' );
-};
+my $portdir = $portageq->envvar('PORTDIR') || $portageq->get_repo_path( $portageq->envvar('EROOT'), 'gentoo' );
+ok( $portdir, 'detect PORTDIR value' )
+  and $portage->{portage_bases}{$portdir} = 1;
 
 subtest 'getAvailableEbuilds($portdir, $package)', sub {
     my $ebuilds = $portage->getAvailableEbuilds( $portdir, 'non_existen/package' );

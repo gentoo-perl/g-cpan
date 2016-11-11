@@ -18,6 +18,7 @@ use Log::Agent::Driver::File;
 use Log::Agent::Driver::Silent;
 use Term::ANSIColor;
 
+use App::gcpan;
 use Gentoo;
 use Gentoo::UI::Console;
 
@@ -205,17 +206,18 @@ my $gcpan_run = Gentoo->new(
     'DEBUG'       => $debug,
 );
 
-# Grab some configuration options for g-cpan
-my $GCPAN_CAT = $gcpan_run->getEnv('GCPAN_CAT');
-$GCPAN_CAT = 'perl-gcpan' unless defined($GCPAN_CAT) and length($GCPAN_CAT) > 0;
+my $env = App::gcpan->setup_env();
+
+my $GCPAN_CAT = $env->{GCPAN_CAT};
 # Push back to the env so we can use during cleanup
 $ENV{GCPAN_CAT} = $GCPAN_CAT;
 
-my $GCPAN_OVERLAY = $gcpan_run->getEnv('GCPAN_OVERLAY') || 0;
 # Ensure it's in the category list
 if(length(grep {/$GCPAN_CAT/} @perl_dirs) == 0) {
 	push @perl_dirs, $GCPAN_CAT;
 }
+
+my $GCPAN_OVERLAY = $env->{GCPAN_OVERLAY};
 
 # Confirm that there is an /etc/portage/categories file
 # and that we have an entry for perl-gcpan in it.
@@ -280,22 +282,14 @@ if (@ARGV == 0 && defined $cpan_reload) {
 }
 
 # Get the main portdir
-my $PORTAGE_DIR = $gcpan_run->getEnv('PORTDIR');
+my $PORTAGE_DIR = $env->{PORTDIR};
 $gcpan_run->{portage_bases}{$PORTAGE_DIR} = 1;
 
 # Grab the keywords - we'll need these when we build the ebuild
-my $keywords = $gcpan_run->getEnv('ACCEPT_KEYWORDS');
-if ($keywords =~ m{ACCEPT_KEYWORDS}) { $keywords="" }
-$keywords ||= do
-{
-    open my $tmp, '<', "$PORTAGE_DIR/profiles/arch.list"
-      or fatal(print_err("ERROR READING $PORTAGE_DIR/profiles/arch.list: $!"));
-    join ' ', map { chomp; s/^#.*$//g; $_ } <$tmp>;
-};
-
+my $keywords = $env->{ACCEPT_KEYWORDS};
 $ENV{ACCEPT_KEYWORDS} = $keywords;
 # Get the DISTDIR - we'd like store the tarballs in here the one time
-$gcpan_run->{sources} = ($gcpan_run->getEnv('DISTDIR'));
+$gcpan_run->{sources} = ( $env->{DISTDIR} );
 
 # Make sure we have write access to the DISTDIR
 if (   $generate
@@ -321,7 +315,7 @@ if (   $generate
 }
 
 # Get the overlays
-my $overlay = $gcpan_run->getEnv('PORTDIR_OVERLAY');
+my $overlay = $env->{PORTDIR_OVERLAY};
 if ($overlay)
 {
     if ($overlay =~ m{\S*\s+\S*}x)

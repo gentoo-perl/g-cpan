@@ -28,7 +28,7 @@ require Exporter;
 
 our @ISA = qw(Exporter Gentoo);
 
-our @EXPORT = qw( getAvailableEbuilds getAvailableVersions getEnv generate_digest emerge_ebuild );
+our @EXPORT = qw( getAvailableEbuilds getAvailableVersions generate_digest emerge_ebuild );
 
 our $VERSION = '0.01';
 
@@ -38,36 +38,6 @@ sub new {
     return bless {}, $class;
 }
 
-
-sub getEnv {
-    my ( $self, $envvar ) = @_;
-
-    my $filter = sub {
-        my ( $var, $value, $change ) = @_;
-        return ( $var =~ /^$envvar$/ );
-    };
-
-    foreach my $file ( "$ENV{HOME}/.gcpanrc", '/etc/portage/make.conf', '/etc/make.conf',
-        '/usr/share/portage/config/make.globals' )
-    {
-        if ( -f $file ) {
-            my $importer = Shell::EnvImporter->new(
-                file          => $file,
-                shell         => 'bash',
-                import_filter => $filter,
-            );
-            $importer->shellobj->envcmd('set');
-            $importer->run();
-            if ( defined( $ENV{$envvar} ) && ( $ENV{$envvar} =~ m{\W*} ) ) {
-                my $tm = _strip_env( $ENV{$envvar} );
-                $importer->restore_env;
-                return $tm;
-            }
-        }
-    }
-
-    return;
-}
 
 sub _strip_env {
     my $key = shift;
