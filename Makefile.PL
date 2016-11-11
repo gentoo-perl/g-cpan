@@ -13,19 +13,22 @@ my %args = (
     LICENSE      => 'gpl',
     EXE_FILES    => ['bin/g-cpan'],
     PREREQ_PM    => {
-        'File::Basename'     => 0,
-        'File::Copy'         => 0,
-        'File::Find'         => 0,
-        'File::Path'         => 0,
-        'File::Spec'         => 0,
         'Log::Agent'         => 0,
-        'Memoize'            => 0,
-        'IO::File'           => 0,
         'Shell::EnvImporter' => 0,
-        'Term::ANSIColor'    => 0,
-        'Test::More'         => 0.94,
         'YAML'               => 0,
     },
 );
+
+if ( ExtUtils::MakeMaker->VERSION >= 6.64 ) {
+    $args{TEST_REQUIRES} = {
+        'Test::More' => 0.94,
+        # for developer tests
+        #'Test::CPAN::Changes' => 0,
+        #'Test::CheckManifest' => 0,
+        #'Test::EOL'           => 0,
+        #'Test::Pod'           => 1.40,
+        #'Test::Spelling'      => 0.11,
+    };
+}
 
 WriteMakefile(%args);

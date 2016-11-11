@@ -1,6 +1,10 @@
 Revision history for g-cpan
 
 0.17 Development
+
+  - rework Makefile.PL to keep only non-core deps
+    also place test reqs under proper section
+
   - migrate to 'Changes' (CPAN-like) instead of 'ChangeLog'
     but keep 'ChangeLog' anyway to save history
 
