@@ -26,6 +26,8 @@ use warnings;
 use Config::Tiny;
 use Path::Tiny;
 
+our $VERSION = '0.001';
+
 # default locations (paths) for make.profile & portage env settings (make.conf and friends)
 # order matters, latest might overwrite previous values
 my @make_profile = ( '/etc/make.profile', '/etc/portage/make.profile' );
