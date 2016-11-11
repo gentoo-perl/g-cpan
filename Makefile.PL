@@ -15,9 +15,20 @@ my %args = (
     PREREQ_PM    => {
         'Log::Agent'         => 0,
         'Shell::EnvImporter' => 0,
-        'Test::More'         => 0.94,
         'YAML'               => 0,
     },
 );
+
+if ( ExtUtils::MakeMaker->VERSION >= 6.64 ) {
+    $args{TEST_REQUIRES} = {
+        'Test::More' => 0.94,
+        # for developer tests
+        #'Test::CPAN::Changes' => 0,
+        #'Test::CheckManifest' => 0,
+        #'Test::EOL'           => 0,
+        #'Test::Pod'           => 1.40,
+        #'Test::Spelling'      => 0.11,
+    };
+}
 
 WriteMakefile(%args);
