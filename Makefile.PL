@@ -18,6 +18,15 @@ my %args = (
         'Path::Tiny'         => 0,
         'Shell::EnvImporter' => 0,
         'YAML'               => 0,
+        # perl core deps
+        'File::Basename'  => 0,
+        'File::Copy'      => 0,
+        'File::Find'      => 0,
+        'File::Path'      => 0,
+        'File::Spec'      => 0,
+        'IO::File'        => 0,
+        'Memoize'         => 0,
+        'Term::ANSIColor' => 0,
     },
 );
 
