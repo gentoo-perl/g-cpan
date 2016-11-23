@@ -22,18 +22,18 @@ else {
     plan tests => 3;
 }
 
-use_ok('Gentoo');
-my $GC = new_ok('Gentoo');
+use_ok('Gentoo::CPAN');
+my $cpan = new_ok('Gentoo::CPAN');
 
 my $module = 'Module::Build';
-subtest "retrieve and check information for $module", sub {
-    $GC->getCPANInfo($module);
+subtest "getCPANInfo('$module')", sub {
+    $cpan->getCPANInfo($module);
     my $module_lc = lc($module);
-    ok( $GC->{cpan}{$module_lc},              'information obtained' );
-    ok( $GC->{cpan}{$module_lc}{version},     'has version' );
-    ok( $GC->{cpan}{$module_lc}{name},        'has a name' );
-    ok( $GC->{cpan}{$module_lc}{src_uri},     'has src_uri' );
-    ok( $GC->{cpan}{$module_lc}{description}, 'has a description' );
+    ok( $cpan->{cpan}{$module_lc},              'information obtained' );
+    ok( $cpan->{cpan}{$module_lc}{version},     'has version' );
+    ok( $cpan->{cpan}{$module_lc}{name},        'has a name' );
+    ok( $cpan->{cpan}{$module_lc}{src_uri},     'has src_uri' );
+    ok( $cpan->{cpan}{$module_lc}{description}, 'has a description' );
 };
 
 sub _init_cpan_config {

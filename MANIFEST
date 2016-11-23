@@ -13,7 +13,7 @@ README.md
 t/00_Gentoo.t
 t/01_Gentoo_Portage_Q.t
 t/05_Gentoo_Portage.t
-t/10cpan_packages.t
+t/06_Gentoo_CPAN.t
 t/11_App_gcpan.t
 t/98_changes.t
 t/98_eol.t
