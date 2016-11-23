@@ -426,11 +426,11 @@ sub yaml_load {
     return if $@;
     return $yaml;
 }
+
 sub transformCPAN {
-    my $self = shift;
-    my $name = shift;
-    my $req = shift;
-    return unless ( defined($name) );
+    my ( $self, $name, $req ) = @_;
+    return unless $name;
+
     my $re_path = '(?:.*)?';
     my $re_pkg  = '(?:.*)?';
     my $re_ver  = '(?:v?[\d\.]+[a-z]?\d*)?';
@@ -470,14 +470,8 @@ sub transformCPAN {
     if ( substr( $filenamever, 0, 1 ) eq '.' ) {
         $filenamever = 0 . $filenamever;
     }
-    if ($req eq "v")
-    {
-        return ($filenamever);
-    }
-    else
-    {
-        return ($filename);
-    }
+
+    return ( $req eq 'v' ) ? $filenamever : $filename;
 }
 
 sub makeCPANstub {
@@ -627,9 +621,9 @@ Grabs the module from CPAN and unpacks it. It then proceeds to scan for
 dependencies, filling in $obj->{'cpan'}{lc($somemodule)}{'depends'} with and
 deeps that were found (hash).
 
-=item $obj->transformCPANVersion($somemodule)
+=item $obj->transformCPAN($somemodule, 'v')
 
-=item $obj->transformCPANName($somemodule)
+=item $obj->transformCPAN($somemodule, 'n')
 
 Returns a portage friend version or module name from the name that is used on
 CPAN. Useful for modules that use names or versions that would break as a
