@@ -46,16 +46,8 @@ use constant DEF_BASH_PROG     => '/bin/bash';
 unless ( $ENV{TMPDIR} ) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
 
 sub new {
-    my $proto = shift;
-    my %args  = @_;
-    my $class = ref($proto) || $proto;
-    my $self  = {};
-
-    $self->{cpan}               = {};
-    $self->{DEBUG}              = $args{debug}||"";
-
-    bless( $self, $class );
-    return $self;
+    my $class = shift;
+    return bless {}, $class;
 }
 
 ##### - CPAN OVERRIDE - #####
