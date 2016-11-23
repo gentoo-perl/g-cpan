@@ -19,21 +19,29 @@ elsif ( $needs_cpan_stub and not _init_cpan_config() ) {
     plan skip_all => 'Tests impossible without a configured CPAN::Config';
 }
 else {
-    plan tests => 3;
+    plan tests => 4;
 }
 
 use_ok('Gentoo::CPAN');
 my $cpan = new_ok('Gentoo::CPAN');
 
-my $module = 'Module::Build';
+my $module    = 'Module::Build';
+my $module_lc = lc($module);
+
 subtest "getCPANInfo('$module')", sub {
     $cpan->getCPANInfo($module);
-    my $module_lc = lc($module);
     ok( $cpan->{cpan}{$module_lc},              'information obtained' );
     ok( $cpan->{cpan}{$module_lc}{version},     'has version' );
     ok( $cpan->{cpan}{$module_lc}{name},        'has a name' );
     ok( $cpan->{cpan}{$module_lc}{src_uri},     'has src_uri' );
     ok( $cpan->{cpan}{$module_lc}{description}, 'has a description' );
+};
+
+subtest "transformCPAN('$cpan->{cpan}{$module_lc}{src_uri}', 'n'|'v')", sub {
+    my $name = $cpan->transformCPAN( $cpan->{cpan}{$module_lc}{src_uri}, 'n' );
+    is( $name, 'Module-Build', '"name" is OK' );
+    my $version = $cpan->transformCPAN( $cpan->{cpan}{$module_lc}{src_uri}, 'v' );
+    like( $version, qr/^\d[\d\.]+\d$/, '"version" is OK' );
 };
 
 sub _init_cpan_config {
