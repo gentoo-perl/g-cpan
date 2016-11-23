@@ -50,7 +50,7 @@ sub new {
 =head2 envvar($variable)
 
 Returns a specific environment variable as exists prior to ebuild.sh.
-WARNING: At the moment the method is very limited and have only few hardcoded vars to return, like C<EROOT>.
+WARNING: At the moment C<EROOT> is hardcoded to .
 
 =cut
 
