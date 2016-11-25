@@ -48,19 +48,15 @@ sub UNIVERSAL::debug {
 }
 
 sub new {
-    my $proto = shift;
-    my %args  = @_;
-    my $class = ref($proto) || $proto;
-    my $self  = {};
-
-    $self->{modules}            = {};
-    $self->{portage_categories} = [];
-    $self->{portage_bases}      = {};
-    $self->{cpan_reload}        = $args{cpan_reload};
-    $self->{DEBUG}              = $args{debug};
-
-    bless( $self, $class );
-    return $self;
+    my ( $class, %args ) = @_;
+    my $self = {
+        cpan_reload        => $args{cpan_reload},    # used in Gentoo::CPAN only
+        DEBUG              => $args{debug},
+        modules            => {},
+        portage_categories => [],
+        portage_bases      => {},
+    };
+    return bless $self, $class;
 }
 
 sub DESTROY {
@@ -80,14 +76,18 @@ Gentoo - Base perl class for working with the Gentoo:: namespace.
 =head1 SYNOPSIS
 
   use Gentoo;
-  my $obj = Gentoo->new(
-    'cpan_reload' => "1",
-    'DEBUG'       => "1",);
+  my $gentoo_obj = Gentoo->new( cpan_reload => 1 );
 
 =head1 DESCRIPTION
 
 Base class for the Gentoo namespace, providing access to the rest of the
 Gentoo::modules.
+
+=head1 METHODS
+
+=head2 new(%args)
+
+Create an object.
 
 =head1 SEE ALSO
 
