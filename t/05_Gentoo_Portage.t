@@ -24,7 +24,7 @@ subtest 'getAvailableEbuilds($portdir, $package)', sub {
     my $package  = 'YAML';
     $ebuilds = $portage->getAvailableEbuilds( $portdir, "$category/$package" );
     is( ref $ebuilds, 'ARRAY', "retrieve ebuilds for '$category/$package' (as arrayref)" );
-    like( $ebuilds->[0], qr/^YAML-[\d\.]+\.ebuild$/, '  and contains element like ebuild' );
+    like( $ebuilds->[0], qr/^YAML-[\d\.]+(?:-\w+)?\.ebuild$/, '  and contains element like ebuild' );
 };
 
 subtest 'getAvailableVersions($portdir, $find_package)', sub {
