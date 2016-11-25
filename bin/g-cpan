@@ -204,6 +204,7 @@ use CPAN;
 my $gcpan_run = Gentoo->new( cpan_reload => $cpan_reload, debug => $debug );
 
 my $env = App::gcpan->setup_env();
+$debug and $gcpan_run->debug($env);
 
 my $GCPAN_CAT = $env->{GCPAN_CAT};
 # Push back to the env so we can use during cleanup
