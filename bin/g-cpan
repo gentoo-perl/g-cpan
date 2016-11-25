@@ -201,10 +201,7 @@ use CPAN;
 # main() #
 ##########
 
-my $gcpan_run = Gentoo->new(
-    'cpan_reload' => $cpan_reload,
-    'DEBUG'       => $debug,
-);
+my $gcpan_run = Gentoo->new( cpan_reload => $cpan_reload, debug => $debug );
 
 my $env = App::gcpan->setup_env();
 
@@ -270,10 +267,7 @@ else
 }
 
 # Reset the object in case we created a new category.
-$gcpan_run = Gentoo->new(
-    'cpan_reload' => $cpan_reload,
-    'DEBUG'       => $debug,
-);
+$gcpan_run = Gentoo->new( cpan_reload => $cpan_reload, debug => $debug );
 
 # If passed --cpan_reload and nothing else, just reload and exit.
 if (@ARGV == 0 && defined $cpan_reload) {

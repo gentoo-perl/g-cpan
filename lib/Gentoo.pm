@@ -51,7 +51,7 @@ sub new {
     my ( $class, %args ) = @_;
     my $self = {
         cpan_reload        => $args{cpan_reload},    # used in Gentoo::CPAN only
-        DEBUG              => $args{debug},
+        debug              => $args{debug},
         modules            => {},
         portage_categories => [],
         portage_bases      => {},
