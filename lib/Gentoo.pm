@@ -42,9 +42,9 @@ sub _init {
 sub UNIVERSAL::debug {
     my ( $package, $file, $line ) = caller();
     my $subroutine = ( caller(1) )[3] || $package;
-    print STDERR "In $subroutine ($file:$line):\n",
-      Data::Dumper->Dump( [ $_[0] ] );
-    logerr("In $subroutine ($file:$line:\n".Data::Dumper->Dump( [ $_[0]]));
+    my $msg = "In $subroutine ($file:$line:\n" . Data::Dumper->Dump( \@_ );
+    warn $msg;
+    logerr($msg);
 }
 
 sub new {
