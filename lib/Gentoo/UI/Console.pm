@@ -53,27 +53,23 @@ sub new {
 
 sub print_colored { print ' ' . color(shift) . '* ' . color("reset") . shift() , "\n" }
 
-# These methods take as args  :
-# - the program name (1 string)
-# - additional args to be printed
-
 sub print_ok {
-    print_colored('bold green', shift, @_);
+    print_colored( 'bold green', @_ );
     logsay "@_";
 }
 
 sub print_info {
-    print_colored('bold cyan',  shift, @_);
+    print_colored( 'bold cyan', @_ );
     logsay "[INFO] @_";
 }
 
 sub print_warn {
-    print_colored('bold yellow', shift, @_);
+    print_colored( 'bold yellow', @_ );
     logerr "[WARNING] @_";
 }
 
 sub print_err {
-    print_colored('bold red', shift, @_);
+    print_colored( 'bold red', @_ );
     logerr "[ERROR] @_";
 }
 
