@@ -46,16 +46,8 @@ use constant DEF_BASH_PROG     => '/bin/bash';
 unless ( $ENV{TMPDIR} ) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
 
 sub new {
-    my $proto = shift;
-    my %args  = @_;
-    my $class = ref($proto) || $proto;
-    my $self  = {};
-
-    $self->{cpan}               = {};
-    $self->{DEBUG}              = $args{debug}||"";
-
-    bless( $self, $class );
-    return $self;
+    my $class = shift;
+    return bless {}, $class;
 }
 
 ##### - CPAN OVERRIDE - #####
@@ -143,12 +135,15 @@ sub getCPANInfo {
         $desc =~ s/^$module_name - //g;
         return $desc;
     }
-    $self->{'cpan'}{ lc($find_module) }{'description'} =
-      $mod->{RO}{'description'} || manpage_title($mod, $find_module) || "No description available";
-    $self->{'cpan'}{ lc($find_module) }{'src_uri'} = $mod->{RO}{'CPAN_FILE'};
-    $self->{'cpan'}{ lc($find_module) }{'name'}    = $mod->id;
-    $self->{'cpan'}{ lc($find_module) }{'version'} = $mod->{RO}{'CPAN_VERSION'}
-      || "0";
+
+    my $dist_info = $self->{cpan}{ lc($find_module) };
+    $dist_info->{description} =
+      $mod->{RO}{description} || manpage_title( $mod, $find_module ) || 'No description available';
+    $dist_info->{src_uri}             = $mod->{RO}{CPAN_FILE};
+    $dist_info->{name}                = $mod->id;
+    $dist_info->{version}             = $mod->{RO}{CPAN_VERSION} || '0';
+    $self->{cpan}{ lc($find_module) } = $dist_info;
+
     return;
 }
 
@@ -431,11 +426,11 @@ sub yaml_load {
     return if $@;
     return $yaml;
 }
+
 sub transformCPAN {
-    my $self = shift;
-    my $name = shift;
-    my $req = shift;
-    return unless ( defined($name) );
+    my ( $self, $name, $req ) = @_;
+    return unless $name;
+
     my $re_path = '(?:.*)?';
     my $re_pkg  = '(?:.*)?';
     my $re_ver  = '(?:v?[\d\.]+[a-z]?\d*)?';
@@ -475,14 +470,8 @@ sub transformCPAN {
     if ( substr( $filenamever, 0, 1 ) eq '.' ) {
         $filenamever = 0 . $filenamever;
     }
-    if ($req eq "v")
-    {
-        return ($filenamever);
-    }
-    else
-    {
-        return ($filename);
-    }
+
+    return ( $req eq 'v' ) ? $filenamever : $filename;
 }
 
 sub makeCPANstub {
@@ -632,9 +621,9 @@ Grabs the module from CPAN and unpacks it. It then proceeds to scan for
 dependencies, filling in $obj->{'cpan'}{lc($somemodule)}{'depends'} with and
 deeps that were found (hash).
 
-=item $obj->transformCPANVersion($somemodule)
+=item $obj->transformCPAN($somemodule, 'v')
 
-=item $obj->transformCPANName($somemodule)
+=item $obj->transformCPAN($somemodule, 'n')
 
 Returns a portage friend version or module name from the name that is used on
 CPAN. Useful for modules that use names or versions that would break as a
