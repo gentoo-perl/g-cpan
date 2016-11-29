@@ -308,32 +308,21 @@ if (   $generate
     }
 }
 
-# Get the overlays
-my $overlay = $env->{PORTDIR_OVERLAY};
-if ($overlay)
-{
-    if ($overlay =~ m{\S*\s+\S*}x)
-    {
-        my @overlays = split ' ', $overlay;
-        foreach (@overlays)
-        {
-            $gcpan_run->{portage_bases}{$_} = 1 if (-d $_);
-        }
-    }
-    else
-    {
-        if (-d $overlay) { $gcpan_run->{portage_bases}{$overlay} = 1 }
-    }
-    unless (keys %{$gcpan_run->{portage_bases}} > 1)
-    {
-        fatal(print_err("DEFINED OVERLAYS DON'T EXIST!"));
+# overlays & repos
+my @overlays;
+if ( $env->{PORTDIR_OVERLAY} ) {
+    @overlays = split / /, $env->{PORTDIR_OVERLAY};
+    foreach (@overlays) {
+        $gcpan_run->{portage_bases}{$_} = 1 if -d $_;
     }
 
+    unless ( %{ $gcpan_run->{portage_bases} } ) {
+        fatal( print_err("DEFINED OVERLAYS DON'T EXIST!") );
+    }
 }
-elsif ($generate || $list || $pretend)
-{
-    print_err("The option you have chosen isn't supported without a configured overlay.\n");
-    exit();
+elsif ( $generate || $list || $pretend ) {
+    print_err("The option you have chosen isn't supported without a configured overlay\n");
+    exit;
 }
 
 # Set portage_categories to our defined list of perl_dirs
@@ -410,11 +399,9 @@ if ($list || $upgrade)
     }
     else
     {
-        my @overlays = split ' ', $overlay;
-        foreach my $overlay_dir (@overlays)
-        {
-            next unless -d $overlay_dir;
-            my $gcpan_dir = File::Spec->catdir( $overlay_dir, $GCPAN_CAT );
+        foreach my $dir (@overlays) {
+            next unless -d $dir;
+            my $gcpan_dir = File::Spec->catdir( $dir, $GCPAN_CAT );
             next unless -d $gcpan_dir;
 
             print_info("OVERLAY: $gcpan_dir");
@@ -635,19 +622,12 @@ sub generatePackageInfo
 
             # Write ebuild here?
             $debug and $gcpan_run->debug;
-            my @overlays;
-            if ($GCPAN_OVERLAY)
-            {
-                push @overlays, $GCPAN_OVERLAY
+            if ($GCPAN_OVERLAY) {
+                unshift @overlays, $GCPAN_OVERLAY;
             }
-            elsif ($overlay)
-            {
-                @overlays = split ' ', $overlay
-            }
-            else
-            {
-                push @overlays, "/var/tmp/g-cpan"
-                  and $ENV{PORTDIR_OVERLAY} = "/var/tmp/g-cpan";
+            elsif ( not @overlays ) {
+                push @overlays, '/var/tmp/g-cpan';
+                $ENV{PORTDIR_OVERLAY} = '/var/tmp/g-cpan';
             }
             foreach my $target_dir (@overlays)
             {
