@@ -214,8 +214,6 @@ if(length(grep {/$GCPAN_CAT/} @perl_dirs) == 0) {
 	push @perl_dirs, $GCPAN_CAT;
 }
 
-my $GCPAN_OVERLAY = $env->{GCPAN_OVERLAY};
-
 # Confirm that there is an /etc/portage/categories file
 # and that we have an entry for perl-gcpan in it.
 my $cat_file = "/etc/portage/categories";
@@ -323,6 +321,13 @@ if ( $env->{PORTDIR_OVERLAY} ) {
 elsif ( $generate || $list || $pretend ) {
     print_err("The option you have chosen isn't supported without a configured overlay\n");
     exit;
+}
+
+my $GCPAN_OVERLAY = $env->{GCPAN_OVERLAY};
+
+unless ( $gcpan_run->{portage_bases}{$GCPAN_OVERLAY} ) {
+    print_warn('Your "GCPAN_OVERLAY" is not present in overlays/repos list');
+    print_warn('Bear in mind what you will not have ability to manage generated ebuilds by "-l", "-u" options');
 }
 
 # Set portage_categories to our defined list of perl_dirs
