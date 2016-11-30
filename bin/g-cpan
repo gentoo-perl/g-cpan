@@ -30,7 +30,6 @@ my $prog = basename($0);
 ##### Establish our tmpdir
 unless ($ENV{TMPDIR}) { $ENV{TMPDIR} = '/var/tmp/g-cpan' }
 
-my %dep_list = ();
 my @perl_dirs = (qw( dev-perl perl-core perl-gcpan dev-lang ));
 
 ###############################
