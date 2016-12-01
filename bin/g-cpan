@@ -325,7 +325,7 @@ elsif ( $generate || $list || $pretend ) {
 
 my $GCPAN_OVERLAY = $env->{GCPAN_OVERLAY};
 
-unless ( $gcpan_run->{portage_bases}{$GCPAN_OVERLAY} ) {
+if ( $GCPAN_OVERLAY and not $gcpan_run->{portage_bases}{$GCPAN_OVERLAY} ) {
     print_warn('Your "GCPAN_OVERLAY" is not present in overlays/repos list');
     print_warn('Bear in mind what you will not have ability to manage generated ebuilds by "-l", "-u" options');
 }
