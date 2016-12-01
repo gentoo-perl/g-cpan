@@ -50,7 +50,7 @@ sub new {
 =head2 envvar($variable)
 
 Returns a specific environment variable as exists prior to ebuild.sh.
-WARNING: At the moment C<EROOT> is hardcoded to .
+WARNING: At the moment C<EROOT> is hardcoded to C</>.
 
 =cut
 
@@ -205,7 +205,9 @@ __END__
 
 =over
 
-=item Split the module and place onto CPAN as separate one
+=item * Add good detection for C<EROOT> (to support Gentoo Prefix Project)
+
+=item * Split the module and place onto C<CPAN> as separate one
 
 =back
 
