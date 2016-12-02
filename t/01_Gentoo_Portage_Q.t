@@ -8,7 +8,18 @@ use Test::More tests => 5;
 
 use_ok('Gentoo::Portage::Q');
 
-my $portageq = new_ok('Gentoo::Portage::Q');
+my ( $portageq, $portageq_prefix, $portageq_real );
+
+subtest 'new' => sub {
+    $portageq        = new_ok('Gentoo::Portage::Q');
+    $portageq_prefix = do {
+        local $ENV{EPREFIX} = 't/data';
+        new_ok( 'Gentoo::Portage::Q' => [], 'new with EPREFIX' );
+    };
+    if ( -e '/etc/gentoo-release' ) {
+        $portageq_real = new_ok( 'Gentoo::Portage::Q' => [], 'new for real Gentoo instance' );
+    }
+};
 
 subtest 'envvar($variable)', sub {
     is( $portageq->envvar('EROOT'), '/', 'EROOT' );
@@ -16,11 +27,16 @@ subtest 'envvar($variable)', sub {
     like( $portageq->envvar('USE'), qr/^\w[\w\s\-]*$/, 'USE' );
     ok( !$portageq->envvar('SOME_BOGUS_VAR'), 'fake var' );
 
+    subtest 'with EPREFIX', sub {
+        is( $portageq_prefix->envvar('EROOT'),   '/t/data', 'EROOT' );
+        is( $portageq_prefix->envvar('EPREFIX'), 't/data', 'EPREFIX' );
+    };
+
     subtest 'real Gentoo Linux', sub {
-        plan skip_all => 'nope' unless -e '/etc/gentoo-release';
-        like( $portageq->envvar('ARCH'),            qr/^~?[\w\-]+$/, 'ARCH' );
-        like( $portageq->envvar('ACCEPT_KEYWORDS'), qr/^~?[\w\-]+$/, 'ACCEPT_KEYWORDS' );
-        ok( $portageq->envvar('MAKEOPTS'), 'MAKEOPTS' );
+        plan skip_all => 'nope' unless $portageq_real;
+        like( $portageq_real->envvar('ARCH'),            qr/^~?[\w\-]+$/, 'ARCH' );
+        like( $portageq_real->envvar('ACCEPT_KEYWORDS'), qr/^~?[\w\-]+$/, 'ACCEPT_KEYWORDS' );
+        ok( $portageq_real->envvar('MAKEOPTS'), 'MAKEOPTS' );
     };
 };
 
@@ -31,10 +47,10 @@ subtest 'get_repo_path( $eroot, $repo_id )', sub {
     is( $portageq->get_repo_path( $eroot, 'bogus' ),  undef,                "trying for ('$eroot','bogus')" );
 
     subtest 'real Gentoo Linux', sub {
-        plan skip_all => 'nope' unless -e '/etc/gentoo-release';
+        plan skip_all => 'nope' unless $portageq_real;
         $eroot = '/';
         like(
-            $portageq->get_repo_path( $eroot, 'gentoo' ),
+            $portageq_real->get_repo_path( $eroot, 'gentoo' ),
             qr%(/usr/portage|/var/db/repos/gentoo)%,
             "trying for ('$eroot','gentoo')"
         );
