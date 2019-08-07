@@ -1,16 +1,15 @@
 #!/usr/bin/env perl
-# check if your Manifest matches your distro
+# check if your MANIFEST matches your distro
 
 use strict;
 use warnings;
 
-use Test::More;
+use ExtUtils::Manifest;
+use Test::More tests => 2;
 
 # skip if doing a regular tests
 plan skip_all => "Developer's tests not required for installation"
   unless $ENV{DEV_TESTING};
 
-eval { require Test::CheckManifest; };    ## no critic (ErrorHandling::RequireCheckingReturnValueOfEval)
-plan skip_all => 'Test::CheckManifest required' if $@;
-
-Test::CheckManifest::ok_manifest();
+is_deeply [ ExtUtils::Manifest::manicheck() ], [], 'no missing files';
+is_deeply [ ExtUtils::Manifest::filecheck() ], [], 'no extra files';

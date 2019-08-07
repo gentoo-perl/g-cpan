@@ -7,6 +7,7 @@
 ^MANIFEST\.bak$
 ^MANIFEST\.SKIP$
 ^MYMETA\.json$
+^MYMETA\.json\.lock$
 ^MYMETA\.yml$
 ^blib
 ^cover_db
