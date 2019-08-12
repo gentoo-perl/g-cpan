@@ -359,7 +359,7 @@ if any ebuild exists and which versions are available for this name.
 
 =item $obj->getEbuildVersionSpecial($ebuild)
 
-Given the full name of an ebuild (foo-1.3.4-rc5.ebuild), this function will
+Given the full name of an ebuild (C<foo-1.3.4-rc5.ebuild>), this function will
 return the actual version of the ebuild after stripping out the portage
 related syntax.
 
