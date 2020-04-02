@@ -4,6 +4,7 @@ use lib 'lib';
 use strict;
 use warnings;
 
+use Path::Tiny;
 use Test::More tests => 5;
 
 use_ok('Gentoo::Portage::Q');
@@ -13,7 +14,8 @@ my ( $portageq, $portageq_prefix, $portageq_real );
 subtest 'new' => sub {
     $portageq        = new_ok('Gentoo::Portage::Q');
     $portageq_prefix = do {
-        local $ENV{EPREFIX} = 't/data';
+        local $ENV{ROOT}    = Path::Tiny->cwd;
+        local $ENV{EPREFIX} = '/t/data';
         new_ok( 'Gentoo::Portage::Q' => [], 'new with EPREFIX' );
     };
     if ( -e '/etc/gentoo-release' ) {
@@ -28,8 +30,8 @@ subtest 'envvar($variable)', sub {
     ok( !$portageq->envvar('SOME_BOGUS_VAR'), 'fake var' );
 
     subtest 'with EPREFIX', sub {
-        is( $portageq_prefix->envvar('EROOT'),   '/t/data', 'EROOT' );
-        is( $portageq_prefix->envvar('EPREFIX'), 't/data', 'EPREFIX' );
+        is( $portageq_prefix->envvar('EPREFIX'), '/t/data', 'EPREFIX' );
+        like( $portageq_prefix->envvar('EROOT'), qr%^/.+?/t/data\z%, 'EROOT' );
     };
 
     subtest 'real Gentoo Linux', sub {
@@ -45,6 +47,11 @@ subtest 'get_repo_path( $eroot, $repo_id )', sub {
     is( $portageq->get_repo_path( $eroot, 'gentoo' ), '/usr/portage',       "trying for ('$eroot','gentoo')" );
     is( $portageq->get_repo_path( $eroot, 'local' ),  '/usr/local/portage', "trying for ('$eroot','local')" );
     is( $portageq->get_repo_path( $eroot, 'bogus' ),  undef,                "trying for ('$eroot','bogus')" );
+
+    subtest 'with EPREFIX', sub {
+        $eroot = $portageq_prefix->envvar('EROOT');
+        is( $portageq_prefix->get_repo_path( $eroot, 'gentoo' ), '/usr/portage', "('$eroot','gentoo')" );
+    };
 
     subtest 'real Gentoo Linux', sub {
         plan skip_all => 'nope' unless $portageq_real;

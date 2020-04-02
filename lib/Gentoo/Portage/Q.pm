@@ -44,7 +44,12 @@ Returns a new C<Gentoo::Portage::Q> object.
 
 sub new {
     my $class = shift;
-    return bless { _eprefix => ( $ENV{EPREFIX} || '' ) }, $class;
+    my $self  = {
+        _eprefix => ( $ENV{EPREFIX} || '' ),
+        _eroot => $ENV{EROOT},
+    };
+    $self->{_eroot} ||= path( ( $ENV{ROOT} || '/' ) . $self->{_eprefix} )->canonpath;
+    return bless $self, $class;
 }
 
 =head2 envvar($variable)
@@ -170,9 +175,7 @@ sub _read_portage_env {
     my $self = shift;
     my %portage_env;
 
-    my $eroot = $ENV{EROOT} || ( $ENV{ROOT} || '/' ) . $self->{_eprefix};
-
-    for my $file ( @{ $self->_portage_env_files($eroot) } ) {
+    for my $file ( @{ $self->_portage_env_files( $self->{_eroot} ) } ) {
         open( my $h, '-|', "bash -norc -noprofile -c '. $file; set'" ) or die "Can't run bash command: $!";
         while ( defined( my $l = <$h> ) ) {
             # skip already defined ENV vars, since we want only portage env
@@ -184,7 +187,7 @@ sub _read_portage_env {
     }
 
     $portage_env{EPREFIX} = $self->{_eprefix};
-    $portage_env{EROOT}   = $eroot;
+    $portage_env{EROOT}   = $self->{_eroot};
 
     return \%portage_env;
 }
