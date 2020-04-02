@@ -77,19 +77,19 @@ Returns the path to the C<$repo_id>.
 sub get_repo_path {
     my ( $self, $eroot, $repo_id ) = @_;
 
-    $self->{_repo} ||= $self->_load_repos($eroot);
+    $self->{_repos}{$eroot} ||= $self->_load_repos($eroot);
 
-    unless ( $self->{_repo}{$repo_id} ) {
+    unless ( $self->{_repos}{$eroot}{$repo_id} ) {
         # if not loaded by 'get_repos' then trying to guess file name
         my $repo_conf_file = path( $eroot, 'etc', 'portage', 'repos.conf' )->child("$repo_id.conf");
         if ( $repo_conf_file->exists ) {
             my $repo_conf = Config::Tiny->read($repo_conf_file);
-            $self->{_repo}{$repo_id} = $repo_conf->{$repo_id};
+            $self->{_repos}{$eroot}{$repo_id} = $repo_conf->{$repo_id};
         }
         else { return; }
     }
 
-    return $self->{_repo}{$repo_id}{location};
+    return $self->{_repos}{$eroot}{$repo_id}{location};
 }
 
 =head2 get_repos($eroot)
@@ -101,17 +101,10 @@ Returns arrayref with all C<repos> with names (repo_name file).
 sub get_repos {
     my ( $self, $eroot ) = @_;
 
-    unless ( $self->{_repos} ) {
-        $self->{_repo} ||= $self->_load_repos($eroot);
+    my $repos = $self->{_repos}{$eroot} ||= $self->_load_repos($eroot);
 
-        # keep order by priority, like portageq
-        $self->{_repos} = [
-            sort { ( $self->{_repo}{$b}{priority} || 0 ) <=> ( $self->{_repo}{$a}{priority} || 0 ) }
-              keys %{ $self->{_repo} }
-        ];
-    }
-
-    return $self->{_repos};
+    # keep order by priority, like portageq
+    return [ sort { ( $repos->{$b}{priority} || 0 ) <=> ( $repos->{$a}{priority} || 0 ) } keys %{$repos} ];
 }
 
 
