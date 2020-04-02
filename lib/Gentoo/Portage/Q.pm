@@ -143,8 +143,20 @@ sub _portage_env_files {
                 # handle parent file, add each parent's location
                 my $p = path( $path, 'parent' );
                 if ( $p->exists ) {
-                    push @_make_profile,
-                      map { substr( $_, 0, 1 ) eq '/' ? $_ : path( $path, $_ )->realpath } $p->lines( { chomp => 1 } );
+                    for my $profile_line ( $p->lines( { chomp => 1 } ) ) {
+                        my $profile_path;
+                        if ( $profile_line =~ /^ (?<name> [^:]+) : (?<path> .+) \z/x ) {
+                            $profile_path =
+                              path( $eroot, $self->get_repo_path( $eroot, $+{name} ), 'profiles', $+{path} )->realpath;
+                        }
+                        else {
+                            $profile_path =
+                              substr( $profile_line, 0, 1 ) eq '/'
+                              ? $profile_line
+                              : path( $path, $profile_line )->realpath;
+                        }
+                        push @_make_profile, $profile_path;
+                    }
                 }
             }
         }

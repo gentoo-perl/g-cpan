@@ -28,3 +28,4 @@ t/data/usr/local/repos/test/metadata/layout.conf
 t/data/usr/local/repos/test/profiles/profiles.desc
 t/data/usr/local/repos/test/profiles/repo_name
 t/data/usr/local/repos/test/profiles/test_profile/make.defaults
+t/data/usr/portage/profiles/default/linux/eapi
