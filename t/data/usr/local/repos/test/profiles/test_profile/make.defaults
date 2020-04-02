@@ -1,0 +1,4 @@
+# Please consult /usr/share/portage/config/make.conf.example for a more
+# detailed example and review 'man make.conf' for more information.
+
+ACCEPT_KEYWORDS="amd64"

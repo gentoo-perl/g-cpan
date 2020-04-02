@@ -1,0 +1,4 @@
+#layout:
+#arch	        profile_directory		                        status
+
+amd64           test_profile                                    dev

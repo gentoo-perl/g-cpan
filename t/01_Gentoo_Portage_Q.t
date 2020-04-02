@@ -32,6 +32,8 @@ subtest 'envvar($variable)', sub {
     subtest 'with EPREFIX', sub {
         is( $portageq_prefix->envvar('EPREFIX'), '/t/data', 'EPREFIX' );
         like( $portageq_prefix->envvar('EROOT'), qr%^/.+?/t/data\z%, 'EROOT' );
+        is( $portageq_prefix->envvar('ACCEPT_KEYWORDS'), 'amd64',        'ACCEPT_KEYWORDS' );
+        is( $portageq_prefix->envvar('USE'),             'perl -python', 'USE' );
     };
 
     subtest 'real Gentoo Linux', sub {
