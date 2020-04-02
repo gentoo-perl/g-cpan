@@ -4,7 +4,7 @@ use lib 'lib';
 use strict;
 use warnings;
 
-use Test::More;
+use Test::More tests => 5;
 
 use_ok('Gentoo::Portage::Q');
 
@@ -33,7 +33,11 @@ subtest 'get_repo_path( $eroot, $repo_id )', sub {
     subtest 'real Gentoo Linux', sub {
         plan skip_all => 'nope' unless -e '/etc/gentoo-release';
         $eroot = '/';
-        is( $portageq->get_repo_path( $eroot, 'gentoo' ), '/usr/portage', "trying for ('$eroot','gentoo')" );
+        like(
+            $portageq->get_repo_path( $eroot, 'gentoo' ),
+            qr%(/usr/portage|/var/db/repos/gentoo)%,
+            "trying for ('$eroot','gentoo')"
+        );
     };
 };
 
@@ -41,5 +45,3 @@ subtest 'get_repos($eroot)', sub {
     my $eroot = 't/data';
     is_deeply( $portageq->get_repos($eroot), [ 'local', 'gentoo' ], "trying for ('$eroot')" );
 };
-
-done_testing();
