@@ -38,6 +38,7 @@ if ( ExtUtils::MakeMaker->VERSION >= 6.64 ) {
         #'Test::EOL'           => 0,
         #'Test::Pod'           => 1.40,
         #'Test::Spelling'      => 0.11,
+        #'Test::Strict'        => 0,
     };
 }
 

@@ -20,6 +20,7 @@ t/98_eol.t
 t/98_manifest.t
 t/98_pod_spelling.t
 t/98_pod_syntax.t
+t/98_strict.t
 t/data/etc/portage/make.conf
 t/data/etc/portage/make.profile/parent
 t/data/etc/portage/repos.conf/gentoo.conf
