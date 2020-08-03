@@ -553,6 +553,7 @@ sub generatePackageInfo
         spinner_start();
         $gcpan_run->{cpan}{lc($ebuild_wanted)}{portage_name}    = $gcpan_run->transformCPAN($gcpan_run->{cpan}{lc($ebuild_wanted)}{src_uri}, 'n');
         $gcpan_run->{cpan}{lc($ebuild_wanted)}{portage_version} = $gcpan_run->transformCPAN($gcpan_run->{cpan}{lc($ebuild_wanted)}{src_uri}, 'v');
+        $gcpan_run->{cpan}{lc($ebuild_wanted)}{module_version} = $gcpan_run->transformCPAN($gcpan_run->{cpan}{lc($ebuild_wanted)}{src_uri}, 'mv');
         spinner_stop();
     }
     else
@@ -686,7 +687,7 @@ sub generatePackageInfo
                             }
                         }
 
-                        my $module_version = $gcpan_run->{cpan}{ lc($original_ebuild) }{portage_version};
+                        my $module_version = $gcpan_run->{cpan}{ lc($original_ebuild) }{module_version};
                         my $description = $gcpan_run->{'cpan'}{ lc($original_ebuild) }{'description'};
                         $description =~ s/"/\\"/g;
 

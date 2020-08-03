@@ -462,7 +462,7 @@ sub transformCPAN {
     $filenamever =~ s/([0-9.]+)-([0-9.]+)$/$1\.$2/;
 
     # Remove leading v's - happens on occasion
-    $filenamever =~ s{^v}{}i;
+    $filenamever =~ s{^v}{}i if $req ne 'mv';
 
     # Some modules don't use the /\d\.\d\d/ convention, and portage goes
     # berserk if the ebuild is called ebulldname-.02.ebuild -- so we treat
@@ -471,7 +471,7 @@ sub transformCPAN {
         $filenamever = 0 . $filenamever;
     }
 
-    return ( $req eq 'v' ) ? $filenamever : $filename;
+    return ( $req eq 'v' || $req eq 'mv' ) ? $filenamever : $filename;
 }
 
 sub makeCPANstub {
