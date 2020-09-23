@@ -61,7 +61,7 @@ Returns a specific environment variable as exists prior to ebuild.sh.
 sub envvar {
     my ( $self, $var ) = @_;
 
-    return $ENV{$var} if defined $ENV{$var};    # prefer to use custom from ENV
+    return $ENV{$var} if $ENV{$var};    # prefer to use custom from ENV
 
     $self->{_portage_env} ||= $self->_read_portage_env();
 
