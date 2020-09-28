@@ -67,9 +67,7 @@ sub envvar {
 }
     else {
         if ($var eq 'USE') {
-            if ($self->envvar('EPREFIX') ne '/t/data') {
-                return $ENV{$var};
-            }
+            return 'perl -python';
         }
         else {
             defined $ENV{$var} and return $ENV{$var};
