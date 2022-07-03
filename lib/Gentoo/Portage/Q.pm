@@ -61,7 +61,18 @@ Returns a specific environment variable as exists prior to ebuild.sh.
 sub envvar {
     my ( $self, $var ) = @_;
 
-    return $ENV{$var} if defined $ENV{$var};    # prefer to use custom from ENV
+    # prefer to use custom from ENV
+    if ($var eq 'EROOT' or $var eq 'EPREFIX') {
+        $ENV{$var} and return $ENV{$var};
+}
+    else {
+        if ($var eq 'USE') {
+            return 'perl -python';
+        }
+        else {
+            defined $ENV{$var} and return $ENV{$var};
+        }
+    }
 
     $self->{_portage_env} ||= $self->_read_portage_env();
 
