@@ -1,5 +1,14 @@
 Revision history for g-cpan
 
+0.18.0 2022-07-03
+
+  - Use EAPI 8 for generated ebuilds, rather than banned EAPI 5. This became
+    particularly important as the Perl eclasses (perl-functions.eclass,
+    perl-module.eclass) dropped EAPI 5 support. Thanks to
+    Ian Pickworth <ian@pickworth.me.uk>.
+
+  - Add 'make check' target for syntax checking.
+
 0.17.0 2020-04-03
 
   - add Gentoo::Portage::Q module and migrate to it for get env vars, get repos, etc
